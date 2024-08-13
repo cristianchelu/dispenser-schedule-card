@@ -1,0 +1,13 @@
+{
+    "ui": {
+        "name": "Orar",
+        "portions": "porții"
+    },
+    "status": {
+        "dispensed": "Dozat",
+        "dispensing": "Se dozează",
+        "pending": "În așteptare",
+        "failed": "Eșuat",
+        "skipped": "Omis"
+    }
+}

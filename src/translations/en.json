@@ -1,0 +1,13 @@
+{
+    "ui": {
+        "name": "Schedule",
+        "portions": "portions"
+    },
+    "status": {
+        "dispensed": "Dispensed",
+        "dispensing": "Dispensing",
+        "pending": "Pending",
+        "failed": "Failed",
+        "skipped": "Skipped"
+    }
+}

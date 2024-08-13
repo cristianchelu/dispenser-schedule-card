@@ -1,0 +1,33 @@
+{
+  "name": "pet-feeder-card",
+  "version": "0.0.1",
+  "description": "Custom HomeAssistant card to control pet feeders",
+  "main": "dist/pet-feeder-card.mjs",
+  "author": "Cristian Chelu <cristianchelu@gmail.com>",
+  "license": "MIT",
+  "source": "src/feeder-card.ts",
+  "module": "dist/feeder-card.mjs",
+  "targets": {
+    "module": {
+      "includeNodeModules": true
+    }
+  },
+  "scripts": {
+    "build": "rollup --config",
+    "dev": "rollup --watch --config"
+  },
+  "dependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "home-assistant-js-websocket": "^9.4.0",
+    "lit": "^3.1.4",
+    "rollup-plugin-import-css": "^3.5.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^4.19.0",
+    "tslib": "^2.6.3",
+    "typescript": "^5.5.3"
+  }
+}

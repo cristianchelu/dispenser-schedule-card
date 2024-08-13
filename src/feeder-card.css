@@ -1,0 +1,70 @@
+:host {
+  --timeline-width: 1.25pt;
+  --timeline-color: var(--state-icon-color);
+  --timeline-inset: 4px;
+  --gap-size: 8px;
+}
+
+ha-card {
+  /* padding: 16px; */
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-size);
+}
+
+.edit-button {
+  margin-right: 1em;
+}
+
+.card-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-size);
+  --ha-icon-display: flex;
+}
+
+.edit-row ha-textfield {
+  flex: 1;
+}
+
+hui-generic-entity-row {
+  position: relative;
+}
+
+hui-generic-entity-row.timeline::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: calc(100% - var(--timeline-inset));
+  left: calc(20px - (var(--timeline-width) / 2));
+  width: var(--timeline-width);
+  height: calc(var(--timeline-inset) * 2 + var(--gap-size));
+  background-color: var(--timeline-color);
+  opacity: 0.2;
+}
+
+hui-generic-entity-row.timeline:last-child::before {
+  display: none;
+}
+
+hui-generic-entity-row>* {
+  --ha-icon-display: flex;
+}
+
+.save-entry {
+  color: var(--primary-color);
+}
+
+.remove-entry {
+  margin-left: auto;
+  color: var(--error-color);
+}
