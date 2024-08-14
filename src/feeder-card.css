@@ -1,8 +1,8 @@
 :host {
   --timeline-width: 1.25pt;
   --timeline-color: var(--state-icon-color);
-  --timeline-inset: 4px;
   --gap-size: 8px;
+  --timeline-inset: 4px;
 }
 
 ha-card {
@@ -23,6 +23,11 @@ ha-card {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+
+.edit-menu {
+  margin-top: -8px;
+  margin-bottom: -8px;
 }
 
 .edit-row {

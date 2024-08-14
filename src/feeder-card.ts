@@ -115,13 +115,13 @@ class FeederCard extends LitElement {
   declare _isEditing: boolean;
   declare _isReady: boolean;
   declare _schedules: Array<ScheduleEntry>;
-  declare _editSchedules: Array<EditScheduleEntry>;
+  declare _editSchedule: EditScheduleEntry | null;
 
   constructor() {
     super();
     this._isReady = false;
     this._schedules = [];
-    this._editSchedules = [];
+    this._editSchedule = null;
   }
 
   static get properties() {
@@ -132,7 +132,7 @@ class FeederCard extends LitElement {
       _isEditing: { state: true },
       _isReady: { state: true },
       _schedules: { state: true },
-      _editSchedules: { state: true },
+      _editSchedule: { state: true },
     };
   }
 
@@ -151,29 +151,35 @@ class FeederCard extends LitElement {
 
   handleEdit() {
     if (this._isEditing) {
-      this._editSchedules = [];
       this._isEditing = false;
     } else {
-      this._editSchedules = this._schedules;
       this._isEditing = true;
     }
   }
 
+  handleEditEntry(entry: ScheduleEntry) {
+    this._editSchedule = entry;
+  }
+
   handleAddEntry() {
-    this._editSchedules.push({
+    this._editSchedule = {
       id: null,
       hour: 0,
       minute: 0,
       portions: 1,
-    });
+    };
   }
 
   handleCancel() {
-    this._isEditing = false;
-    this._editSchedules = [];
+    this._editSchedule = null;
   }
 
-  handleSave(entry: EditScheduleEntry) {
+  handleSave() {
+    const entry = this._editSchedule;
+    if (!entry) {
+      return;
+    }
+
     if (entry.id === null) {
       const id = getNextId(this._schedules.map(e => e.id));
       const [domain, action] = this._config.add_action.split('.');
@@ -183,7 +189,6 @@ class FeederCard extends LitElement {
         minute: entry.minute,
         portions: entry.portions,
       });
-      this._editSchedules = this._editSchedules.map(e => e === entry ? { ...e, id } : e);
     } else {
       const [domain, action] = this._config.edit_action.split('.');
       this._hass.callService(domain, action, {
@@ -193,16 +198,18 @@ class FeederCard extends LitElement {
         portions: entry.portions,
       });
     }
+    this._editSchedule = null;
   }
 
   handleDelete(entry: EditScheduleEntry) {
-    if (entry.id) {
-      const [domain, action] = this._config.remove_action.split('.');
-      this._hass.callService(domain, action, {
-        id: entry.id,
-      });
+    if (!entry.id) {
+      return;
     }
-    this._editSchedules = this._editSchedules.filter(e => e !== entry);
+
+    const [domain, action] = this._config.remove_action.split('.');
+    this._hass.callService(domain, action, {
+      id: entry.id,
+    });
   }
 
   async loadComponents() {
@@ -224,6 +231,8 @@ class FeederCard extends LitElement {
     const isPastDue = new Date().getTime() > scheduledDate.getTime();
     const isSkipped = isPastDue && status == SCHEDULE_STATUS.PENDING;
     const displayStatus = isSkipped ? SCHEDULE_STATUS.SKIPPED : status;
+    const statusText = `${localize(SCHEDULE_LABEL[displayStatus])}`;
+    const secondaryText = `${portions} ${localize('ui.portions')} ~${GRAMS_PER_PORTION * portions}g`;
 
     return html`<hui-generic-entity-row
         .hass=${this._hass}
@@ -232,22 +241,47 @@ class FeederCard extends LitElement {
         name: `${hour}:${minute.toString().padStart(2, "0")}`,
         icon: SCHEDULE_ICONS[displayStatus],
       }}
-        secondaryText="${localize(SCHEDULE_LABEL[displayStatus])}"
-        class="timeline"
+        .catchInteraction=${false}
+        secondaryText="${this._isEditing ? secondaryText : statusText}"
+        class="${!this._isEditing ? 'timeline' : ''}"
       >
-        ${portions} ${localize('ui.portions')} ~${GRAMS_PER_PORTION * portions}g
+        <div>
+          ${!this._isEditing
+        ? html`<span>${secondaryText}</span>`
+        : nothing
+      }
+          ${this._isEditing
+        ? html`<ha-button-menu class="edit-menu">
+            <ha-icon-button slot="trigger"> 
+                <ha-icon icon="mdi:dots-vertical"></ha-icon>
+            </ha-icon-button>
+            <a @click=${() => this.handleEditEntry(schedule)}>
+            <ha-list-item graphic="icon" hasMeta>
+              ${this._hass.localize('ui.common.edit')}
+              <ha-icon class='save-entry'  slot="graphic" icon="mdi:pencil"></ha-icon>
+            </ha-list-item>
+            </a>
+            <a @click=${() => this.handleDelete(schedule)}>
+            <ha-list-item graphic="icon" hasMeta>
+              ${this._hass.localize('ui.common.delete')}
+              <ha-icon class='remove-entry' slot="graphic" icon="mdi:delete"></ha-icon>
+            </ha-list-item>
+            </a>
+          </ha-button-menu>`
+        : nothing
+      }
+        </div>
       </hui-generic-entity-row>`;
   }
 
   handleTimeChanged(ev: CustomEvent, entry: EditScheduleEntry) {
     const [hour, minute] = ev.detail.value.split(':').map(Number);
-    this._editSchedules = this._editSchedules.map(e => e === entry ? { ...e, hour, minute } : e);
-    console.log(this._editSchedules);
+    this._editSchedule = { ...entry, hour, minute };
   }
 
   handlePortionsChanged(ev: InputEvent, entry: EditScheduleEntry) {
-    this._editSchedules = this._editSchedules.map(e => e === entry ? { ...e, portions: parseInt((ev.target as any).value) } : e);
-    console.log(this._editSchedules);
+    const portions = parseInt((ev.target as HTMLInputElement).value);
+    this._editSchedule = { ...entry, portions };
   }
 
   renderSwitch() {
@@ -260,6 +294,8 @@ class FeederCard extends LitElement {
         ${createEntityNotFoundWarning(this._hass, this._config.switch)}
       </ha-alert>`;
     }
+
+    const isAddDisabled = this._schedules.length >= MAX_ENTRIES;
 
     return html`
       <hui-generic-entity-row
@@ -278,10 +314,19 @@ class FeederCard extends LitElement {
         >
           ${this._hass.localize(this._isEditing ? "ui.sidebar.done" : 'ui.common.edit')}
         </mwc-button>
-        <ha-entity-toggle 
-          .hass=${this._hass}
-          .stateObj=${this._switchEntity}
-        ></ha-entity-toggle>
+        ${this._isEditing
+        ? html`<ha-icon-button 
+              class='edit-menu'
+              ?disabled=${isAddDisabled}
+              @click=${this.handleAddEntry}
+            >
+              <ha-icon class='save-entry' icon="mdi:clock-plus"></ha-icon>
+            </ha-icon-button>`
+        : html`<ha-entity-toggle 
+            .hass=${this._hass}
+            .stateObj=${this._switchEntity}
+          ></ha-entity-toggle>`
+      }
       </hui-generic-entity-row>`;
   }
 
@@ -322,10 +367,25 @@ class FeederCard extends LitElement {
       </ha-alert>`;
     }
 
-    if (this._isEditing) {
-      const isAddDisabled = this._editSchedules.length >= MAX_ENTRIES;
+    if (this._editSchedule) {
+      const entry = this._editSchedule;
+      const spacerHeight = Math.max(this._schedules.length - 1, 0) * (40 + 8) - 24;
       return html`
-        ${this._editSchedules.map((entry, _index) => html`
+        <ha-control-button-group>
+          <mwc-button
+            @click=${this.handleCancel}
+            class='cancel-button'
+          >
+            ${this._hass.localize('ui.common.cancel')}
+          </mwc-button>
+          <mwc-button
+            @click=${this.handleSave}
+            class='save-button'
+            ?disabled=${this.isSaveDisabled(entry)}
+          >
+            ${this._hass.localize('ui.common.save')}
+          </mwc-button>
+        </ha-control-button-group>
           <div class="edit-row">
             <ha-time-input
               .value=${`${entry.hour}:${entry.minute.toString().padStart(2, "0")}`}
@@ -341,30 +401,12 @@ class FeederCard extends LitElement {
               min="1"
               @change=${(ev: InputEvent) => this.handlePortionsChanged(ev, entry)}
             ></ha-textfield>
-            <ha-icon-button 
-              class='remove-entry' 
-              @click=${() => this.handleDelete(entry)}
-            >
-              <ha-icon icon="mdi:delete"></ha-icon>
-            </ha-icon-button>
-            <ha-icon-button 
-              class='save-entry' 
-              @click=${() => this.handleSave(entry)}
-              ?disabled=${this.isSaveDisabled(entry)}
-            >
-              <ha-icon icon="mdi:floppy"></ha-icon>
-            </ha-icon-button>
           </div>
-        `)}
-        <ha-control-button-group>
-          <ha-control-button @click=${this.handleAddEntry} ?disabled=${isAddDisabled}>
-            <ha-icon icon="mdi:clock-plus"></ha-icon>
-          </ha-control-button>
-        </ha-control-button-group>`
+          <div class='edit-row-spacer' style="flex-basis: ${spacerHeight}px"></div>
+        `
     }
 
-    return this._schedules
-      .map(this.renderScheduleRow, this)
+    return this._schedules.map(this.renderScheduleRow, this);
   }
 
   render() {
@@ -379,7 +421,7 @@ class FeederCard extends LitElement {
     return html`
       <ha-card>
         <div class="card-content">
-          ${this.renderSwitch()}
+          ${this._editSchedule ? nothing : this.renderSwitch()}
           ${this.renderContent()}
         </div>
       </ha-card>
