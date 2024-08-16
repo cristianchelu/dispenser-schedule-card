@@ -11,6 +11,7 @@ interface FeederCardConfig {
   add_action: string;
   remove_action: string;
   edit_action: string;
+  editable: "always" | "toggle" | "never";
 }
 
 /** Schedule */
@@ -243,7 +244,7 @@ class FeederCard extends LitElement {
       }}
         .catchInteraction=${false}
         secondaryText="${this._isEditing ? secondaryText : statusText}"
-        class="${!this._isEditing ? 'timeline' : ''}"
+        class="timeline"
       >
         <div>
           ${!this._isEditing
@@ -306,14 +307,14 @@ class FeederCard extends LitElement {
         icon: this._switchEntity.attributes.icon,
         state_color: true,
       }}
-        class="${!this._isEditing ? "timeline" : ""}"
+        class="timeline"
       >
-        <mwc-button 
+        ${this._config.editable === "toggle" ? html`<mwc-button 
           @click=${this.handleEdit} 
           class='edit-button'
         >
           ${this._hass.localize(this._isEditing ? "ui.sidebar.done" : 'ui.common.edit')}
-        </mwc-button>
+        </mwc-button>` : nothing}
         ${this._isEditing
         ? html`<ha-icon-button 
               class='edit-menu'
@@ -433,6 +434,19 @@ class FeederCard extends LitElement {
   }
 
   setConfig(config: FeederCardConfig) {
-    this._config = config;
+    const editable = config.editable ?? "toggle";
+
+    if (editable === "always") {
+      this._isEditing = true;
+    } else if (editable === "never") {
+      this._isEditing = false;
+    } else if (editable !== "toggle") {
+      throw new Error(`Invalid editable option: ${editable}`);
+    }
+
+    this._config = {
+      ...config,
+      editable,
+    };
   }
 }
