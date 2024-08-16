@@ -5,10 +5,6 @@
   --timeline-inset: 4px;
 }
 
-ha-card {
-  /* padding: 16px; */
-}
-
 .card-content {
   display: flex;
   flex-direction: column;
@@ -65,11 +61,19 @@ hui-generic-entity-row>* {
   --ha-icon-display: flex;
 }
 
-.save-entry {
+.remove-entry:not(:disabled) ha-icon {
+  color: var(--error-color);
+}
+
+.edit-entry:not(:disabled) ha-icon {
   color: var(--primary-color);
 }
 
-.remove-entry {
-  margin-left: auto;
-  color: var(--error-color);
+.add-entry {
+  margin-top: -8px;
+  margin-bottom: -8px;
+}
+
+.add-entry:not(:disabled) ha-icon {
+  color: var(--primary-color);
 }

@@ -6,12 +6,14 @@ import localize from "./localization";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
 interface FeederCardConfig {
-  entity?: string;
+  entity: string;
   switch?: string;
-  add_action: string;
-  remove_action: string;
-  edit_action: string;
-  editable: "always" | "toggle" | "never";
+  actions?: {
+    add: string;
+    edit: string;
+    remove: string;
+  };
+  editable?: "always" | "toggle" | "never";
 }
 
 /** Schedule */
@@ -150,7 +152,7 @@ class FeederCard extends LitElement {
     }
   }
 
-  handleEdit() {
+  handleEditToggle() {
     if (this._isEditing) {
       this._isEditing = false;
     } else {
@@ -171,19 +173,32 @@ class FeederCard extends LitElement {
     };
   }
 
+  handleRemoveEntry(entry: EditScheduleEntry) {
+    if (!entry.id || !this._config.actions?.remove) {
+      return;
+    }
+    const [domain, action] = this._config.actions.remove.split('.');
+    this._hass.callService(domain, action, {
+      id: entry.id,
+    });
+  }
+
   handleCancel() {
     this._editSchedule = null;
   }
 
-  handleSave() {
+  handleSaveEntry() {
     const entry = this._editSchedule;
     if (!entry) {
       return;
     }
 
     if (entry.id === null) {
+      if (!this._config.actions?.add) {
+        return;
+      }
       const id = getNextId(this._schedules.map(e => e.id));
-      const [domain, action] = this._config.add_action.split('.');
+      const [domain, action] = this._config.actions.add.split('.');
       this._hass.callService(domain, action, {
         id,
         hour: entry.hour,
@@ -191,7 +206,10 @@ class FeederCard extends LitElement {
         portions: entry.portions,
       });
     } else {
-      const [domain, action] = this._config.edit_action.split('.');
+      if (!this._config.actions?.edit) {
+        return;
+      }
+      const [domain, action] = this._config.actions.edit.split('.');
       this._hass.callService(domain, action, {
         id: entry.id,
         hour: entry.hour,
@@ -200,17 +218,6 @@ class FeederCard extends LitElement {
       });
     }
     this._editSchedule = null;
-  }
-
-  handleDelete(entry: EditScheduleEntry) {
-    if (!entry.id) {
-      return;
-    }
-
-    const [domain, action] = this._config.remove_action.split('.');
-    this._hass.callService(domain, action, {
-      id: entry.id,
-    });
   }
 
   async loadComponents() {
@@ -256,18 +263,26 @@ class FeederCard extends LitElement {
             <ha-icon-button slot="trigger"> 
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
             </ha-icon-button>
-            <a @click=${() => this.handleEditEntry(schedule)}>
-            <ha-list-item graphic="icon" hasMeta>
+            <ha-list-item
+              @click=${() => this.handleEditEntry(schedule)} 
+              ?disabled=${!this._config.actions?.edit} 
+              graphic="icon"
+              class='edit-entry'
+              hasMeta
+            >
               ${this._hass.localize('ui.common.edit')}
-              <ha-icon class='save-entry'  slot="graphic" icon="mdi:pencil"></ha-icon>
+              <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
             </ha-list-item>
-            </a>
-            <a @click=${() => this.handleDelete(schedule)}>
-            <ha-list-item graphic="icon" hasMeta>
+            <ha-list-item 
+              @click=${() => this.handleRemoveEntry(schedule)} 
+              ?disabled=${!this._config.actions?.remove} 
+              graphic="icon" 
+              class='remove-entry'
+              hasMeta
+            >
               ${this._hass.localize('ui.common.delete')}
-              <ha-icon class='remove-entry' slot="graphic" icon="mdi:delete"></ha-icon>
+              <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
             </ha-list-item>
-            </a>
           </ha-button-menu>`
         : nothing
       }
@@ -309,25 +324,26 @@ class FeederCard extends LitElement {
       }}
         class="timeline"
       >
-        ${this._config.editable === "toggle" ? html`<mwc-button 
-          @click=${this.handleEdit} 
-          class='edit-button'
-        >
-          ${this._hass.localize(this._isEditing ? "ui.sidebar.done" : 'ui.common.edit')}
-        </mwc-button>` : nothing}
+        ${this._config.editable === "toggle"
+        ? html`<mwc-button 
+            @click=${this.handleEditToggle} 
+            class='edit-button'
+          >
+            ${this._hass.localize(this._isEditing ? "ui.sidebar.done" : 'ui.common.edit')}
+          </mwc-button>`
+        : nothing}
         ${this._isEditing
         ? html`<ha-icon-button 
-              class='edit-menu'
-              ?disabled=${isAddDisabled}
-              @click=${this.handleAddEntry}
-            >
-              <ha-icon class='save-entry' icon="mdi:clock-plus"></ha-icon>
-            </ha-icon-button>`
+            ?disabled=${isAddDisabled || !this._config.actions?.add}
+            @click=${this.handleAddEntry}
+            class='add-entry'
+          >
+            <ha-icon icon="mdi:clock-plus"></ha-icon>
+          </ha-icon-button>`
         : html`<ha-entity-toggle 
             .hass=${this._hass}
             .stateObj=${this._switchEntity}
-          ></ha-entity-toggle>`
-      }
+          ></ha-entity-toggle>`}
       </hui-generic-entity-row>`;
   }
 
@@ -349,7 +365,6 @@ class FeederCard extends LitElement {
 
   isSaveDisabled(entry: EditScheduleEntry) {
     if (entry.id === null) {
-      debugger;
       return entry.hour < 0 || entry.hour > 23
         || entry.minute < 0 || entry.minute > 59
         || entry.portions < 1 || entry.portions > MAX_PORTIONS;
@@ -380,7 +395,7 @@ class FeederCard extends LitElement {
             ${this._hass.localize('ui.common.cancel')}
           </mwc-button>
           <mwc-button
-            @click=${this.handleSave}
+            @click=${this.handleSaveEntry}
             class='save-button'
             ?disabled=${this.isSaveDisabled(entry)}
           >
