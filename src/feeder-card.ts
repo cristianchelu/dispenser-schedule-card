@@ -79,22 +79,6 @@ const createEntityNotFoundWarning = (
     })
     : hass.localize("ui.panel.lovelace.warning.starting");
 
-// export const formatTime = (
-//   dateObj: Date,
-//   locale: FrontendLocaleData,
-//   config: HassConfig
-// ) => formatTimeMem(locale, config.time_zone).format(dateObj);
-
-// const formatTimeMem = memoizeOne(
-//   (locale: FrontendLocaleData, serverTimeZone: string) =>
-//     new Intl.DateTimeFormat(locale.language, {
-//       hour: "numeric",
-//       minute: "2-digit",
-//       hourCycle: useAmPm(locale) ? "h12" : "h23",
-//       timeZone: resolveTimeZone(locale.time_zone, serverTimeZone),
-//     })
-// );
-
 function getFirstGap(arr: Array<number>) {
   arr.sort((a, b) => a - b);
   for (let i = 0; i < arr.length; i++) {
