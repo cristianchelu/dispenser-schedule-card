@@ -285,11 +285,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderSwitch() {
-    if (!this._config.switch) {
-      return nothing;
-    }
-
-    if (!this._switchEntity) {
+    if (this._config.switch && !this._switchEntity) {
       return html`<ha-alert alert-type="warning">
         ${createEntityNotFoundWarning(this._hass, this._config.switch)}
       </ha-alert>`;
@@ -297,13 +293,21 @@ class DispenserScheduleCard extends LitElement {
 
     const isAddDisabled = this._schedules.length >= MAX_ENTRIES;
 
+    const switchElement = this._switchEntity
+      ? html`<ha-entity-toggle 
+          .hass=${this._hass}
+          .stateObj=${this._switchEntity}
+        ></ha-entity-toggle>`
+      : nothing;
+
     return html`
       <hui-generic-entity-row
         .hass=${this._hass}
+        .catchInteraction=${false}
         .config=${{
-        entity: this._config.switch,
-        name: localize('ui.name') ?? this._switchEntity.attributes.friendly_name,
-        icon: this._switchEntity.attributes.icon,
+        entity: this._switchEntity ? this._config.switch : this._config.entity,
+        name: localize('ui.name'),
+        icon: this._switchEntity ? this._switchEntity.attributes.icon : 'mdi:calendar-badge',
         state_color: true,
       }}
         class="timeline"
@@ -324,10 +328,7 @@ class DispenserScheduleCard extends LitElement {
           >
             <ha-icon icon="mdi:clock-plus"></ha-icon>
           </ha-icon-button>`
-        : html`<ha-entity-toggle 
-            .hass=${this._hass}
-            .stateObj=${this._switchEntity}
-          ></ha-entity-toggle>`}
+        : switchElement}
       </hui-generic-entity-row>`;
   }
 
