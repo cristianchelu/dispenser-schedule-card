@@ -14,6 +14,12 @@ interface DispenserScheduleCardConfig {
     remove: string;
   };
   editable?: "always" | "toggle" | "never";
+  unit_of_measurement?: string;
+  alternate_unit?: {
+    unit_of_measurement: string;
+    conversion_factor: number;
+    approximate?: boolean;
+  };
 }
 
 /** Schedule */
@@ -213,6 +219,22 @@ class DispenserScheduleCard extends LitElement {
     this._isReady = true;
   }
 
+  renderAmount(amount: number) {
+    const { alternate_unit } = this._config;
+
+    const main_unit = this._config.unit_of_measurement ?? localize('ui.portions');
+    const mainStr = `${amount} ${main_unit}`;
+
+    let alternateStr;
+    if (alternate_unit) {
+      const { approximate, conversion_factor, unit_of_measurement: alt_unit } = alternate_unit;
+      const convertedAmount = amount * conversion_factor;
+      alternateStr = `${approximate ? '~' : ''}${convertedAmount} ${alt_unit}`;
+    }
+
+    return [mainStr, alternateStr].filter(Boolean).join(' ⸱ ');
+  }
+
   renderScheduleRow(schedule: ScheduleEntry) {
     const { id, hour, minute, portions, status } = schedule;
 
@@ -224,7 +246,7 @@ class DispenserScheduleCard extends LitElement {
     const isSkipped = isPastDue && status == SCHEDULE_STATUS.PENDING;
     const displayStatus = isSkipped ? SCHEDULE_STATUS.SKIPPED : status;
     const statusText = localize(`status.${SCHEDULE_LABEL[displayStatus]}`);
-    const secondaryText = `${portions} ${localize('ui.portions')} ~${GRAMS_PER_PORTION * portions}g`;
+    const secondaryText = this.renderAmount(portions);
 
     return html`<hui-generic-entity-row
         .hass=${this._hass}
@@ -397,7 +419,7 @@ class DispenserScheduleCard extends LitElement {
               .value=${entry.portions} 
               type="number" 
               no-spinner 
-              label=${localize('ui.portions')}
+              label=${this._config.unit_of_measurement ?? localize('ui.portions')}
               max=${MAX_PORTIONS}
               min="1"
               @change=${(ev: InputEvent) => this.handlePortionsChanged(ev, entry)}
