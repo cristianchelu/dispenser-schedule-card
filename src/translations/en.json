@@ -1,7 +1,8 @@
 {
     "ui": {
         "name": "Schedule",
-        "portions": "portions"
+        "portions": "portions",
+        "empty": "No schedule defined"
     },
     "status": {
         "dispensed": "Dispensed",

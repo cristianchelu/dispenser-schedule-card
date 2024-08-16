@@ -77,3 +77,7 @@ hui-generic-entity-row>* {
 .add-entry:not(:disabled) ha-icon {
   color: var(--primary-color);
 }
+
+.empty-row {
+  --paper-item-icon-color: var(--disabled-text-color);
+}

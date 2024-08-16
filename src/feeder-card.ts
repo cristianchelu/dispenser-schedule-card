@@ -32,11 +32,11 @@ enum SCHEDULE_STATUS {
 
 /** Labels for each schedule status */
 const SCHEDULE_LABEL = {
-  [SCHEDULE_STATUS.DISPENSED]: "status.dispensed",
-  [SCHEDULE_STATUS.FAILED]: "status.failed",
-  [SCHEDULE_STATUS.DISPENSING]: "status.dispensing",
-  [SCHEDULE_STATUS.PENDING]: "status.pending",
-  [SCHEDULE_STATUS.SKIPPED]: "status.skipped",
+  [SCHEDULE_STATUS.DISPENSED]: "dispensed",
+  [SCHEDULE_STATUS.FAILED]: "failed",
+  [SCHEDULE_STATUS.DISPENSING]: "dispensing",
+  [SCHEDULE_STATUS.PENDING]: "pending",
+  [SCHEDULE_STATUS.SKIPPED]: "skipped",
 } as const;
 
 /** Icons for each schedule status */
@@ -239,7 +239,7 @@ class FeederCard extends LitElement {
     const isPastDue = new Date().getTime() > scheduledDate.getTime();
     const isSkipped = isPastDue && status == SCHEDULE_STATUS.PENDING;
     const displayStatus = isSkipped ? SCHEDULE_STATUS.SKIPPED : status;
-    const statusText = `${localize(SCHEDULE_LABEL[displayStatus])}`;
+    const statusText = localize(`status.${SCHEDULE_LABEL[displayStatus]}`);
     const secondaryText = `${portions} ${localize('ui.portions')} ~${GRAMS_PER_PORTION * portions}g`;
 
     return html`<hui-generic-entity-row
@@ -251,7 +251,7 @@ class FeederCard extends LitElement {
       }}
         .catchInteraction=${false}
         secondaryText="${this._isEditing ? secondaryText : statusText}"
-        class="timeline"
+        class="timeline ${SCHEDULE_LABEL[displayStatus]}"
       >
         <div>
           ${!this._isEditing
@@ -280,7 +280,7 @@ class FeederCard extends LitElement {
               class='remove-entry'
               hasMeta
             >
-              ${this._hass.localize('ui.common.delete')}
+              ${this._hass.localize('ui.common.remove')}
               <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
             </ha-list-item>
           </ha-button-menu>`
@@ -422,6 +422,16 @@ class FeederCard extends LitElement {
         `
     }
 
+    if (this._schedules.length === 0) {
+      return html`<hui-generic-entity-row
+      class="empty-row"
+      .hass=${this._hass}
+      .config=${{
+          entity: this._config.entity,
+          name: localize('ui.empty'),
+          icon: 'mdi:calendar-blank-outline',
+        }}></hui-generic-entity-row>`;
+    }
     return this._schedules.map(this.renderScheduleRow, this);
   }
 

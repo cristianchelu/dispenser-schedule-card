@@ -1,7 +1,8 @@
 {
     "ui": {
         "name": "Orar",
-        "portions": "porții"
+        "portions": "porții",
+        "empty": "Niciun orar definit"
     },
     "status": {
         "dispensed": "Dozat",
