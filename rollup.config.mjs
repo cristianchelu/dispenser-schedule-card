@@ -5,12 +5,12 @@ import css from "rollup-plugin-import-css";
 import json from '@rollup/plugin-json';
 
 export default {
-  input: 'src/feeder-card.ts',
+  input: 'src/dispenser-schedule-card.ts',
   output: [{
-    file: 'dist/feeder-card.js',
+    file: 'dist/dispenser-schedule-card.js',
     format: 'esm'
   }, {
-    file: 'dist/feeder-card.min.js',
+    file: 'dist/dispenser-schedule-card.min.js',
     plugins: [terser()]
   }],
   plugins: [

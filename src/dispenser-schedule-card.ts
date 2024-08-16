@@ -1,11 +1,11 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
-import { customElement } from 'lit/decorators.js';
+import { customElement } from 'lit/decorators/custom-element.js';
 
-import FeederCardStyles from "./feeder-card.css";
+import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 import localize from "./localization";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
-interface FeederCardConfig {
+interface DispenserScheduleCardConfig {
   entity: string;
   switch?: string;
   actions?: {
@@ -93,9 +93,9 @@ function getNextId(arr: Array<number>) {
   return Math.min(getFirstGap(arr), Math.max(...arr) + 1);
 }
 
-@customElement('wired-toggle-card')
-class FeederCard extends LitElement {
-  declare _config: FeederCardConfig;
+@customElement('dispenser-schedule-card')
+class DispenserScheduleCard extends LitElement {
+  declare _config: DispenserScheduleCardConfig;
   declare _hass: any;
   declare _scheduleEntity: any;
   declare _switchEntity: any;
@@ -124,7 +124,7 @@ class FeederCard extends LitElement {
   }
 
   static get styles() {
-    return unsafeCSS(FeederCardStyles);
+    return unsafeCSS(DispenserScheduleCardStyles);
   }
 
   set hass(hass: any) {
@@ -442,7 +442,7 @@ class FeederCard extends LitElement {
     return 3;
   }
 
-  setConfig(config: FeederCardConfig) {
+  setConfig(config: DispenserScheduleCardConfig) {
     const editable = config.editable ?? "toggle";
 
     if (editable === "always") {

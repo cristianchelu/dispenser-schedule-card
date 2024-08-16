@@ -1,12 +1,12 @@
 {
-  "name": "pet-feeder-card",
+  "name": "dispenser-schedule-card",
   "version": "0.0.1",
-  "description": "Custom HomeAssistant card to control pet feeders",
-  "main": "dist/pet-feeder-card.mjs",
+  "description": "Custom HomeAssistant card to control dispenser schedules",
+  "main": "dist/dispenser-schedule-card.mjs",
   "author": "Cristian Chelu <cristianchelu@gmail.com>",
   "license": "MIT",
-  "source": "src/feeder-card.ts",
-  "module": "dist/feeder-card.mjs",
+  "source": "src/dispenser-schedule-card.ts",
+  "module": "dist/dispenser-schedule-card.mjs",
   "targets": {
     "module": {
       "includeNodeModules": true
