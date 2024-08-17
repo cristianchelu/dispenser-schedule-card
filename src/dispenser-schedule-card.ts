@@ -430,12 +430,16 @@ class DispenserScheduleCard extends LitElement {
     }
 
     if (this._schedules.length === 0) {
+      const label = this._scheduleEntity?.state === 'unavailable'
+        ? this._hass.localize('state.default.unavailable')
+        : localize('ui.empty');
+
       return html`<hui-generic-entity-row
       class="empty-row"
       .hass=${this._hass}
       .config=${{
           entity: this._config.entity,
-          name: localize('ui.empty'),
+          name: label,
           icon: 'mdi:calendar-blank-outline',
         }}></hui-generic-entity-row>`;
     }
