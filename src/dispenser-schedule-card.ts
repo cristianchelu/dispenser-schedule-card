@@ -462,7 +462,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   getCardSize(): number {
-    return 3;
+    return this._schedules ? 1 + this._schedules.length : 3;
   }
 
   setConfig(config: DispenserScheduleCardConfig) {
