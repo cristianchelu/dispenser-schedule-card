@@ -1,0 +1,14 @@
+{
+    "ui": {
+        "name": "Program",
+        "portions": "porsiyon",
+        "empty": "program tanımlanmamış"
+    },
+    "status": {
+        "dispensed": "Verildi",
+        "dispensing": "Veriliyor",
+        "pending": "Beklemede",
+        "failed": "Başarısız",
+        "skipped": "Atlandı"
+    }
+}

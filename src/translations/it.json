@@ -1,0 +1,14 @@
+{
+    "ui": {
+        "name": "Orario",
+        "portions": "porzioni",
+        "empty": "Nessun orario definito"
+    },
+    "status": {
+        "dispensed": "Distribuito",
+        "dispensing": "In distribuzione",
+        "pending": "In attesa",
+        "failed": "Fallita",
+        "skipped": "Saltata"
+    }
+}
