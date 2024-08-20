@@ -96,7 +96,7 @@ function getFirstGap(arr: Array<number>) {
 }
 
 function getNextId(arr: Array<number>) {
-  return Math.min(getFirstGap(arr), Math.max(...arr) + 1);
+  return !arr.length ? 0 : Math.min(getFirstGap(arr), Math.max(...arr) + 1);
 }
 
 @customElement('dispenser-schedule-card')
