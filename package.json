@@ -1,6 +1,6 @@
 {
   "name": "dispenser-schedule-card",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Custom HomeAssistant card to control dispenser schedules",
   "main": "dist/dispenser-schedule-card.mjs",
   "author": "Cristian Chelu <cristianchelu@gmail.com>",
