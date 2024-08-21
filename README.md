@@ -3,7 +3,22 @@
 > A very simple card to view and control dispenser schedules for the 
 > [Home Assistant](https://www.home-assistant.io/) Lovelace / Grace UI
 
+
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+
+
 ![Screenshot of dispenser schedule card](docs/screenshot.png)
+
+## Installation
+
+### Using HACS
+
+You can add this repository as a custom HACS repo by following the official guide:
+https://hacs.xyz/docs/faq/custom_repositories/
+
+### Manually
+
+Download `dispenser-schedule-card.min.js` from the Releases tab of this repository and place it in under your `www` folder, then add this as a dashboard, by following the official HA guide: https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources
 
 ## Usage
 
