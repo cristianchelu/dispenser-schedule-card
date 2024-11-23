@@ -164,7 +164,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   handleRemoveEntry(entry: EditScheduleEntry) {
-    if (!entry.id || !this._config.actions?.remove) {
+    if (entry.id === null || !this._config.actions?.remove) {
       return;
     }
     const [domain, action] = this._config.actions.remove.split('.');
