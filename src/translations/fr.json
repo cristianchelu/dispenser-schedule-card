@@ -7,8 +7,8 @@
     "status": {
         "dispensed": "Distribuée",
         "dispensing": "En cours de distribution",
-        "pending": "En attente",
-        "failed": "Échouée",
-        "skipped": "Sautée"
+        "pending": "Planifée",
+        "failed": "Échec",
+        "skipped": "Annulée"
     }
 }
