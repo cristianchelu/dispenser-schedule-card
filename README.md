@@ -50,11 +50,13 @@ alternate_unit:
 | `alternate_unit`      |  *Optional*  | Configuration to display a secondary unit of measurement, with a conversion factor.                                                     |
 
 #### `actions` options
-|  Name    |  Required  | Description                                             |
-|----------|------------|-----------------------------------------------------------|
-| `add`    | *Optional* | action_id that accepts `id`, `hour`, `minute`, `portions` |
-| `edit`   | *Optional* | action_id that accepts `id`, `hour`, `minute`, `portions` |
-| `remove` | *Optional* | action_id that accepts `id`                               |
+|  Name    |  Required  | Description                                                                                   |
+|----------|------------|-----------------------------------------------------------------------------------------------|
+| `add`    | *Optional* | action_id that accepts `id`, `hour`, `minute`, `amount`*.                                     |
+| `edit`   | *Optional* | action_id that accepts `id`, `hour`, `minute`, `amount`*.                                     |
+| `remove` | *Optional* | action_id that accepts `id`.                                                                  |
+
+- `*` - `portions` is also accepted as a parameter instead of `amount`.
 
 #### `alternate_unit` options
 

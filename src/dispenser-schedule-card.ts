@@ -28,7 +28,7 @@ enum SCHEDULE_STATUS {
   DISPENSED = 0,
   /** Schedule failed */
   FAILED = 1,
-  /** Currently dispensing portions */
+  /** Actively dispensing */
   DISPENSING = 254,
   /** Schedule not yet triggered */
   PENDING = 255,
@@ -54,17 +54,16 @@ const SCHEDULE_ICONS: Record<SCHEDULE_STATUS, string> = {
   [SCHEDULE_STATUS.SKIPPED]: 'mdi:calendar-clock-outline',
 } as const;
 
-const GRAMS_PER_PORTION = 5;
 const MAX_ENTRIES = 10;
-const MAX_PORTIONS = 30;
+const MAX_AMOUNT = 30;
 const pattern =
-  /(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<portions>[0-9]{1,3}),(?<status>[0-9]{1,3}),?/g;
+  /(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?/g;
 
 interface ScheduleEntry {
   id: number;
   hour: number;
   minute: number;
-  portions: number;
+  amount: number;
   status: SCHEDULE_STATUS;
 }
 
@@ -72,7 +71,7 @@ interface EditScheduleEntry {
   id: number | null;
   hour: number;
   minute: number;
-  portions: number;
+  amount: number;
 }
 
 const createEntityNotFoundWarning = (
@@ -159,7 +158,7 @@ class DispenserScheduleCard extends LitElement {
       id: null,
       hour: 0,
       minute: 0,
-      portions: 1,
+      amount: 1,
     };
   }
 
@@ -183,28 +182,36 @@ class DispenserScheduleCard extends LitElement {
       return;
     }
 
+    const getAmountKey = (domain: string, action: string) => {
+      // Backwards compatibility for `portions` field
+      return Object.keys(this._hass.services[domain][action].fields)
+        .find((k) => ['amount', 'portions'].includes(k)) ?? 'amount';
+    }
+
     if (entry.id === null) {
       if (!this._config.actions?.add) {
         return;
       }
       const id = getNextId(this._schedules.map(e => e.id));
       const [domain, action] = this._config.actions.add.split('.');
+      const amountKey = getAmountKey(domain, action);
       this._hass.callService(domain, action, {
         id,
         hour: entry.hour,
         minute: entry.minute,
-        portions: entry.portions,
+        [amountKey]: entry.amount,
       });
     } else {
       if (!this._config.actions?.edit) {
         return;
       }
       const [domain, action] = this._config.actions.edit.split('.');
+      const amountKey = getAmountKey(domain, action);
       this._hass.callService(domain, action, {
         id: entry.id,
         hour: entry.hour,
         minute: entry.minute,
-        portions: entry.portions,
+        [amountKey]: entry.amount,
       });
     }
     this._editSchedule = null;
@@ -236,7 +243,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderScheduleRow(schedule: ScheduleEntry) {
-    const { id, hour, minute, portions, status } = schedule;
+    const { id, hour, minute, amount, status } = schedule;
 
     const scheduledDate = new Date();
     scheduledDate.setHours(hour, minute);
@@ -246,7 +253,7 @@ class DispenserScheduleCard extends LitElement {
     const isSkipped = isPastDue && status == SCHEDULE_STATUS.PENDING;
     const displayStatus = isSkipped ? SCHEDULE_STATUS.SKIPPED : status;
     const statusText = localize(`status.${SCHEDULE_LABEL[displayStatus]}`);
-    const secondaryText = this.renderAmount(portions);
+    const secondaryText = this.renderAmount(amount);
 
     return html`<hui-generic-entity-row
         .hass=${this._hass}
@@ -301,9 +308,9 @@ class DispenserScheduleCard extends LitElement {
     this._editSchedule = { ...entry, hour, minute };
   }
 
-  handlePortionsChanged(ev: InputEvent, entry: EditScheduleEntry) {
-    const portions = parseInt((ev.target as HTMLInputElement).value);
-    this._editSchedule = { ...entry, portions };
+  handleAmountChanged(ev: InputEvent, entry: EditScheduleEntry) {
+    const amount = parseInt((ev.target as HTMLInputElement).value);
+    this._editSchedule = { ...entry, amount };
   }
 
   renderSwitch() {
@@ -362,7 +369,7 @@ class DispenserScheduleCard extends LitElement {
         id: parseInt(res.groups!.id),
         hour: parseInt(res.groups!.hour),
         minute: parseInt(res.groups!.minute),
-        portions: parseInt(res.groups!.portions),
+        amount: parseInt(res.groups!.amount),
         status: parseInt(res.groups!.status),
       });
     }
@@ -374,12 +381,12 @@ class DispenserScheduleCard extends LitElement {
     if (entry.id === null) {
       return entry.hour < 0 || entry.hour > 23
         || entry.minute < 0 || entry.minute > 59
-        || entry.portions < 1 || entry.portions > MAX_PORTIONS;
+        || entry.amount < 1 || entry.amount > MAX_AMOUNT;
     } else {
       const schedule = this._schedules.find(e => e.id === entry.id);
       return schedule?.hour === entry.hour
         && schedule?.minute === entry.minute
-        && schedule?.portions === entry.portions;
+        && schedule?.amount === entry.amount;
     }
   }
 
@@ -416,13 +423,13 @@ class DispenserScheduleCard extends LitElement {
               @value-changed=${(ev: CustomEvent) => this.handleTimeChanged(ev, entry)}
             ></ha-time-input>
             <ha-textfield 
-              .value=${entry.portions} 
+              .value=${entry.amount} 
               type="number" 
               no-spinner 
-              label=${this._config.unit_of_measurement ?? localize('ui.portions')}
-              max=${MAX_PORTIONS}
+              label=${this._config.unit_of_measurement ?? localize('ui.amount')}
+              max=${MAX_AMOUNT}
               min="1"
-              @change=${(ev: InputEvent) => this.handlePortionsChanged(ev, entry)}
+              @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
             ></ha-textfield>
           </div>
           <div class='edit-row-spacer' style="flex-basis: ${spacerHeight}px"></div>
