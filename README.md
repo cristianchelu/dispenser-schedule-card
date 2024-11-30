@@ -18,7 +18,10 @@ https://hacs.xyz/docs/faq/custom_repositories/
 
 ### Manually
 
-Download `dispenser-schedule-card.min.js` from the Releases tab of this repository and place it in under your `www` folder, then add this as a dashboard, by following the official HA guide: https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources
+Download `dispenser-schedule-card.min.js` from the Releases tab of this 
+repository and place it in under your `www` folder, then add this as resource 
+type "Javascript Module", by following the official HA guide: 
+https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources
 
 ## Usage
 
@@ -52,11 +55,11 @@ alternate_unit:
 #### `actions` options
 |  Name    |  Required  | Description                                                                                   |
 |----------|------------|-----------------------------------------------------------------------------------------------|
-| `add`    | *Optional* | action_id that accepts `id`, `hour`, `minute`, `amount`*.                                     |
-| `edit`   | *Optional* | action_id that accepts `id`, `hour`, `minute`, `amount`*.                                     |
+| `add`    | *Optional* | action_id that accepts `id`, `hour`, `minute`, `amount` `*`.                                     |
+| `edit`   | *Optional* | action_id that accepts `id`, `hour`, `minute`, `amount` `*`.                                     |
 | `remove` | *Optional* | action_id that accepts `id`.                                                                  |
 
-- `*` - `portions` is also accepted as a parameter instead of `amount`.
+`*` - `portions` is also accepted as a parameter instead of `amount`.
 
 #### `alternate_unit` options
 
@@ -69,12 +72,39 @@ alternate_unit:
 
 ## Compatibility
 
-This card was created for the Xiaomi Smart Pet Feeder running 
-[esphome-miot](https://github.com/dhewg/esphome-miot),
-but support for other types of dispensers may be added if enough is known
-about the structure. Please open an issue including as much detail as possible.
+### Xiaomi Smart Pet Feeder (`mmgg.feeder.fi1`)
 
-`entity` state currently must be contain a string with the the structure
+This card was originally created for the Xiaomi Smart Pet Feeder running 
+ESPHome firmware with the [esphome-miot](https://github.com/dhewg/esphome-miot/blob/main/config/mmgg.feeder.fi1.yaml) 
+component and offers full support for it.
+
+Feeders with the original firmware are *NOT* currently supported as much of the
+logic is not handled by the device itself.
+
+### DIY ESPHome projects
+
+View this [ESPHome config example](./docs/dispenser-blueprint.yaml) to get started.
+It features a 10-entry schedule completely on device, compatible with this card.
+
+You may use it as a starting point for, or as an enhancement to your own DIY
+cat/dog/bird/fish feeders, or other generic dispensers that require offline 
+or battery-powered scheduling.
+
+Please note that it is modelled after the original xiaomi device behavior and 
+may not be the best way of handling an on-device schedule, especially as the
+ESPHome project matures and gains new features with time.
+
+### Others
+
+Support for other types of dispensers can be added if enough is known
+about the structure. 
+
+Please open an issue including as much detail as available.
+
+### General points
+
+For a device to be compatible with this card, `entity` state currently must
+contain a string with the the structure
 `[int id],[int hour],[int minute],[int amount],[int status]`, as a 
 comma-separated list, where `id` is the entry index, `hour` is the 23h formatted
 hour at which to dispense, `minute` is the minute of the hour at which to dispense, `amount`
@@ -92,8 +122,8 @@ Example:
 - entry 0: 10:30 dispense 5 portions, dispensed successfully.
 - entry 1: 12:00 dispense 10 portions, pending.
 
-`skipped` is assumed when the entry is still `pending` but the current time is
-greater than the dispense time.
+`skipped` status is assumed by the card when the schedule entry is still status
+`pending` but the current time is greater than the dispense time.
 
 A customizable option using Jinja2 templates to extract the schedule from
 arbitrary entities is also under consideration.

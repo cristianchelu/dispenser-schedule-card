@@ -1,0 +1,397 @@
+esphome:
+  name: dispenser-blueprint
+  friendly_name: dispenser-blueprint
+  on_boot: 
+    then:
+      - script.execute: restore_schedule
+
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: esp-idf
+
+substitutions:
+  WIFI_SSID: !secret wifi_ssid
+  WIFI_PASSWORD: !secret wifi_password
+  API_KEY: !secret dispenser_blueprint_api_key
+  AP_PASSWORD: !secret dispenser_blueprint_ap_password
+  OTA_PASSWORD: !secret dispenser_blueprint_ota_password
+
+  CONFIG_TIMEZONE: "Europe/Bucharest" # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  CONFIG_DISPENSE_UOM: "portions" # g, kg, oz, portions, cups, etc.
+  CONFIG_DISPENSE_MIN_AMOUNT: "1" # Minimum amount that can be dispensed
+  CONFIG_DISPENSE_MAX_AMOUNT: "30" # Maximum amount that can be dispensed
+  CONFIG_DISPENSE_AMOUNT_STEP: "1" # Step for the amount that can be dispensed
+
+  # Do not change substitutions below this line
+  TAG: "dispenser" # Tag to distinguish our logs from other components
+  STATUS_DISPENSED: "0"
+  STATUS_FAILED: "1"
+  STATUS_DISPENSING: "254"
+  STATUS_PENDING: "255"
+  MANUAL_DISPENSE_ID: "255"
+  MAX_ENTRIES: "10"
+
+globals:
+  - id: schedule
+    # map<id, {hour, minute, amount, status}>
+    type: std::map<int, std::array<int, 4>>
+    restore_value: False
+  - id: schedule_storage
+    type: int[50] # 10 entries * 5 values per entry
+    restore_value: True
+  - id: amount_dispensed_today
+    type: int
+    restore_value: True
+    initial_value: "0"
+  - id: manual_dispense_amount
+    type: int
+    restore_value: True
+    initial_value: "1"
+  - id: active_entry
+    type: int
+    initial_value: "${MANUAL_DISPENSE_ID}"
+    restore_value: False
+  - id: last_dispense_timestamp
+    type: int
+    initial_value: "0"
+    restore_value: True
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: ${API_KEY}
+  services:
+    - service: dispense
+      variables:
+        amount: int
+      then:
+        - globals.set:
+            id: active_entry
+            value: "${MANUAL_DISPENSE_ID}"
+        - script.execute:
+            id: start_dispense
+            amount: !lambda return amount;
+    - service: set_scheduled_dispense
+      variables:
+        id: int
+        hour: int
+        minute: int
+        amount: int
+      then:
+        - logger.log:
+            format: "Setting scheduled dispense for entry %d at %02d:%02d with %d ${CONFIG_DISPENSE_UOM}"
+            args: [id, hour, minute, amount]
+            tag: ${TAG}
+            level: INFO
+        - if:
+            condition:
+              lambda: return id >= ${MAX_ENTRIES};
+            then:
+              - logger.log:
+                  format: "Maximum of ${MAX_ENTRIES} schedule entries supported"
+                  tag: ${TAG}
+                  level: ERROR
+            else:
+              - lambda: id(schedule)[id] = {hour, minute, amount, ${STATUS_PENDING}};
+              - component.update: schedule_text_sensor
+              - script.execute: save_schedule
+    - service: remove_scheduled_dispense
+      variables:
+        id: int
+      then:
+        if: 
+          condition:
+            lambda: return id(schedule).find(id) != id(schedule).end();
+          then:
+            - logger.log:
+                format: "Removing scheduled dispense for entry %d"
+                args: [id]
+                tag: ${TAG}
+                level: INFO
+            - lambda: id(schedule).erase(id);
+            - component.update: schedule_text_sensor
+            - script.execute: save_schedule
+          else:
+            - logger.log:
+                format: "Entry %d not found in schedule"
+                args: [id]
+                tag: ${TAG}
+                level: WARN
+
+ota:
+  - platform: esphome
+    password: ${OTA_PASSWORD}
+
+wifi:
+  ssid: ${WIFI_SSID}
+  password: ${WIFI_PASSWORD}
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Dispenser-Blueprint"
+    password: ${AP_PASSWORD}
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    timezone: ${CONFIG_TIMEZONE}
+    on_time_sync:
+      then:
+        # if we're no longer in the same day as the last dispense attempt,
+        # most likely we were powered off at midnight when `reset_day` tried to run,
+        # so we should reset the day statistics again just in case
+        if:
+          condition:
+            lambda: return (id(ha_time).now().timestamp / 86400) != (id(last_dispense_timestamp) / 86400);
+          then:
+            - logger.log:
+                format: "Detected a new day since last dispense"
+                tag: ${TAG}
+                level: INFO
+            - script.execute: reset_day
+    on_time: 
+      - hours: "*"
+        minutes: "*"
+        seconds: 0
+        then:
+          script.execute: check_schedule
+      - hours: 0
+        minutes: 0
+        seconds: 0
+        then:
+          script.execute: reset_day
+    
+output:
+  - platform: gpio
+    pin: GPIO2
+    id: dispense_motor # Simulated by Onboard LED
+
+script:
+  - id: start_dispense
+    parameters: 
+      amount: int
+    then:
+      - globals.set:
+          id: last_dispense_timestamp
+          value: !lambda return id(ha_time).now().timestamp;
+      - script.execute:
+          id: update_schedule_status
+          status: ${STATUS_DISPENSING}
+      - if:
+          condition:
+            - or:
+              - switch.is_on: hopper_empty
+              # - binary_sensor.is_on: some_other_error_sensor
+          then:
+            - script.execute:
+                id: end_dispense
+                dispensed: 0
+                status: ${STATUS_FAILED}
+          else:
+            # Simulate dispensing by turning on the LED for the amount of time.
+            # Replace this with your actual dispensing code.
+            - output.turn_on: dispense_motor
+            - delay: !lambda return amount * 1000;
+            # Stop motors, cleanup, update the schedule and statistics
+            - script.execute:
+                id: end_dispense
+                dispensed: !lambda return amount;
+                status: ${STATUS_DISPENSED}
+        
+  - id: end_dispense
+    parameters:
+      dispensed: int
+      status: int
+    then:
+      - output.turn_off: dispense_motor
+      - lambda: id(amount_dispensed_today) = id(amount_dispensed_today) + dispensed;
+      - component.update: amount_dispensed_today_sensor
+      - script.execute:
+          id: update_schedule_status
+          status: !lambda return status;
+      - script.execute: save_schedule
+      - logger.log:
+          format: "Dispensed %d ${CONFIG_DISPENSE_UOM} for entry %d with status %d"
+          args: [dispensed, id(active_entry), status]
+          tag: ${TAG}
+          level: INFO
+  - id: update_schedule_status
+    parameters:
+      status: int
+    then:
+      - if: 
+          condition:
+            lambda: return id(schedule).find(id(active_entry)) != id(schedule).end();
+          then:
+            - logger.log:
+                format: "Updating schedule status for entry %d to %d"
+                args: [id(active_entry), status]
+                tag: ${TAG}
+                level: DEBUG
+            - lambda: id(schedule)[id(active_entry)][3] = status;
+            - component.update: schedule_text_sensor
+          else:
+            - if:
+                condition:
+                  lambda: return id(active_entry) != ${MANUAL_DISPENSE_ID};
+                then:
+                  - logger.log:
+                      format: "Entry %d not found in schedule"
+                      args: [id(active_entry)]
+                      tag: ${TAG}
+                      level: WARN
+  - id: check_schedule
+    then:
+      - lambda: |-
+          ESP_LOGV("${TAG}", "Checking schedule");
+          auto now = id(ha_time).now();
+          for (auto &entry : id(schedule)) {
+            if (now.hour == entry.second[0] && now.minute == entry.second[1]) {
+              ESP_LOGI("${TAG}", "Dispensing %d ${CONFIG_DISPENSE_UOM} for entry %d", entry.second[2], entry.first);
+              id(active_entry) = entry.first;
+              id(start_dispense).execute(entry.second[2]);
+              return;
+            }
+          }
+          ESP_LOGV("${TAG}", "No scheduled dispense found at %02d:%02d", now.hour, now.minute);
+  - id: reset_day
+    then:
+      - logger.log:
+          format: "Resetting daily statistics"
+          tag: ${TAG}
+          level: INFO
+      - lambda: |-
+          for (auto &entry : id(schedule)) {
+            entry.second[3] = ${STATUS_PENDING};
+          }
+      - component.update: schedule_text_sensor
+      - globals.set:
+          id: amount_dispensed_today
+          value: "0"
+      - component.update: amount_dispensed_today_sensor
+      - script.execute: save_schedule
+  - id: save_schedule
+    then:
+      - logger.log:
+          format: "Saving schedule to flash storage"
+          tag: ${TAG}
+          level: VERBOSE
+      - lambda: |-
+          for (int i = 0; i < 10; i++) {
+            int offset = i * 5;
+            auto it = id(schedule).find(i);
+            if (it == id(schedule).end()) {
+              id(schedule_storage)[offset + 0] = i;
+              id(schedule_storage)[offset + 1] = 255;
+              id(schedule_storage)[offset + 2] = 255;
+              id(schedule_storage)[offset + 3] = 255;
+              id(schedule_storage)[offset + 4] = 255;
+            } else {
+              id(schedule_storage)[offset + 0] = it->first;
+              id(schedule_storage)[offset + 1] = it->second[0];
+              id(schedule_storage)[offset + 2] = it->second[1];
+              id(schedule_storage)[offset + 3] = it->second[2];
+              id(schedule_storage)[offset + 4] = it->second[3];
+            }
+          }
+  - id: restore_schedule
+    then:
+      - logger.log:
+          format: "Loading schedule from flash storage"
+          tag: ${TAG}
+          level: INFO
+      - lambda: |-
+          id(schedule).clear();
+          for (int i = 0; i < 10; i++) {
+            int offset = i * 5;
+            if (id(schedule_storage)[offset + 0] != i
+             || id(schedule_storage)[offset + 3] < ${CONFIG_DISPENSE_MIN_AMOUNT}
+             || id(schedule_storage)[offset + 3] > ${CONFIG_DISPENSE_MAX_AMOUNT}
+            ) {
+              continue;
+            }
+
+            id(schedule)[id(schedule_storage)[offset + 0]] = {
+              id(schedule_storage)[offset + 1],
+              id(schedule_storage)[offset + 2],
+              id(schedule_storage)[offset + 3],
+              id(schedule_storage)[offset + 4]
+            };
+          }
+      - component.update: schedule_text_sensor
+
+text_sensor:
+  - platform: template
+    id: schedule_text_sensor
+    name: "Schedule"
+    lambda: |-
+      std::string schedule_str;
+      for (auto &entry : id(schedule)) {
+        schedule_str += str_sprintf("%d,%d,%d,%d,%d ",
+                                    entry.first,
+                                    entry.second[0],
+                                    entry.second[1],
+                                    entry.second[2],
+                                    entry.second[3]);
+      }
+      if (!schedule_str.empty()) {
+        schedule_str.pop_back(); // Remove the trailing space
+      }
+      return schedule_str;
+
+sensor:
+  - platform: template
+    name: "Dispensed Today"
+    id: amount_dispensed_today_sensor
+    unit_of_measurement: "${CONFIG_DISPENSE_UOM}"
+    accuracy_decimals: 0
+    lambda: |-
+      return id(amount_dispensed_today);
+
+button:
+  - platform: template
+    name: "Manual dispense"
+    on_press:
+      then:
+      - globals.set: 
+          id: active_entry
+          value: "${MANUAL_DISPENSE_ID}"
+      - script.execute:
+          id: start_dispense
+          amount: !lambda return id(manual_dispense_amount);
+  - platform: template
+    name: "Simulate dispenser jammed"
+    on_press:
+      then:
+        - script.stop: start_dispense
+        - script.execute:
+            id: end_dispense
+            dispensed: 0
+            status: ${STATUS_FAILED}
+
+number:
+  - platform: template
+    name: "Manual Dispense Amount"
+    id: manual_dispense_amount_sensor
+    min_value: ${CONFIG_DISPENSE_MIN_AMOUNT}
+    max_value: ${CONFIG_DISPENSE_MAX_AMOUNT}
+    step: ${CONFIG_DISPENSE_AMOUNT_STEP}
+    lambda: return id(manual_dispense_amount);
+    unit_of_measurement: "${CONFIG_DISPENSE_UOM}"
+    set_action:
+      globals.set:
+        id: manual_dispense_amount
+        value: !lambda return x;
+
+switch:
+  - platform: template
+    name: "Simulate hopper empty"
+    id: hopper_empty
+    optimistic: true
