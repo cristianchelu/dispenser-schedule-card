@@ -9,6 +9,6 @@
         "dispensing": "En cours de distribution",
         "pending": "Planifée",
         "failed": "Échec",
-        "skipped": "Annulée"
+        "skipped": "Non effectuée"
     }
 }
