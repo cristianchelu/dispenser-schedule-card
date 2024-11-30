@@ -68,7 +68,7 @@ alternate_unit:
 ## Compatibility
 
 This card was created for the Xiaomi Smart Pet Feeder running 
-[esphome-miot](https://github.com/dhewg/esphome-miot/pull/17),
+[esphome-miot](https://github.com/dhewg/esphome-miot),
 but support for other types of dispensers may be added if enough is known
 about the structure. Please open an issue including as much detail as possible.
 
