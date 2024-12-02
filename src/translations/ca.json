@@ -1,14 +1,14 @@
 {
     "ui": {
-        "name": "Schedule",
-        "portions": "portions",
-        "empty": "No schedule defined"
+        "name": "Horari",
+        "portions": "bocins",
+        "empty": "No hi ha cap horari"
     },
     "status": {
-        "dispensed": "Dispensed",
-        "dispensing": "Dispensing",
-        "pending": "Pending",
-        "failed": "Failed",
-        "skipped": "Skipped"
+        "dispensed": "Lliurats",
+        "dispensing": "Lliurant-se",
+        "pending": "Pendent",
+        "failed": "Malreeixit",
+        "skipped": "Eludit"
     }
 }
