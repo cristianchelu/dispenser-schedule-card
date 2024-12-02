@@ -133,6 +133,7 @@ arbitrary entities is also under consideration.
 
 Translations are currently available for the following languages:
 
+- Català (Catalan)
 - English
 - Français (French)
 - Italiano (Italian)
