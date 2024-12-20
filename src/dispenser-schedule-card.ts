@@ -22,27 +22,36 @@ interface DispenserScheduleCardConfig {
   };
 }
 
-/** Schedule */
-enum SCHEDULE_STATUS {
+/** Device Schedule */
+const DEVICE_SCHEDULE_STATUS = {
   /** Schedule triggered successfully */
-  DISPENSED = 0,
+  DISPENSED: 0,
   /** Schedule failed */
-  FAILED = 1,
+  FAILED: 1,
   /** Actively dispensing */
-  DISPENSING = 254,
+  DISPENSING: 254,
   /** Schedule not yet triggered */
-  PENDING = 255,
+  PENDING: 255,
+} as const;
+
+/** Card schedule status. */
+const SCHEDULE_STATUS = {
+  ...DEVICE_SCHEDULE_STATUS,
   /** Schedule was skipped for today */
-  SKIPPED = 256, // TODO: Remove from here
-};
+  SKIPPED: 256,
+  /** Schedule will be skipped until re-enabled */
+  DISABLED: 257,
+} as const;
+type SCHEDULE_STATUS = typeof SCHEDULE_STATUS[keyof typeof SCHEDULE_STATUS];
 
 /** Labels for each schedule status */
-const SCHEDULE_LABEL = {
+const SCHEDULE_LABEL: Record<SCHEDULE_STATUS, string> = {
   [SCHEDULE_STATUS.DISPENSED]: "dispensed",
   [SCHEDULE_STATUS.FAILED]: "failed",
   [SCHEDULE_STATUS.DISPENSING]: "dispensing",
   [SCHEDULE_STATUS.PENDING]: "pending",
   [SCHEDULE_STATUS.SKIPPED]: "skipped",
+  [SCHEDULE_STATUS.DISABLED]: "disabled",
 } as const;
 
 /** Icons for each schedule status */
@@ -51,7 +60,8 @@ const SCHEDULE_ICONS: Record<SCHEDULE_STATUS, string> = {
   [SCHEDULE_STATUS.FAILED]: 'mdi:close',
   [SCHEDULE_STATUS.DISPENSING]: 'mdi:tray-arrow-down',
   [SCHEDULE_STATUS.PENDING]: 'mdi:clock-outline',
-  [SCHEDULE_STATUS.SKIPPED]: 'mdi:calendar-clock-outline',
+  [SCHEDULE_STATUS.SKIPPED]: 'mdi:clock-remove-outline',
+  [SCHEDULE_STATUS.DISABLED]: 'mdi:clock-alert-outline',
 } as const;
 
 const MAX_ENTRIES = 10;
@@ -226,6 +236,28 @@ class DispenserScheduleCard extends LitElement {
     this._isReady = true;
   }
 
+  getDisplayStatus(entry: ScheduleEntry) {
+    const { hour, minute, status } = entry;
+
+    const scheduledDate = new Date();
+    scheduledDate.setHours(hour, minute);
+
+    const isStatusPending = status === SCHEDULE_STATUS.PENDING;
+    const isScheduleSwitchOff = this._switchEntity?.state === 'off';
+    // TODO: Handle case of FE timezone different from device timezone
+    const isPastDue = new Date().getTime() > scheduledDate.getTime();
+
+    if (isPastDue && isStatusPending) {
+      return SCHEDULE_STATUS.SKIPPED;
+    }
+
+    if (isScheduleSwitchOff && isStatusPending) {
+      return SCHEDULE_STATUS.DISABLED;
+    }
+
+    return status;
+  }
+
   renderAmount(amount: number) {
     const { alternate_unit } = this._config;
 
@@ -242,16 +274,10 @@ class DispenserScheduleCard extends LitElement {
     return [mainStr, alternateStr].filter(Boolean).join(' ⸱ ');
   }
 
-  renderScheduleRow(schedule: ScheduleEntry) {
-    const { id, hour, minute, amount, status } = schedule;
+  renderScheduleRow(entry: ScheduleEntry) {
+    const { hour, minute, amount } = entry;
 
-    const scheduledDate = new Date();
-    scheduledDate.setHours(hour, minute);
-
-    // TODO: Handle case of FE timezone different from device timezone
-    const isPastDue = new Date().getTime() > scheduledDate.getTime();
-    const isSkipped = isPastDue && status == SCHEDULE_STATUS.PENDING;
-    const displayStatus = isSkipped ? SCHEDULE_STATUS.SKIPPED : status;
+    const displayStatus = this.getDisplayStatus(entry);
     const statusText = localize(`status.${SCHEDULE_LABEL[displayStatus]}`);
     const secondaryText = this.renderAmount(amount);
 
@@ -277,7 +303,7 @@ class DispenserScheduleCard extends LitElement {
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
             </ha-icon-button>
             <ha-list-item
-              @click=${() => this.handleEditEntry(schedule)} 
+              @click=${() => this.handleEditEntry(entry)} 
               ?disabled=${!this._config.actions?.edit} 
               graphic="icon"
               class='edit-entry'
@@ -287,7 +313,7 @@ class DispenserScheduleCard extends LitElement {
               <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
             </ha-list-item>
             <ha-list-item 
-              @click=${() => this.handleRemoveEntry(schedule)} 
+              @click=${() => this.handleRemoveEntry(entry)} 
               ?disabled=${!this._config.actions?.remove} 
               graphic="icon" 
               class='remove-entry'
@@ -370,7 +396,7 @@ class DispenserScheduleCard extends LitElement {
         hour: parseInt(res.groups!.hour),
         minute: parseInt(res.groups!.minute),
         amount: parseInt(res.groups!.amount),
-        status: parseInt(res.groups!.status),
+        status: parseInt(res.groups!.status) as SCHEDULE_STATUS,
       });
     }
     return schedules.filter(({ hour }) => hour !== 255)

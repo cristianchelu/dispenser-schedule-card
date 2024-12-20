@@ -9,6 +9,7 @@
         "dispensing": "Dispensing",
         "pending": "Pending",
         "failed": "Failed",
-        "skipped": "Skipped"
+        "skipped": "Skipped",
+        "disabled": "Disabled"
     }
 }

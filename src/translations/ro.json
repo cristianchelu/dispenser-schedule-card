@@ -9,6 +9,7 @@
         "dispensing": "Se dozează",
         "pending": "În așteptare",
         "failed": "Eșuat",
-        "skipped": "Omis"
+        "skipped": "Omis",
+        "disabled": "Dezactivat"
     }
 }
