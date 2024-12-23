@@ -80,6 +80,10 @@ component and offers full support for it.
 Feeders with the original firmware are *NOT* currently supported as much of the
 logic is not handled by the device itself.
 
+### PetKit Feeders (Fresh Element, YumShare)
+
+The [`homeassistant_petkit`](https://github.com/Jezza34000/homeassistant_petkit) custom integration by [@Jezza34000](https://github.com/Jezza34000) is compatible with this card.
+
 ### DIY ESPHome projects
 
 View this [ESPHome config example](./docs/dispenser-blueprint.yaml) to get started.
