@@ -289,7 +289,7 @@ class DispenserScheduleCard extends LitElement {
         icon: SCHEDULE_ICONS[displayStatus],
       }}
         .catchInteraction=${false}
-        secondaryText="${this._isEditing ? secondaryText : statusText}"
+        .secondaryText="${this._isEditing ? secondaryText : statusText}"
         class="timeline ${SCHEDULE_LABEL[displayStatus]}"
       >
         <div>
