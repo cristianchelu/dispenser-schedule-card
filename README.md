@@ -69,7 +69,6 @@ alternate_unit:
 | `conversion_factor`   | **Required** | Number to multiply the primary amount by                                       |
 | `approximate`         |  *Optional*  | Whether the alternate unit is an approximation. Adds a `~` prefix to the value |
 
-
 ## Compatibility
 
 ### Xiaomi Smart Pet Feeder (`mmgg.feeder.fi1`)
@@ -122,8 +121,25 @@ Example:
 - entry 0: 10:30 dispense 5 portions, dispensed successfully.
 - entry 1: 12:00 dispense 10 portions, pending.
 
-`skipped` status is assumed by the card when the schedule entry is still status
-`pending` but the current time is greater than the dispense time.
+#### Assumed statuses
+
+There are a few entry status options that the card itself calculates and
+displays to bring more clarity into events of the schedule: 
+
+`skipped` status is assumed by the card when:
+ - the schedule entry is status `pending` and,
+ - the current Home Assistant time is greater than the dispense time.
+ * Useful to know if an entry was not dispensed due to external factors
+ such as a lack of power or the schedule being disabled at the dispense time, 
+ but not a failure of the device itself.
+
+`disabled` status is assumed by the card when:
+ - the schedule entry is status `pending` and,
+ - the dispense time is greater than current Home Assistant time and,
+ - there exists a `switch` entry in the card config and,
+ - the `switch` entity is off.
+ * Useful to know that future dispense entries will **not** be executed because
+ the schedule is currently disabled.
 
 A customizable option using Jinja2 templates to extract the schedule from
 arbitrary entities is also under consideration.
