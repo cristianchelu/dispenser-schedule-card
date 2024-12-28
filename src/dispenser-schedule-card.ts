@@ -5,6 +5,13 @@ import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 import localize from "./localization";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
+const EditableConfigOption = {
+  ALWAYS: 'always',
+  NEVER: 'never',
+  TOGGLE: 'toggle'
+} as const;
+type EditableConfigOption = typeof EditableConfigOption[keyof typeof EditableConfigOption];
+
 interface DispenserScheduleCardConfig {
   entity: string;
   switch?: string;
@@ -13,7 +20,7 @@ interface DispenserScheduleCardConfig {
     edit: string;
     remove: string;
   };
-  editable?: "always" | "toggle" | "never";
+  editable?: EditableConfigOption;
   unit_of_measurement?: string;
   alternate_unit?: {
     unit_of_measurement: string;
@@ -22,59 +29,39 @@ interface DispenserScheduleCardConfig {
   };
 }
 
-/** Device Schedule */
-const DEVICE_SCHEDULE_STATUS = {
-  /** Schedule triggered successfully */
-  DISPENSED: 0,
-  /** Schedule failed */
-  FAILED: 1,
-  /** Actively dispensing */
-  DISPENSING: 254,
-  /** Schedule not yet triggered */
-  PENDING: 255,
+/** Schedule entry status */
+const EntryStatus = {
+  /** Schedule entry triggered successfully */
+  DISPENSED: 'dispensed',
+  /** Schedule entry failed */
+  FAILED: 'failed',
+  /** Sechedule entry is actively dispensing */
+  DISPENSING: 'dispensing',
+  /** Schedule entry not yet triggered */
+  PENDING: 'pending',
+  /** Schedule entry was skipped for today */
+  SKIPPED: 'skipped',
+  /** Schedule entry will be skipped until re-enabled */
+  DISABLED: 'disabled',
 } as const;
-
-/** Card schedule status. */
-const SCHEDULE_STATUS = {
-  ...DEVICE_SCHEDULE_STATUS,
-  /** Schedule was skipped for today */
-  SKIPPED: 256,
-  /** Schedule will be skipped until re-enabled */
-  DISABLED: 257,
-} as const;
-type SCHEDULE_STATUS = typeof SCHEDULE_STATUS[keyof typeof SCHEDULE_STATUS];
-
-/** Labels for each schedule status */
-const SCHEDULE_LABEL: Record<SCHEDULE_STATUS, string> = {
-  [SCHEDULE_STATUS.DISPENSED]: "dispensed",
-  [SCHEDULE_STATUS.FAILED]: "failed",
-  [SCHEDULE_STATUS.DISPENSING]: "dispensing",
-  [SCHEDULE_STATUS.PENDING]: "pending",
-  [SCHEDULE_STATUS.SKIPPED]: "skipped",
-  [SCHEDULE_STATUS.DISABLED]: "disabled",
-} as const;
+type EntryStatus = typeof EntryStatus[keyof typeof EntryStatus];
 
 /** Icons for each schedule status */
-const SCHEDULE_ICONS: Record<SCHEDULE_STATUS, string> = {
-  [SCHEDULE_STATUS.DISPENSED]: 'mdi:check',
-  [SCHEDULE_STATUS.FAILED]: 'mdi:close',
-  [SCHEDULE_STATUS.DISPENSING]: 'mdi:tray-arrow-down',
-  [SCHEDULE_STATUS.PENDING]: 'mdi:clock-outline',
-  [SCHEDULE_STATUS.SKIPPED]: 'mdi:clock-remove-outline',
-  [SCHEDULE_STATUS.DISABLED]: 'mdi:clock-alert-outline',
+const StatusIcon: Record<EntryStatus, string> = {
+  [EntryStatus.DISPENSED]: 'mdi:check',
+  [EntryStatus.FAILED]: 'mdi:close',
+  [EntryStatus.DISPENSING]: 'mdi:tray-arrow-down',
+  [EntryStatus.PENDING]: 'mdi:clock-outline',
+  [EntryStatus.SKIPPED]: 'mdi:clock-remove-outline',
+  [EntryStatus.DISABLED]: 'mdi:clock-alert-outline',
 } as const;
-
-const MAX_ENTRIES = 10;
-const MAX_AMOUNT = 30;
-const pattern =
-  /(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?/g;
 
 interface ScheduleEntry {
   id: number;
   hour: number;
   minute: number;
   amount: number;
-  status: SCHEDULE_STATUS;
+  status: EntryStatus;
 }
 
 interface EditScheduleEntry {
@@ -83,6 +70,18 @@ interface EditScheduleEntry {
   minute: number;
   amount: number;
 }
+
+const XIAOMI_STATUS_MAP: Record<number, EntryStatus> = {
+  0: EntryStatus.DISPENSED,
+  1: EntryStatus.FAILED,
+  254: EntryStatus.DISPENSING,
+  255: EntryStatus.PENDING,
+}
+const XIAOMI_MAX_ENTRIES = 10;
+const XIAOMI_MAX_AMOUNT = 30;
+const XIAOMI_MIN_AMOUNT = 1;
+const XIAOMI_STATUS_PATTERN =
+  /(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?/g;
 
 const createEntityNotFoundWarning = (
   hass: any,
@@ -168,7 +167,7 @@ class DispenserScheduleCard extends LitElement {
       id: null,
       hour: 0,
       minute: 0,
-      amount: 1,
+      amount: XIAOMI_MIN_AMOUNT,
     };
   }
 
@@ -242,17 +241,16 @@ class DispenserScheduleCard extends LitElement {
     const scheduledDate = new Date();
     scheduledDate.setHours(hour, minute);
 
-    const isStatusPending = status === SCHEDULE_STATUS.PENDING;
-    const isScheduleSwitchOff = this._switchEntity?.state === 'off';
-    // TODO: Handle case of FE timezone different from device timezone
-    const isPastDue = new Date().getTime() > scheduledDate.getTime();
+    if (status === EntryStatus.PENDING) {
+      // TODO: Handle case of FE timezone different from device timezone
+      const isPastDue = new Date().getTime() > scheduledDate.getTime();
+      if (isPastDue) {
+        return EntryStatus.SKIPPED;
+      }
 
-    if (isPastDue && isStatusPending) {
-      return SCHEDULE_STATUS.SKIPPED;
-    }
-
-    if (isScheduleSwitchOff && isStatusPending) {
-      return SCHEDULE_STATUS.DISABLED;
+      if (this._switchEntity?.state === 'off') {
+        return EntryStatus.DISABLED;
+      }
     }
 
     return status;
@@ -278,7 +276,7 @@ class DispenserScheduleCard extends LitElement {
     const { hour, minute, amount } = entry;
 
     const displayStatus = this.getDisplayStatus(entry);
-    const statusText = localize(`status.${SCHEDULE_LABEL[displayStatus]}`);
+    const statusText = localize(`status.${displayStatus}`);
     const secondaryText = this.renderAmount(amount);
 
     return html`<hui-generic-entity-row
@@ -286,11 +284,11 @@ class DispenserScheduleCard extends LitElement {
         .config=${{
         entity: this._config.entity,
         name: `${hour}:${minute.toString().padStart(2, "0")}`,
-        icon: SCHEDULE_ICONS[displayStatus],
+        icon: StatusIcon[displayStatus],
       }}
         .catchInteraction=${false}
         .secondaryText="${this._isEditing ? secondaryText : statusText}"
-        class="timeline ${SCHEDULE_LABEL[displayStatus]}"
+        class="timeline ${displayStatus}"
       >
         <div>
           ${!this._isEditing
@@ -346,7 +344,7 @@ class DispenserScheduleCard extends LitElement {
       </ha-alert>`;
     }
 
-    const isAddDisabled = this._schedules.length >= MAX_ENTRIES;
+    const isAddDisabled = this._schedules.length >= XIAOMI_MAX_ENTRIES;
 
     const switchElement = this._switchEntity
       ? html`<ha-entity-toggle 
@@ -390,24 +388,25 @@ class DispenserScheduleCard extends LitElement {
   parseSchedule() {
     const schedules: Array<ScheduleEntry> = [];
     let res;
-    while ((res = pattern.exec(this._scheduleEntity?.state)) !== null) {
+    while ((res = XIAOMI_STATUS_PATTERN.exec(this._scheduleEntity?.state)) !== null) {
       schedules.push({
         id: parseInt(res.groups!.id),
         hour: parseInt(res.groups!.hour),
         minute: parseInt(res.groups!.minute),
         amount: parseInt(res.groups!.amount),
-        status: parseInt(res.groups!.status) as SCHEDULE_STATUS,
+        status: XIAOMI_STATUS_MAP[parseInt(res.groups!.status)],
       });
     }
     return schedules.filter(({ hour }) => hour !== 255)
       .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
+
   }
 
   isSaveDisabled(entry: EditScheduleEntry) {
     if (entry.id === null) {
       return entry.hour < 0 || entry.hour > 23
         || entry.minute < 0 || entry.minute > 59
-        || entry.amount < 1 || entry.amount > MAX_AMOUNT;
+        || entry.amount < 1 || entry.amount > XIAOMI_MAX_AMOUNT;
     } else {
       const schedule = this._schedules.find(e => e.id === entry.id);
       return schedule?.hour === entry.hour
@@ -453,7 +452,7 @@ class DispenserScheduleCard extends LitElement {
               type="number" 
               no-spinner 
               label=${this._config.unit_of_measurement ?? localize('ui.amount')}
-              max=${MAX_AMOUNT}
+              max=${XIAOMI_MAX_AMOUNT}
               min="1"
               @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
             ></ha-textfield>
