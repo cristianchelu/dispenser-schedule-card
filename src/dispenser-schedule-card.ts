@@ -1,87 +1,13 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
+import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 import { customElement } from 'lit/decorators/custom-element.js';
 
-import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
+import { Device, DispenserScheduleCardConfig, EditScheduleEntry, EntryStatus, ScheduleEntry, StatusIcon } from "./types";
+
 import localize from "./localization";
-import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
+import Devices from "./devices";
 
-const EditableConfigOption = {
-  ALWAYS: 'always',
-  NEVER: 'never',
-  TOGGLE: 'toggle'
-} as const;
-type EditableConfigOption = typeof EditableConfigOption[keyof typeof EditableConfigOption];
-
-interface DispenserScheduleCardConfig {
-  entity: string;
-  switch?: string;
-  actions?: {
-    add: string;
-    edit: string;
-    remove: string;
-  };
-  editable?: EditableConfigOption;
-  unit_of_measurement?: string;
-  alternate_unit?: {
-    unit_of_measurement: string;
-    conversion_factor: number;
-    approximate?: boolean;
-  };
-}
-
-/** Schedule entry status */
-const EntryStatus = {
-  /** Schedule entry triggered successfully */
-  DISPENSED: 'dispensed',
-  /** Schedule entry failed */
-  FAILED: 'failed',
-  /** Sechedule entry is actively dispensing */
-  DISPENSING: 'dispensing',
-  /** Schedule entry not yet triggered */
-  PENDING: 'pending',
-  /** Schedule entry was skipped for today */
-  SKIPPED: 'skipped',
-  /** Schedule entry will be skipped until re-enabled */
-  DISABLED: 'disabled',
-} as const;
-type EntryStatus = typeof EntryStatus[keyof typeof EntryStatus];
-
-/** Icons for each schedule status */
-const StatusIcon: Record<EntryStatus, string> = {
-  [EntryStatus.DISPENSED]: 'mdi:check',
-  [EntryStatus.FAILED]: 'mdi:close',
-  [EntryStatus.DISPENSING]: 'mdi:tray-arrow-down',
-  [EntryStatus.PENDING]: 'mdi:clock-outline',
-  [EntryStatus.SKIPPED]: 'mdi:clock-remove-outline',
-  [EntryStatus.DISABLED]: 'mdi:clock-alert-outline',
-} as const;
-
-interface ScheduleEntry {
-  id: number;
-  hour: number;
-  minute: number;
-  amount: number;
-  status: EntryStatus;
-}
-
-interface EditScheduleEntry {
-  id: number | null;
-  hour: number;
-  minute: number;
-  amount: number;
-}
-
-const XIAOMI_STATUS_MAP: Record<number, EntryStatus> = {
-  0: EntryStatus.DISPENSED,
-  1: EntryStatus.FAILED,
-  254: EntryStatus.DISPENSING,
-  255: EntryStatus.PENDING,
-}
-const XIAOMI_MAX_ENTRIES = 10;
-const XIAOMI_MAX_AMOUNT = 30;
-const XIAOMI_MIN_AMOUNT = 1;
-const XIAOMI_STATUS_PATTERN =
-  /(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?/g;
+import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 
 const createEntityNotFoundWarning = (
   hass: any,
@@ -117,6 +43,7 @@ class DispenserScheduleCard extends LitElement {
   declare _isReady: boolean;
   declare _schedules: Array<ScheduleEntry>;
   declare _editSchedule: EditScheduleEntry | null;
+  declare _device: Device;
 
   constructor() {
     super();
@@ -167,7 +94,7 @@ class DispenserScheduleCard extends LitElement {
       id: null,
       hour: 0,
       minute: 0,
-      amount: XIAOMI_MIN_AMOUNT,
+      amount: this._device.minAmount,
     };
   }
 
@@ -344,7 +271,7 @@ class DispenserScheduleCard extends LitElement {
       </ha-alert>`;
     }
 
-    const isAddDisabled = this._schedules.length >= XIAOMI_MAX_ENTRIES;
+    const isAddDisabled = this._schedules.length >= this._device.maxEntries;
 
     const switchElement = this._switchEntity
       ? html`<ha-entity-toggle 
@@ -386,27 +313,14 @@ class DispenserScheduleCard extends LitElement {
   }
 
   parseSchedule() {
-    const schedules: Array<ScheduleEntry> = [];
-    let res;
-    while ((res = XIAOMI_STATUS_PATTERN.exec(this._scheduleEntity?.state)) !== null) {
-      schedules.push({
-        id: parseInt(res.groups!.id),
-        hour: parseInt(res.groups!.hour),
-        minute: parseInt(res.groups!.minute),
-        amount: parseInt(res.groups!.amount),
-        status: XIAOMI_STATUS_MAP[parseInt(res.groups!.status)],
-      });
-    }
-    return schedules.filter(({ hour }) => hour !== 255)
-      .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
-
+    return this._device.getSchedule(this._scheduleEntity.state);
   }
 
   isSaveDisabled(entry: EditScheduleEntry) {
     if (entry.id === null) {
       return entry.hour < 0 || entry.hour > 23
         || entry.minute < 0 || entry.minute > 59
-        || entry.amount < 1 || entry.amount > XIAOMI_MAX_AMOUNT;
+        || entry.amount < this._device.minAmount || entry.amount > this._device.maxAmount;
     } else {
       const schedule = this._schedules.find(e => e.id === entry.id);
       return schedule?.hour === entry.hour
@@ -452,8 +366,8 @@ class DispenserScheduleCard extends LitElement {
               type="number" 
               no-spinner 
               label=${this._config.unit_of_measurement ?? localize('ui.amount')}
-              max=${XIAOMI_MAX_AMOUNT}
-              min="1"
+              max=${this._device.maxAmount}
+              min=${this._device.minAmount}
               @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
             ></ha-textfield>
           </div>
@@ -503,6 +417,7 @@ class DispenserScheduleCard extends LitElement {
 
   setConfig(config: DispenserScheduleCardConfig) {
     const editable = config.editable ?? "toggle";
+    const deviceType = config.device_type ?? 'xiaomi-smart-feeder';
 
     if (editable === "always") {
       this._isEditing = true;
@@ -516,5 +431,7 @@ class DispenserScheduleCard extends LitElement {
       ...config,
       editable,
     };
+
+    this._device = new Devices[deviceType](this._config, this._hass);
   }
 }
