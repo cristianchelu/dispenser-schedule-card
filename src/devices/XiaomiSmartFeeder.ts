@@ -1,30 +1,18 @@
-import { Device, EntryStatus, ScheduleEntry } from "../types";
+import CustomDevice from "./CustomDevice";
 
-export default class XiaomiSmartFeeder extends Device {
-  readonly maxEntries = 10;
-  readonly maxAmount = 30;
-  readonly minAmount = 1;
-  readonly statusPattern = /(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?/g;
-  readonly statusMap: Record<number, EntryStatus> = {
-    0: EntryStatus.DISPENSED,
-    1: EntryStatus.FAILED,
-    254: EntryStatus.DISPENSING,
-    255: EntryStatus.PENDING,
-  };
-
-  getSchedule(state: string) {
-    const schedules: Array<ScheduleEntry> = [];
-    let res;
-    while ((res = this.statusPattern.exec(state)) !== null) {
-      schedules.push({
-        id: parseInt(res.groups!.id),
-        hour: parseInt(res.groups!.hour),
-        minute: parseInt(res.groups!.minute),
-        amount: parseInt(res.groups!.amount),
-        status: this.statusMap[parseInt(res.groups!.status)],
-      });
-    }
-    return schedules.filter(({ hour }) => hour !== 255)
-      .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
+export default class XiaomiSmartFeeder extends CustomDevice {
+  constructor(config: any, hass: any) {
+    super({
+      ...config,
+      device_config: {
+        status_pattern: '(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?',
+        status_map: ['0 -> dispensed', '1 -> failed', '254 -> dispensing', '255 -> pending'],
+        max_entries: 10,
+        max_amount: 30,
+        min_amount: 1,
+        step_amount: 1,
+        ...config.device_config,
+      }
+    }, hass);
   }
 }

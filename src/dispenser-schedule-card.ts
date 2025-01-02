@@ -203,7 +203,7 @@ class DispenserScheduleCard extends LitElement {
     const { hour, minute, amount } = entry;
 
     const displayStatus = this.getDisplayStatus(entry);
-    const statusText = localize(`status.${displayStatus}`);
+    const statusText = localize(`status.${displayStatus}`) ?? displayStatus;
     const secondaryText = this.renderAmount(amount);
 
     return html`<hui-generic-entity-row

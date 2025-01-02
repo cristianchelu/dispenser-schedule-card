@@ -1,3 +1,5 @@
+import { DeviceType } from "./devices";
+
 /** Schedule entry status */
 export const EntryStatus = {
   /** Schedule entry triggered successfully */
@@ -36,7 +38,7 @@ export const ConfigEditableOption = {
 } as const;
 export type ConfigEditableOption = typeof ConfigEditableOption[keyof typeof ConfigEditableOption];
 
-export interface DispenserScheduleCardConfig {
+export interface DispenserScheduleCardConfig<T = any> {
   entity: string;
   switch?: string;
   actions?: {
@@ -51,7 +53,8 @@ export interface DispenserScheduleCardConfig {
     conversion_factor: number;
     approximate?: boolean;
   };
-  device_type?: 'xiaomi-smart-feeder';
+  device_type?: DeviceType;
+  device_config: T;
 }
 
 export interface ScheduleEntry {
@@ -73,6 +76,7 @@ export abstract class Device {
   abstract readonly maxEntries: number;
   abstract readonly maxAmount: number;
   abstract readonly minAmount: number;
+  abstract readonly stepAmount: number;
 
   constructor(readonly config: DispenserScheduleCardConfig, readonly hass: any) { }
 
