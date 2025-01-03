@@ -439,7 +439,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   setConfig(config: DispenserScheduleCardConfig) {
-    const editable = config.editable ?? "toggle";
+    let editable = config.editable ?? "toggle";
     const deviceType = config.device_type ?? 'xiaomi-smart-feeder';
 
     if (editable === "always") {
@@ -448,6 +448,12 @@ class DispenserScheduleCard extends LitElement {
       this._isEditing = false;
     } else if (editable !== "toggle") {
       throw new Error(`Invalid editable option: ${editable}`);
+    }
+
+    const actions = config.actions || {};
+    if (Object.keys(actions).length === 0) {
+      editable = "never";
+      this._isEditing = false;
     }
 
     this._config = {
