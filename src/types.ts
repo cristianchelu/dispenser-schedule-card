@@ -42,9 +42,10 @@ export interface DispenserScheduleCardConfig<T = any> {
   entity: string;
   switch?: string;
   actions?: {
-    add: string;
-    edit: string;
-    remove: string;
+    add?: string;
+    edit?: string;
+    remove?: string;
+    toggle?: string;
   };
   editable?: ConfigEditableOption;
   unit_of_measurement?: string;

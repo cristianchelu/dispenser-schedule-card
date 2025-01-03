@@ -108,6 +108,16 @@ class DispenserScheduleCard extends LitElement {
     });
   }
 
+  handleToggleEntry(entry: EditScheduleEntry) {
+    if (entry.id === null || !this._config.actions?.toggle) {
+      return;
+    }
+    const [domain, action] = this._config.actions.toggle.split('.');
+    this._hass.callService(domain, action, {
+      id: entry.id,
+    });
+  }
+
   handleCancel() {
     this._editSchedule = null;
   }
@@ -206,6 +216,8 @@ class DispenserScheduleCard extends LitElement {
     const statusText = localize(`status.${displayStatus}`) ?? displayStatus;
     const secondaryText = this.renderAmount(amount);
 
+    const { add, ...actions } = this._config.actions || {};
+
     return html`<hui-generic-entity-row
         .hass=${this._hass}
         .config=${{
@@ -222,31 +234,42 @@ class DispenserScheduleCard extends LitElement {
         ? html`<span>${secondaryText}</span>`
         : nothing
       }
-          ${this._isEditing
-        ? html`<ha-button-menu class="edit-menu">
-            <ha-icon-button slot="trigger"> 
+        ${this._isEditing
+        ? html`<ha-button-menu class="edit-menu" disabled=${Object.keys(actions).length === 0}>
+            <ha-icon-button 
+              slot="trigger"
+              disabled=${Object.keys(actions).length === 0}
+            > 
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
             </ha-icon-button>
-            <ha-list-item
-              @click=${() => this.handleEditEntry(entry)} 
-              ?disabled=${!this._config.actions?.edit} 
-              graphic="icon"
-              class='edit-entry'
-              hasMeta
-            >
-              ${this._hass.localize('ui.common.edit')}
-              <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
-            </ha-list-item>
-            <ha-list-item 
-              @click=${() => this.handleRemoveEntry(entry)} 
-              ?disabled=${!this._config.actions?.remove} 
-              graphic="icon" 
-              class='remove-entry'
-              hasMeta
-            >
-              ${this._hass.localize('ui.common.remove')}
-              <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
-            </ha-list-item>
+            ${!!actions?.edit ? html`<ha-list-item
+            @click=${() => this.handleEditEntry(entry)} 
+            graphic="icon"
+            class="edit-entry"
+            hasMeta
+          >
+            ${this._hass.localize('ui.common.edit')}
+            <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
+          </ha-list-item>` : nothing}
+            ${!!actions?.remove ? html`<ha-list-item
+            @click=${() => this.handleRemoveEntry(entry)} 
+            graphic="icon"
+            class="remove-entry"
+            hasMeta
+          >
+            ${this._hass.localize('ui.common.delete')}
+            <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
+          </ha-list-item>` : nothing}
+             ${!!actions?.toggle ?
+            html`<ha-list-item
+             @click=${() => this.handleToggleEntry(entry)} 
+             graphic="icon"
+             class="toggle-entry"
+             hasMeta
+           >
+              ${displayStatus === 'disabled' ? this._hass.localize('ui.common.enable') : this._hass.localize('ui.common.disable')}
+             <ha-icon slot="graphic" icon="${displayStatus === 'disabled' ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off'}"></ha-icon>
+           </ha-list-item>` : nothing}
           </ha-button-menu>`
         : nothing
       }
