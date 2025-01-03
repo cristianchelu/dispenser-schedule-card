@@ -35,9 +35,9 @@ export default class CustomDevice extends Device {
 
   getSchedule(state: string) {
     const schedules: Array<ScheduleEntry> = [];
-    let res;
+    let res, i = 0;
     const regex = new RegExp(this.statusPattern, 'g');
-    while ((res = regex.exec(state)) !== null) {
+    while ((res = regex.exec(state)) !== null && i < this.maxEntries) {
       schedules.push({
         id: parseInt(res.groups!.id),
         hour: parseInt(res.groups!.hour),
@@ -45,6 +45,7 @@ export default class CustomDevice extends Device {
         amount: parseInt(res.groups!.amount),
         status: this.statusMap[parseInt(res.groups!.status)],
       });
+      i++;
     }
     return schedules.filter(({ hour }) => hour !== 255)
       .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
