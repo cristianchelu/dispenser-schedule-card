@@ -5,15 +5,17 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { customElement } from 'lit/decorators/custom-element.js';
 
 import {
-  DefaultDisplayConfig,
   Device,
-  DispenserScheduleCardConfig,
-  DisplayConfig,
-  DisplayConfigEntry,
-  EditScheduleEntry,
   EntryStatus,
-  ScheduleEntry
-} from "./types";
+  ScheduleEntry,
+  EditScheduleEntry
+} from "./types/common";
+
+import {
+  DefaultDisplayConfig,
+  DispenserScheduleCardConfig,
+  DisplayConfigEntry,
+} from "./types/config";
 
 import localize from "./localization";
 import Devices from "./devices";

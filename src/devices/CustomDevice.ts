@@ -1,4 +1,5 @@
-import { Device, DispenserScheduleCardConfig, EntryStatus, ScheduleEntry } from "../types";
+import { Device, EntryStatus, ScheduleEntry } from "../types/common";
+import { DispenserScheduleCardConfig } from "../types/config";
 
 interface CustomDeviceConfig {
   status_pattern: string;
