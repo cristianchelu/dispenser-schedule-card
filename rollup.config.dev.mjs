@@ -8,10 +8,8 @@ export default {
   input: 'src/dispenser-schedule-card.ts',
   output: [{
     file: 'dist/dispenser-schedule-card.js',
-    format: 'esm'
-  }, {
-    file: 'dist/dispenser-schedule-card.min.js',
-    plugins: [terser()]
+    format: 'esm',
+    sourcemap: 'inline'
   }],
   plugins: [
     nodeResolve({}),

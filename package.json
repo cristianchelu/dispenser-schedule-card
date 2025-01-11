@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "rollup --config",
-    "dev": "rollup --watch --config"
+    "build": "rollup --config rollup.config.prod.mjs",
+    "dev": "rollup --watch --config rollup.config.dev.mjs"
   },
   "dependencies": {
     "@rollup/plugin-node-resolve": "^15.3.0",
