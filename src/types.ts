@@ -17,16 +17,39 @@ export const EntryStatus = {
 } as const;
 export type EntryStatus = typeof EntryStatus[keyof typeof EntryStatus];
 
-/** Icons for each schedule status */
-export const StatusIcon: Record<EntryStatus, string> = {
-  [EntryStatus.DISPENSED]: 'mdi:check',
-  [EntryStatus.FAILED]: 'mdi:close',
-  [EntryStatus.DISPENSING]: 'mdi:tray-arrow-down',
-  [EntryStatus.PENDING]: 'mdi:clock-outline',
-  [EntryStatus.SKIPPED]: 'mdi:clock-remove-outline',
-  [EntryStatus.DISABLED]: 'mdi:clock-alert-outline',
-} as const;
+export type DisplayConfigEntry = {
+  icon?: string;
+  color?: string;
+  label?: string;
+}
+export type DisplayConfig = Record<string, DisplayConfigEntry>;
 
+export const DefaultDisplayConfig: DisplayConfig = {
+  [EntryStatus.DISPENSED]: {
+    icon: 'mdi:check',
+    color: 'var(--state-active-color)',
+  },
+  [EntryStatus.FAILED]: {
+    icon: 'mdi:close',
+    color: 'var(--error-color)',
+  },
+  [EntryStatus.DISPENSING]: {
+    icon: 'mdi:tray-arrow-down',
+    color: 'var(--state-active-color)',
+  },
+  [EntryStatus.PENDING]: {
+    icon: 'mdi:clock-outline',
+    color: 'var(--state-icon-color)',
+  },
+  [EntryStatus.SKIPPED]: {
+    icon: 'mdi:clock-remove-outline',
+    color: 'var(--state-inactive-color)',
+  },
+  [EntryStatus.DISABLED]: {
+    icon: 'mdi:clock-alert-outline',
+    color: 'var(--state-inactive-color)',
+  },
+}
 
 export const ConfigEditableOption = {
   /** Schedule is always in edit state */
@@ -56,6 +79,7 @@ export interface DispenserScheduleCardConfig<T = any> {
   };
   device_type?: DeviceType;
   device_config: T;
+  display_config?: DisplayConfig;
 }
 
 export interface ScheduleEntry {

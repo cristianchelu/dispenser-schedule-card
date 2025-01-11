@@ -58,53 +58,8 @@ hui-generic-entity-row.timeline:first-child::before {
 }
 
 hui-generic-entity-row.timeline {
-
-  &.dispensed {
-    --paper-item-icon-color: var(--state-active-color);
-
-    &::before {
-      background-color: var(--state-active-color);
-    }
-  }
-
-  &.failed {
-    --paper-item-icon-color: var(--error-color);
-
-    &::before {
-      background-color: var(--error-color);
-    }
-  }
-
-  &.dispensing {
-    --paper-item-icon-color: var(--state-active-color);
-
-    &::before {
-      background-color: var(--state-active-color);
-    }
-  }
-
-  &.pending {
-    --paper-item-icon-color: var(--state-icon-color);
-
-    &::before {
-      background-color: var(--state-icon-color);
-    }
-  }
-
-  &.skipped {
-    --paper-item-icon-color: var(--disabled-text-color);
-
-    &::before {
-      background-color: var(--disabled-text-color);
-    }
-  }
-
-  &.disabled {
-    --paper-item-icon-color: var(--disabled-text-color);
-
-    &::before {
-      background-color: var(--disabled-text-color);
-    }
+  &::before {
+    background-color: var(--paper-item-icon-color);
   }
 }
 

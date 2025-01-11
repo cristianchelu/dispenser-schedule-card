@@ -1,8 +1,19 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
+
+import { styleMap } from 'lit/directives/style-map.js';
 import { customElement } from 'lit/decorators/custom-element.js';
 
-import { Device, DispenserScheduleCardConfig, EditScheduleEntry, EntryStatus, ScheduleEntry, StatusIcon } from "./types";
+import {
+  DefaultDisplayConfig,
+  Device,
+  DispenserScheduleCardConfig,
+  DisplayConfig,
+  DisplayConfigEntry,
+  EditScheduleEntry,
+  EntryStatus,
+  ScheduleEntry
+} from "./types";
 
 import localize from "./localization";
 import Devices from "./devices";
@@ -213,21 +224,28 @@ class DispenserScheduleCard extends LitElement {
     const { hour, minute, amount } = entry;
 
     const displayStatus = this.getDisplayStatus(entry);
-    const statusText = localize(`status.${displayStatus}`) ?? displayStatus;
-    const secondaryText = this.renderAmount(amount);
 
     const { add, ...actions } = this._config.actions || {};
+
+    const display: DisplayConfigEntry = this._config.display_config?.[displayStatus] ?? {};
+
+    const label = display.label ?? displayStatus;
+    const statusText = localize(`status.${label}`) ?? label;
+    const secondaryText = this.renderAmount(amount);
 
     return html`<hui-generic-entity-row
         .hass=${this._hass}
         .config=${{
         entity: this._config.entity,
         name: `${hour}:${minute.toString().padStart(2, "0")}`,
-        icon: StatusIcon[displayStatus],
+        icon: display?.icon ?? DefaultDisplayConfig[displayStatus]?.icon,
       }}
         .catchInteraction=${false}
         .secondaryText="${this._isEditing ? secondaryText : statusText}"
         class="timeline ${displayStatus}"
+        style=${styleMap({
+        '--paper-item-icon-color': display?.color ?? DefaultDisplayConfig[displayStatus]?.color
+      })}
       >
         <div>
           ${!this._isEditing
