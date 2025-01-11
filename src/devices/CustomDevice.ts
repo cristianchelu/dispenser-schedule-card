@@ -2,8 +2,9 @@ import { Device, EntryStatus, ScheduleEntry } from "../types/common";
 import { DispenserScheduleCardConfig } from "../types/config";
 
 interface CustomDeviceConfig {
+  type: 'custom';
   status_pattern: string;
-  status_map: Array<string>;
+  status_map: Array<`${string} -> ${string}`>;
   max_entries: number;
   max_amount: number;
   min_amount: number;
@@ -17,21 +18,25 @@ export default class CustomDevice extends Device {
   stepAmount: number;
 
   statusPattern: RegExp;
-  statusMap: Record<number, EntryStatus>;
+  statusMap: Record<string, EntryStatus>;
 
   constructor(config: DispenserScheduleCardConfig<CustomDeviceConfig>, hass: any) {
     super(config, hass);
 
-    this.maxEntries = config.device_config.max_entries;
-    this.maxAmount = config.device_config.max_amount;
-    this.minAmount = config.device_config.min_amount;
-    this.stepAmount = config.device_config.step_amount;
+    this.maxEntries = config.device.max_entries;
+    this.maxAmount = config.device.max_amount;
+    this.minAmount = config.device.min_amount;
+    this.stepAmount = config.device.step_amount;
 
-    this.statusPattern = new RegExp(config.device_config.status_pattern);
-    this.statusMap = config.device_config.status_map.reduce((acc, item) => {
+    this.statusPattern = new RegExp(config.device.status_pattern);
+    this.statusMap = config.device.status_map.reduce((acc, item) => {
       const [key, value] = item.split(' -> ');
-      return { ...acc, [parseInt(key)]: value };
+      return { ...acc, [key]: value };
     }, {});
+  }
+
+  getEntryStatus(entry: ScheduleEntry) {
+    return this.statusMap[entry.status];
   }
 
   getSchedule(state: string) {

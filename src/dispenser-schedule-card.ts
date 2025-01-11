@@ -229,7 +229,7 @@ class DispenserScheduleCard extends LitElement {
 
     const { add, ...actions } = this._config.actions || {};
 
-    const display: DisplayConfigEntry = this._config.display_config?.[displayStatus] ?? {};
+    const display: DisplayConfigEntry = this._config.display?.[displayStatus] ?? {};
 
     const label = display.label ?? displayStatus;
     const statusText = localize(`status.${label}`) ?? label;
@@ -458,9 +458,9 @@ class DispenserScheduleCard extends LitElement {
     return this._schedules ? 1 + this._schedules.length : 3;
   }
 
-  setConfig(config: DispenserScheduleCardConfig) {
+  setConfig(config: DispenserScheduleCardConfig<unknown>) {
     let editable = config.editable ?? "toggle";
-    const deviceType = config.device_type ?? 'xiaomi-smart-feeder';
+    const deviceType = config.device?.type ?? 'xiaomi-smart-feeder';
 
     if (editable === "always") {
       this._isEditing = true;

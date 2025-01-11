@@ -25,9 +25,8 @@ export interface DispenserScheduleCardConfig<T = any> {
         conversion_factor: number;
         approximate?: boolean;
     };
-    device_type?: DeviceType;
-    device_config: T;
-    display_config?: DisplayConfig;
+    device: T & { type: DeviceType };
+    display?: DisplayConfig;
 }
 
 export const ConfigEditableOption = {
