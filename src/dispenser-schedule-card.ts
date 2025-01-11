@@ -228,6 +228,7 @@ class DispenserScheduleCard extends LitElement {
     const displayStatus = this.getDisplayStatus(entry);
 
     const { add, ...actions } = this._config.actions || {};
+    const hasOverflowActions = Object.keys(actions).length > 0;
 
     const display: DisplayConfigEntry = this._config.display?.[displayStatus] ?? {};
 
@@ -255,10 +256,10 @@ class DispenserScheduleCard extends LitElement {
         : nothing
       }
         ${this._isEditing
-        ? html`<ha-button-menu class="edit-menu" disabled=${Object.keys(actions).length === 0}>
+        ? html`<ha-button-menu class="edit-menu" .disabled=${!hasOverflowActions}>
             <ha-icon-button 
               slot="trigger"
-              disabled=${Object.keys(actions).length === 0}
+              .disabled=${!hasOverflowActions}
             > 
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
             </ha-icon-button>
