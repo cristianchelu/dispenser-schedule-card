@@ -9,6 +9,8 @@
         "dispensing": "Veriliyor",
         "pending": "Beklemede",
         "failed": "Başarısız",
-        "skipped": "Atlandı"
+        "skipped": "Atlandı",
+        "disabled": "Devre dışı",
+        "unknown": "Bilinmeyen"
     }
 }

@@ -10,6 +10,7 @@
         "pending": "Pending",
         "failed": "Failed",
         "skipped": "Skipped",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "unknown": "Unknown"
     }
 }

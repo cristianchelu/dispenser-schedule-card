@@ -9,6 +9,8 @@
         "dispensing": "Lliurant-se",
         "pending": "Pendent",
         "failed": "Malreeixit",
-        "skipped": "Eludit"
+        "skipped": "Eludit",
+        "disabled": "Desactivat",
+        "unknown": "Desconegut"
     }
 }

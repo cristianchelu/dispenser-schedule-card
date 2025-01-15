@@ -9,6 +9,8 @@
         "dispensing": "In distribuzione",
         "pending": "In attesa",
         "failed": "Fallita",
-        "skipped": "Saltata"
+        "skipped": "Saltata",
+        "disabled": "Disabilitato",
+        "unknown": "Sconosciuto"
     }
 }

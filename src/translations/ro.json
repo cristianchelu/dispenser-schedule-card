@@ -10,6 +10,7 @@
         "pending": "În așteptare",
         "failed": "Eșuat",
         "skipped": "Omis",
-        "disabled": "Dezactivat"
+        "disabled": "Dezactivat",
+        "unknown": "Necunoscut"
     }
 }
