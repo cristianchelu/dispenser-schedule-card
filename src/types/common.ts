@@ -3,20 +3,19 @@ import { DispenserScheduleCardConfig } from "./config";
 /** Schedule entry status */
 export const EntryStatus = {
   /** Schedule entry triggered successfully */
-  DISPENSED: 'dispensed',
+  DISPENSED: "dispensed",
   /** Schedule entry failed */
-  FAILED: 'failed',
+  FAILED: "failed",
   /** Sechedule entry is actively dispensing */
-  DISPENSING: 'dispensing',
+  DISPENSING: "dispensing",
   /** Schedule entry not yet triggered */
-  PENDING: 'pending',
+  PENDING: "pending",
   /** Schedule entry was skipped for today */
-  SKIPPED: 'skipped',
+  SKIPPED: "skipped",
   /** Schedule entry will be skipped until re-enabled */
-  DISABLED: 'disabled',
+  DISABLED: "disabled",
 } as const;
-export type EntryStatus = typeof EntryStatus[keyof typeof EntryStatus];
-
+export type EntryStatus = (typeof EntryStatus)[keyof typeof EntryStatus];
 
 export interface ScheduleEntry {
   id: number;
@@ -39,7 +38,10 @@ export abstract class Device {
   abstract readonly minAmount: number;
   abstract readonly stepAmount: number;
 
-  constructor(readonly config: DispenserScheduleCardConfig, readonly hass: any) { }
+  constructor(
+    readonly config: DispenserScheduleCardConfig,
+    readonly hass: any
+  ) {}
 
   abstract getSchedule(state: string): Array<ScheduleEntry>;
 }

@@ -1,7 +1,7 @@
 esphome:
   name: dispenser-blueprint
   friendly_name: dispenser-blueprint
-  on_boot: 
+  on_boot:
     then:
       - script.execute: restore_schedule
 
@@ -104,7 +104,7 @@ api:
       variables:
         id: int
       then:
-        if: 
+        if:
           condition:
             lambda: return id(schedule).find(id) != id(schedule).end();
           then:
@@ -156,7 +156,7 @@ time:
                 tag: ${TAG}
                 level: INFO
             - script.execute: reset_day
-    on_time: 
+    on_time:
       - hours: "*"
         minutes: "*"
         seconds: 0
@@ -167,7 +167,7 @@ time:
         seconds: 0
         then:
           script.execute: reset_day
-    
+
 output:
   - platform: gpio
     pin: GPIO2
@@ -175,7 +175,7 @@ output:
 
 script:
   - id: start_dispense
-    parameters: 
+    parameters:
       amount: int
     then:
       - globals.set:
@@ -187,7 +187,7 @@ script:
       - if:
           condition:
             - or:
-              - switch.is_on: hopper_empty
+                - switch.is_on: hopper_empty
               # - binary_sensor.is_on: some_other_error_sensor
           then:
             - script.execute:
@@ -204,7 +204,7 @@ script:
                 id: end_dispense
                 dispensed: !lambda return amount;
                 status: ${STATUS_DISPENSED}
-        
+
   - id: end_dispense
     parameters:
       dispensed: int
@@ -226,7 +226,7 @@ script:
     parameters:
       status: int
     then:
-      - if: 
+      - if:
           condition:
             lambda: return id(schedule).find(id(active_entry)) != id(schedule).end();
           then:
@@ -360,12 +360,12 @@ button:
     name: "Manual dispense"
     on_press:
       then:
-      - globals.set: 
-          id: active_entry
-          value: "${MANUAL_DISPENSE_ID}"
-      - script.execute:
-          id: start_dispense
-          amount: !lambda return id(manual_dispense_amount);
+        - globals.set:
+            id: active_entry
+            value: "${MANUAL_DISPENSE_ID}"
+        - script.execute:
+            id: start_dispense
+            amount: !lambda return id(manual_dispense_amount);
   - platform: template
     name: "Simulate dispenser jammed"
     on_press:

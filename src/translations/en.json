@@ -1,16 +1,16 @@
 {
-    "ui": {
-        "name": "Schedule",
-        "portions": "portions",
-        "empty": "No schedule defined"
-    },
-    "status": {
-        "dispensed": "Dispensed",
-        "dispensing": "Dispensing",
-        "pending": "Pending",
-        "failed": "Failed",
-        "skipped": "Skipped",
-        "disabled": "Disabled",
-        "unknown": "Unknown"
-    }
+  "ui": {
+    "name": "Schedule",
+    "portions": "portions",
+    "empty": "No schedule defined"
+  },
+  "status": {
+    "dispensed": "Dispensed",
+    "dispensing": "Dispensing",
+    "pending": "Pending",
+    "failed": "Failed",
+    "skipped": "Skipped",
+    "disabled": "Disabled",
+    "unknown": "Unknown"
+  }
 }

@@ -1,16 +1,16 @@
 {
-    "ui": {
-        "name": "Orar",
-        "portions": "porții",
-        "empty": "Niciun orar definit"
-    },
-    "status": {
-        "dispensed": "Dozat",
-        "dispensing": "Se dozează",
-        "pending": "În așteptare",
-        "failed": "Eșuat",
-        "skipped": "Omis",
-        "disabled": "Dezactivat",
-        "unknown": "Necunoscut"
-    }
+  "ui": {
+    "name": "Orar",
+    "portions": "porții",
+    "empty": "Niciun orar definit"
+  },
+  "status": {
+    "dispensed": "Dozat",
+    "dispensing": "Se dozează",
+    "pending": "În așteptare",
+    "failed": "Eșuat",
+    "skipped": "Omis",
+    "disabled": "Dezactivat",
+    "unknown": "Necunoscut"
+  }
 }

@@ -1,14 +1,14 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
-import { styleMap } from 'lit/directives/style-map.js';
-import { customElement } from 'lit/decorators/custom-element.js';
+import { styleMap } from "lit/directives/style-map.js";
+import { customElement } from "lit/decorators/custom-element.js";
 
 import {
   Device,
   EntryStatus,
   ScheduleEntry,
-  EditScheduleEntry
+  EditScheduleEntry,
 } from "./types/common";
 
 import {
@@ -22,14 +22,11 @@ import Devices from "./devices";
 
 import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 
-const createEntityNotFoundWarning = (
-  hass: any,
-  entityId?: string
-) =>
+const createEntityNotFoundWarning = (hass: any, entityId?: string) =>
   hass.config.state !== STATE_NOT_RUNNING
     ? hass.localize("ui.panel.lovelace.warning.entity_not_found", {
-      entity: entityId || "[empty]",
-    })
+        entity: entityId || "[empty]",
+      })
     : hass.localize("ui.panel.lovelace.warning.starting");
 
 function getFirstGap(arr: Array<number>) {
@@ -39,14 +36,14 @@ function getFirstGap(arr: Array<number>) {
       return i;
     }
   }
-  return arr.length
+  return arr.length;
 }
 
 function getNextId(arr: Array<number>) {
   return !arr.length ? 0 : Math.min(getFirstGap(arr), Math.max(...arr) + 1);
 }
 
-@customElement('dispenser-schedule-card')
+@customElement("dispenser-schedule-card")
 class DispenserScheduleCard extends LitElement {
   declare _config: DispenserScheduleCardConfig;
   declare _hass: any;
@@ -115,7 +112,7 @@ class DispenserScheduleCard extends LitElement {
     if (entry.id === null || !this._config.actions?.remove) {
       return;
     }
-    const [domain, action] = this._config.actions.remove.split('.');
+    const [domain, action] = this._config.actions.remove.split(".");
     this._hass.callService(domain, action, {
       id: entry.id,
     });
@@ -125,7 +122,7 @@ class DispenserScheduleCard extends LitElement {
     if (entry.id === null || !this._config.actions?.toggle) {
       return;
     }
-    const [domain, action] = this._config.actions.toggle.split('.');
+    const [domain, action] = this._config.actions.toggle.split(".");
     this._hass.callService(domain, action, {
       id: entry.id,
     });
@@ -143,16 +140,19 @@ class DispenserScheduleCard extends LitElement {
 
     const getAmountKey = (domain: string, action: string) => {
       // Backwards compatibility for `portions` field
-      return Object.keys(this._hass.services[domain][action].fields)
-        .find((k) => ['amount', 'portions'].includes(k)) ?? 'amount';
-    }
+      return (
+        Object.keys(this._hass.services[domain][action].fields).find((k) =>
+          ["amount", "portions"].includes(k)
+        ) ?? "amount"
+      );
+    };
 
     if (entry.id === null) {
       if (!this._config.actions?.add) {
         return;
       }
-      const id = getNextId(this._schedules.map(e => e.id));
-      const [domain, action] = this._config.actions.add.split('.');
+      const id = getNextId(this._schedules.map((e) => e.id));
+      const [domain, action] = this._config.actions.add.split(".");
       const amountKey = getAmountKey(domain, action);
       this._hass.callService(domain, action, {
         id,
@@ -164,7 +164,7 @@ class DispenserScheduleCard extends LitElement {
       if (!this._config.actions?.edit) {
         return;
       }
-      const [domain, action] = this._config.actions.edit.split('.');
+      const [domain, action] = this._config.actions.edit.split(".");
       const amountKey = getAmountKey(domain, action);
       this._hass.callService(domain, action, {
         id: entry.id,
@@ -181,7 +181,7 @@ class DispenserScheduleCard extends LitElement {
     // so we need to wait for it to be available before we can enable editing.
     const helpers = await window.loadCardHelpers();
 
-    helpers.createRowElement({ "type": "time-entity" });
+    helpers.createRowElement({ type: "time-entity" });
     this._isReady = true;
   }
 
@@ -198,7 +198,7 @@ class DispenserScheduleCard extends LitElement {
         return EntryStatus.SKIPPED;
       }
 
-      if (this._switchEntity?.state === 'off') {
+      if (this._switchEntity?.state === "off") {
         return EntryStatus.DISABLED;
       }
     }
@@ -209,17 +209,22 @@ class DispenserScheduleCard extends LitElement {
   renderAmount(amount: number) {
     const { alternate_unit } = this._config;
 
-    const main_unit = this._config.unit_of_measurement ?? localize('ui.portions');
+    const main_unit =
+      this._config.unit_of_measurement ?? localize("ui.portions");
     const mainStr = `${amount} ${main_unit}`;
 
     let alternateStr;
     if (alternate_unit) {
-      const { approximate, conversion_factor, unit_of_measurement: alt_unit } = alternate_unit;
+      const {
+        approximate,
+        conversion_factor,
+        unit_of_measurement: alt_unit,
+      } = alternate_unit;
       const convertedAmount = amount * conversion_factor;
-      alternateStr = `${approximate ? '~' : ''}${convertedAmount} ${alt_unit}`;
+      alternateStr = `${approximate ? "~" : ""}${convertedAmount} ${alt_unit}`;
     }
 
-    return [mainStr, alternateStr].filter(Boolean).join(' ⸱ ');
+    return [mainStr, alternateStr].filter(Boolean).join(" ⸱ ");
   }
 
   renderScheduleRow(entry: ScheduleEntry) {
@@ -230,76 +235,86 @@ class DispenserScheduleCard extends LitElement {
     const { add, ...actions } = this._config.actions || {};
     const hasOverflowActions = Object.keys(actions).length > 0;
 
-    const display: DisplayConfigEntry = this._config.display?.[displayStatus] ?? {};
+    const display: DisplayConfigEntry =
+      this._config.display?.[displayStatus] ?? {};
 
     const label = display.label ?? displayStatus;
     const statusText = localize(`status.${label}`) ?? label;
     const secondaryText = this.renderAmount(amount);
 
     return html`<hui-generic-entity-row
-        .hass=${this._hass}
-        .config=${{
+      .hass=${this._hass}
+      .config=${{
         entity: this._config.entity,
         name: `${hour}:${minute.toString().padStart(2, "0")}`,
         icon: display?.icon ?? DefaultDisplayConfig[displayStatus]?.icon,
       }}
-        .catchInteraction=${false}
-        .secondaryText="${this._isEditing ? secondaryText : statusText}"
-        class="timeline ${displayStatus}"
-        style=${styleMap({
-        '--paper-item-icon-color': display?.color ?? DefaultDisplayConfig[displayStatus]?.color
+      .catchInteraction=${false}
+      .secondaryText="${this._isEditing ? secondaryText : statusText}"
+      class="timeline ${displayStatus}"
+      style=${styleMap({
+        "--paper-item-icon-color":
+          display?.color ?? DefaultDisplayConfig[displayStatus]?.color,
       })}
-      >
-        <div>
-          ${!this._isEditing
-        ? html`<span>${secondaryText}</span>`
-        : nothing
-      }
+    >
+      <div>
+        ${!this._isEditing ? html`<span>${secondaryText}</span>` : nothing}
         ${this._isEditing
-        ? html`<ha-button-menu class="edit-menu" .disabled=${!hasOverflowActions}>
-            <ha-icon-button 
-              slot="trigger"
+          ? html`<ha-button-menu
+              class="edit-menu"
               .disabled=${!hasOverflowActions}
-            > 
+            >
+              <ha-icon-button slot="trigger" .disabled=${!hasOverflowActions}>
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
-            </ha-icon-button>
-            ${!!actions?.edit ? html`<ha-list-item
-            @click=${() => this.handleEditEntry(entry)} 
-            graphic="icon"
-            class="edit-entry"
-            hasMeta
-          >
-            ${this._hass.localize('ui.common.edit')}
-            <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
-          </ha-list-item>` : nothing}
-            ${!!actions?.remove ? html`<ha-list-item
-            @click=${() => this.handleRemoveEntry(entry)} 
-            graphic="icon"
-            class="remove-entry"
-            hasMeta
-          >
-            ${this._hass.localize('ui.common.delete')}
-            <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
-          </ha-list-item>` : nothing}
-             ${!!actions?.toggle ?
-            html`<ha-list-item
-             @click=${() => this.handleToggleEntry(entry)} 
-             graphic="icon"
-             class="toggle-entry"
-             hasMeta
-           >
-              ${displayStatus === 'disabled' ? this._hass.localize('ui.common.enable') : this._hass.localize('ui.common.disable')}
-             <ha-icon slot="graphic" icon="${displayStatus === 'disabled' ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off'}"></ha-icon>
-           </ha-list-item>` : nothing}
-          </ha-button-menu>`
-        : nothing
-      }
-        </div>
-      </hui-generic-entity-row>`;
+              </ha-icon-button>
+              ${!!actions?.edit
+                ? html`<ha-list-item
+                    @click=${() => this.handleEditEntry(entry)}
+                    graphic="icon"
+                    class="edit-entry"
+                    hasMeta
+                  >
+                    ${this._hass.localize("ui.common.edit")}
+                    <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
+                  </ha-list-item>`
+                : nothing}
+              ${!!actions?.remove
+                ? html`<ha-list-item
+                    @click=${() => this.handleRemoveEntry(entry)}
+                    graphic="icon"
+                    class="remove-entry"
+                    hasMeta
+                  >
+                    ${this._hass.localize("ui.common.delete")}
+                    <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
+                  </ha-list-item>`
+                : nothing}
+              ${!!actions?.toggle
+                ? html`<ha-list-item
+                    @click=${() => this.handleToggleEntry(entry)}
+                    graphic="icon"
+                    class="toggle-entry"
+                    hasMeta
+                  >
+                    ${displayStatus === "disabled"
+                      ? this._hass.localize("ui.common.enable")
+                      : this._hass.localize("ui.common.disable")}
+                    <ha-icon
+                      slot="graphic"
+                      icon="${displayStatus === "disabled"
+                        ? "mdi:toggle-switch"
+                        : "mdi:toggle-switch-off"}"
+                    ></ha-icon>
+                  </ha-list-item>`
+                : nothing}
+            </ha-button-menu>`
+          : nothing}
+      </div>
+    </hui-generic-entity-row>`;
   }
 
   handleTimeChanged(ev: CustomEvent, entry: EditScheduleEntry) {
-    const [hour, minute] = ev.detail.value.split(':').map(Number);
+    const [hour, minute] = ev.detail.value.split(":").map(Number);
     this._editSchedule = { ...entry, hour, minute };
   }
 
@@ -318,42 +333,42 @@ class DispenserScheduleCard extends LitElement {
     const isAddDisabled = this._schedules.length >= this._device.maxEntries;
 
     const switchElement = this._switchEntity
-      ? html`<ha-entity-toggle 
+      ? html`<ha-entity-toggle
           .hass=${this._hass}
           .stateObj=${this._switchEntity}
         ></ha-entity-toggle>`
       : nothing;
 
-    return html`
-      <hui-generic-entity-row
-        .hass=${this._hass}
-        .catchInteraction=${false}
-        .config=${{
+    return html`<hui-generic-entity-row
+      .hass=${this._hass}
+      .catchInteraction=${false}
+      .config=${{
         entity: this._switchEntity ? this._config.switch : this._config.entity,
-        name: localize('ui.name'),
-        icon: this._switchEntity ? this._switchEntity.attributes.icon : 'mdi:calendar-badge',
+        name: localize("ui.name"),
+        icon: this._switchEntity
+          ? this._switchEntity.attributes.icon
+          : "mdi:calendar-badge",
         state_color: true,
       }}
-        class="timeline"
-      >
-        ${this._config.editable === "toggle"
-        ? html`<mwc-button 
-            @click=${this.handleEditToggle} 
-            class='edit-button'
-          >
-            ${this._hass.localize(this._isEditing ? "ui.sidebar.done" : 'ui.common.edit')}
+      class="timeline"
+    >
+      ${this._config.editable === "toggle"
+        ? html`<mwc-button @click=${this.handleEditToggle} class="edit-button">
+            ${this._hass.localize(
+              this._isEditing ? "ui.sidebar.done" : "ui.common.edit"
+            )}
           </mwc-button>`
         : nothing}
-        ${this._isEditing
-        ? html`<ha-icon-button 
+      ${this._isEditing
+        ? html`<ha-icon-button
             ?disabled=${isAddDisabled || !this._config.actions?.add}
             @click=${this.handleAddEntry}
-            class='add-entry'
+            class="add-entry"
           >
             <ha-icon icon="mdi:clock-plus"></ha-icon>
           </ha-icon-button>`
         : switchElement}
-      </hui-generic-entity-row>`;
+    </hui-generic-entity-row>`;
   }
 
   parseSchedule() {
@@ -362,14 +377,21 @@ class DispenserScheduleCard extends LitElement {
 
   isSaveDisabled(entry: EditScheduleEntry) {
     if (entry.id === null) {
-      return entry.hour < 0 || entry.hour > 23
-        || entry.minute < 0 || entry.minute > 59
-        || entry.amount < this._device.minAmount || entry.amount > this._device.maxAmount;
+      return (
+        entry.hour < 0 ||
+        entry.hour > 23 ||
+        entry.minute < 0 ||
+        entry.minute > 59 ||
+        entry.amount < this._device.minAmount ||
+        entry.amount > this._device.maxAmount
+      );
     } else {
-      const schedule = this._schedules.find(e => e.id === entry.id);
-      return schedule?.hour === entry.hour
-        && schedule?.minute === entry.minute
-        && schedule?.amount === entry.amount;
+      const schedule = this._schedules.find((e) => e.id === entry.id);
+      return (
+        schedule?.hour === entry.hour &&
+        schedule?.minute === entry.minute &&
+        schedule?.amount === entry.amount
+      );
     }
   }
 
@@ -382,56 +404,60 @@ class DispenserScheduleCard extends LitElement {
 
     if (this._editSchedule) {
       const entry = this._editSchedule;
-      const spacerHeight = Math.max(this._schedules.length - 1, 0) * (40 + 8) - 24;
+      const spacerHeight =
+        Math.max(this._schedules.length - 1, 0) * (40 + 8) - 24;
       return html`
         <ha-control-button-group>
-          <mwc-button
-            @click=${this.handleCancel}
-            class='cancel-button'
-          >
-            ${this._hass.localize('ui.common.cancel')}
+          <mwc-button @click=${this.handleCancel} class="cancel-button">
+            ${this._hass.localize("ui.common.cancel")}
           </mwc-button>
           <mwc-button
             @click=${this.handleSaveEntry}
-            class='save-button'
+            class="save-button"
             ?disabled=${this.isSaveDisabled(entry)}
           >
-            ${this._hass.localize('ui.common.save')}
+            ${this._hass.localize("ui.common.save")}
           </mwc-button>
         </ha-control-button-group>
-          <div class="edit-row">
-            <ha-time-input
-              .value=${`${entry.hour}:${entry.minute.toString().padStart(2, "0")}`}
-              .locale=${this._hass.locale}
-              @value-changed=${(ev: CustomEvent) => this.handleTimeChanged(ev, entry)}
-            ></ha-time-input>
-            <ha-textfield 
-              .value=${entry.amount} 
-              type="number" 
-              no-spinner 
-              label=${this._config.unit_of_measurement ?? localize('ui.amount')}
-              max=${this._device.maxAmount}
-              min=${this._device.minAmount}
-              @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
-            ></ha-textfield>
-          </div>
-          <div class='edit-row-spacer' style="flex-basis: ${spacerHeight}px"></div>
-        `
+        <div class="edit-row">
+          <ha-time-input
+            .value=${`${entry.hour}:${entry.minute.toString().padStart(2, "0")}`}
+            .locale=${this._hass.locale}
+            @value-changed=${(ev: CustomEvent) =>
+              this.handleTimeChanged(ev, entry)}
+          ></ha-time-input>
+          <ha-textfield
+            .value=${entry.amount}
+            type="number"
+            no-spinner
+            label=${this._config.unit_of_measurement ?? localize("ui.amount")}
+            max=${this._device.maxAmount}
+            min=${this._device.minAmount}
+            @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
+          ></ha-textfield>
+        </div>
+        <div
+          class="edit-row-spacer"
+          style="flex-basis: ${spacerHeight}px"
+        ></div>
+      `;
     }
 
     if (this._schedules.length === 0) {
-      const label = this._scheduleEntity?.state === 'unavailable'
-        ? this._hass.localize('state.default.unavailable')
-        : localize('ui.empty');
+      const label =
+        this._scheduleEntity?.state === "unavailable"
+          ? this._hass.localize("state.default.unavailable")
+          : localize("ui.empty");
 
       return html`<hui-generic-entity-row
-      class="empty-row"
-      .hass=${this._hass}
-      .config=${{
+        class="empty-row"
+        .hass=${this._hass}
+        .config=${{
           entity: this._config.entity,
           name: label,
-          icon: 'mdi:calendar-blank-outline',
-        }}></hui-generic-entity-row>`;
+          icon: "mdi:calendar-blank-outline",
+        }}
+      ></hui-generic-entity-row>`;
     }
     return this._schedules.map(this.renderScheduleRow, this);
   }
@@ -461,7 +487,7 @@ class DispenserScheduleCard extends LitElement {
 
   setConfig(config: DispenserScheduleCardConfig<unknown>) {
     let editable = config.editable ?? "toggle";
-    const deviceType = config.device?.type ?? 'xiaomi-smart-feeder';
+    const deviceType = config.device?.type ?? "xiaomi-smart-feeder";
 
     if (editable === "always") {
       this._isEditing = true;

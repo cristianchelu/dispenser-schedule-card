@@ -1,16 +1,16 @@
 {
-    "ui": {
-        "name": "Horari",
-        "portions": "bocins",
-        "empty": "No hi ha cap horari"
-    },
-    "status": {
-        "dispensed": "Lliurats",
-        "dispensing": "Lliurant-se",
-        "pending": "Pendent",
-        "failed": "Malreeixit",
-        "skipped": "Eludit",
-        "disabled": "Desactivat",
-        "unknown": "Desconegut"
-    }
+  "ui": {
+    "name": "Horari",
+    "portions": "bocins",
+    "empty": "No hi ha cap horari"
+  },
+  "status": {
+    "dispensed": "Lliurats",
+    "dispensing": "Lliurant-se",
+    "pending": "Pendent",
+    "failed": "Malreeixit",
+    "skipped": "Eludit",
+    "disabled": "Desactivat",
+    "unknown": "Desconegut"
+  }
 }

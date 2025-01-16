@@ -1,16 +1,16 @@
 {
-    "ui": {
-        "name": "Horaire",
-        "portions": "portions",
-        "empty": "Aucun horaire défini"
-    },
-    "status": {
-        "dispensed": "Distribuée",
-        "dispensing": "En cours de distribution",
-        "pending": "Planifée",
-        "failed": "Échec",
-        "skipped": "Non effectuée",
-        "disabled": "Désactivée",
-        "unknown": "Inconnue"
-    }
+  "ui": {
+    "name": "Horaire",
+    "portions": "portions",
+    "empty": "Aucun horaire défini"
+  },
+  "status": {
+    "dispensed": "Distribuée",
+    "dispensing": "En cours de distribution",
+    "pending": "Planifée",
+    "failed": "Échec",
+    "skipped": "Non effectuée",
+    "disabled": "Désactivée",
+    "unknown": "Inconnue"
+  }
 }

@@ -17,5 +17,5 @@
     "esModuleInterop": true,
     "allowJs": false,
     "typeRoots": ["./node_modules/@types", "./types"]
-  } 
+  }
 }

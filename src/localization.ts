@@ -1,10 +1,10 @@
 // https://github.com/custom-cards/boilerplate-card/blob/master/src/localize/localize.ts
 
-import * as en from './translations/en.json';
-import * as ro from './translations/ro.json';
-import * as it from './translations/it.json';
-import * as fr from './translations/fr.json';
-import * as tr from './translations/tr.json';
+import * as en from "./translations/en.json";
+import * as ro from "./translations/ro.json";
+import * as it from "./translations/it.json";
+import * as fr from "./translations/fr.json";
+import * as tr from "./translations/tr.json";
 
 type Translations = {
   [key: string]: {
@@ -17,29 +17,29 @@ const languages: Record<string, Translations> = {
   ro,
   it,
   fr,
-  tr
+  tr,
 };
 
-const DEFAULT_LANG = 'en';
+const DEFAULT_LANG = "en";
 
 export default function localize(
   str: string,
   search?: string,
-  replace?: string,
+  replace?: string
 ): string | undefined {
-  const [section, key] = str.toLowerCase().split('.');
+  const [section, key] = str.toLowerCase().split(".");
 
   let langStored: string | null = null;
 
   try {
-    langStored = JSON.parse(localStorage.getItem('selectedLanguage') ?? '');
+    langStored = JSON.parse(localStorage.getItem("selectedLanguage") ?? "");
   } catch (e) {
-    langStored = localStorage.getItem('selectedLanguage');
+    langStored = localStorage.getItem("selectedLanguage");
   }
 
-  const lang = (langStored || navigator.language.split('-')[0] || DEFAULT_LANG)
-    .replace(/['"]+/g, '')
-    .replace('-', '_');
+  const lang = (langStored || navigator.language.split("-")[0] || DEFAULT_LANG)
+    .replace(/['"]+/g, "")
+    .replace("-", "_");
 
   let translated;
 
