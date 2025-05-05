@@ -55,7 +55,7 @@ export const DefaultDisplayConfig: DisplayConfig = {
   },
   [EntryStatus.PENDING]: {
     icon: "mdi:clock-outline",
-    color: "var(--state-icon-color)",
+    color: "",
   },
   [EntryStatus.SKIPPED]: {
     icon: "mdi:clock-remove-outline",
