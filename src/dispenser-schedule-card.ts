@@ -242,6 +242,7 @@ class DispenserScheduleCard extends LitElement {
     const statusText = localize(`status.${label}`) ?? label;
     const secondaryText = this.renderAmount(amount);
 
+    const color = display?.color ?? DefaultDisplayConfig[displayStatus]?.color;
     return html`<hui-generic-entity-row
       .hass=${this._hass}
       .config=${{
@@ -253,8 +254,8 @@ class DispenserScheduleCard extends LitElement {
       .secondaryText="${this._isEditing ? secondaryText : statusText}"
       class="timeline ${displayStatus}"
       style=${styleMap({
-        "--paper-item-icon-color":
-          display?.color ?? DefaultDisplayConfig[displayStatus]?.color,
+        "--state-icon-color": color,
+        "--paper-item-icon-color": color,
       })}
     >
       <div>

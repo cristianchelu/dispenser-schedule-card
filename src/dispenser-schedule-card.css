@@ -59,11 +59,11 @@ hui-generic-entity-row.timeline:first-child::before {
 
 hui-generic-entity-row.timeline {
   &::before {
-    background-color: var(--paper-item-icon-color);
+    background-color: var(--state-icon-color, --paper-item-icon-color);
   }
 }
 
-hui-generic-entity-row > * {
+hui-generic-entity-row>* {
   --ha-icon-display: flex;
 }
 
@@ -86,4 +86,5 @@ hui-generic-entity-row > * {
 
 .empty-row {
   --paper-item-icon-color: var(--disabled-text-color);
+  --state-icon-color: var(--disabled-text-color);
 }
