@@ -58,7 +58,7 @@ alternate_unit:
 | --------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `entity`              | **Required** | An entity_id in the `sensor` domain containing the schedule                                                                             |
 | `switch`              | _Optional_   | An entity_id in the `switch` domain containing the on/off toggle for the schedule.                                                      |
-| `actions`             | _Optional_   | `add`, `edit`, and `remove` actions                                                                                                     |
+| `actions`             | _Optional_   | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions.                                                        |
 | `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br> Default `toggle` if `actions` are defined, otherwise `never`. |
 | `unit_of_measurement` | _Optional_   | Optional override for the unit label. <br><br> Default `portions`.                                                                      |
 | `alternate_unit`      | _Optional_   | Configuration to display a secondary unit of measurement, with a conversion factor.                                                     |
@@ -72,6 +72,7 @@ alternate_unit:
 | `add`    | _Optional_ | action_id that accepts `id`, `hour`, `minute`, `amount` `*`. |
 | `edit`   | _Optional_ | action_id that accepts `id`, `hour`, `minute`, `amount` `*`. |
 | `remove` | _Optional_ | action_id that accepts `id`.                                 |
+| `toggle` | _Optional_ | action_id that accepts `id`.                                 |
 
 `*` - `portions` is also accepted as a parameter instead of `amount`.
 
