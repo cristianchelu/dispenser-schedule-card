@@ -62,6 +62,8 @@ alternate_unit:
 | `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br> Default `toggle` if `actions` are defined, otherwise `never`. |
 | `unit_of_measurement` | _Optional_   | Optional override for the unit label. <br><br> Default `portions`.                                                                      |
 | `alternate_unit`      | _Optional_   | Configuration to display a secondary unit of measurement, with a conversion factor.                                                     |
+| `device`              | _Optional_   | See [Custom Device Parsing](#custom-device-parsing)                                                                                     |
+| `display`             | _Optional_   | See [Display customization](#display-customization)                                                                                     |
 
 #### `actions` options
 
@@ -164,6 +166,83 @@ displays to bring more clarity into events of the schedule:
 
 A customizable option using Jinja2 templates to extract the schedule from
 arbitrary entities is also under consideration.
+
+### Custom Device Parsing
+
+The card supports custom device parsing for advanced use cases.
+This allows you to define custom schedules, statuses, and display options for
+devices that do not follow the Xiaomi structure.
+
+#### `device` Options
+
+| Name             | Required     | Description                                                                                     |
+| ---------------- | ------------ | ----------------------------------------------------------------------------------------------- |
+| `type`           | **Required** | Must be set to `custom` to enable custom parsing.                                               |
+| `max_entries`    | **Required** | Maximum number of schedule entries supported by the device.                                     |
+| `min_amount`     | **Required** | Minimum amount that can be dispensed.                                                           |
+| `max_amount`     | **Required** | Maximum amount that can be dispensed.                                                           |
+| `step_amount`    | **Required** | Step size for the amount to dispense.                                                           |
+| `status_map`     | **Required** | A mapping of status codes to their corresponding states.                                        |
+| `status_pattern` | **Required** | A regex pattern to extract schedule details from the `entity` state. Named groups are required. |
+
+#### Example `status_map`
+
+The `status_map` defines how status codes from the `entity` state are
+interpreted. For example:
+
+- `0 -> dispensed`: Status code `0` maps to the `dispensed` state.
+- `1 -> failed`: Status code `1` maps to the `failed` state.
+- `2 -> My Custom State`: Status code `2` maps to a custom state called `My Custom State`.
+
+Mapping to any of the following states is automatically translated in the
+supported languages (case sensitive):
+
+- `dispensed`, `dispensing`, `pending`, `failed`, `skipped`, `disabled`, `unknown`.
+
+Custom labels can be configured via the [`display` option](#example-display-customization)
+
+#### Example `status_pattern`
+
+The `status_pattern` uses a regex to extract schedule details from the `entity` state. Named groups are required for the following fields:
+
+- `id`: The entry index.
+- `hour`: The hour of the schedule (23h format).
+- `minute`: The minute of the schedule.
+- `amount`: The amount to dispense (portions, grams, etc.).
+- `status`: The status code of the schedule entry.
+
+Example pattern:
+
+```regex
+(?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?
+```
+
+### Display Customization
+
+You can customize the display of specific statuses using the `display` option.
+Each status can have the following properties:
+
+| Name    | Required   | Description                                                                    |
+| ------- | ---------- | ------------------------------------------------------------------------------ |
+| `color` | _Optional_ | CSS color value to use for the status.                                         |
+| `icon`  | _Optional_ | Icon to display for the status. Uses Material Design Icons (e.g., `mdi:icon`). |
+| `label` | _Optional_ | The text label for the status, overriding any default translation.             |
+
+For example:
+
+```yaml
+display:
+  failed:
+    color: var(--success-color)
+    label: Task failed successfully
+  My Custom State:
+    color: hotpink
+    icon: mdi:scale
+```
+
+This will display the `failed` status in the `--success-color` of the home
+assistant theme and the label "Task failed successfully", and the custom state
+`My Custom State`, in hot pink with the `mdi:scale` icon.
 
 ## Languages
 
