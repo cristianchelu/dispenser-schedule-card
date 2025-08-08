@@ -74,7 +74,7 @@ alternate_unit:
 | `remove` | _Optional_ | action_id that accepts `id`.                                 |
 | `toggle` | _Optional_ | action_id that accepts `id`.                                 |
 
-`*` - `portions` is also accepted as a parameter instead of `amount`.
+`*` - `portions` (legacy) is also accepted as a parameter instead of `amount`.
 
 #### `alternate_unit` options
 
@@ -86,7 +86,9 @@ alternate_unit:
 
 ### Pluralization
 
-Both `unit_of_measurement` and `alternate_unit.unit_of_measurement` support pluralization based on [Unicode plural rules](https://www.unicode.org/cldr/charts/43/supplemental/language_plural_rules.html).
+Both `unit_of_measurement` and `alternate_unit.unit_of_measurement` support
+pluralization based on
+[Unicode plural rules](https://www.unicode.org/cldr/charts/43/supplemental/language_plural_rules.html).
 
 Simple string format:
 
@@ -108,6 +110,9 @@ alternate_unit:
     other: grams
 ```
 
+Language for which the pluralization rules apply is always the current logged in
+user's language setting.
+
 ## Compatibility
 
 ### Xiaomi Smart Pet Feeder (`mmgg.feeder.fi1`)
@@ -115,6 +120,24 @@ alternate_unit:
 This card was originally created for the Xiaomi Smart Pet Feeder running
 ESPHome firmware with the [esphome-miot](https://github.com/dhewg/esphome-miot/blob/main/config/mmgg.feeder.fi1.yaml)
 component and offers full support for it.
+
+The sensor entity state follows this comma-separated format:
+`[int id],[int hour],[int minute],[int amount],[int status]`
+
+Where:
+
+- `id` - entry index (0-9)
+- `hour` - dispense hour (0-23)
+- `minute` - dispense minute (0-59)
+- `amount` - portions to dispense (1-30)
+- `status` - current state: `0` (dispensed), `1` (failed), `254` (dispensing), `255` (pending)
+
+Example: `0,10,30,5,0,1,12,0,10,255` represents two entries:
+
+- Entry 0: 10:30, dispense 5 portions, already dispensed
+- Entry 1: 12:00, dispense 10 portions, pending
+
+See how this format is parsed using regex in [Custom Device Parsing](#status_pattern-details).
 
 Feeders with the original firmware are _NOT_ currently supported as much of the
 logic is not handled by the device itself.
@@ -143,60 +166,34 @@ about the structure.
 
 Please open an issue including as much detail as available.
 
-### General points
+### Custom Device Parsing
 
-For a device to be compatible with this card, `entity` state currently must
-contain a string with the the structure
-`[int id],[int hour],[int minute],[int amount],[int status]`, as a
-comma-separated list, where `id` is the entry index, `hour` is the 23h formatted
-hour at which to dispense, `minute` is the minute of the hour at which to dispense, `amount`
-is the amount to dispense (portions, grams, etc) and `status` is an
-integer with the following meaning:
+The card supports custom device parsing for advanced use cases.
+This allows you to define custom schedules, statuses, and display options for
+devices that do not follow the Xiaomi structure.
 
-- 0 - dispensed successfully for today
-- 1 - dispense failed for today (lack of food, food stuck, etc)
-- 254 - currently dispensing
-- 255 - pending for today
+#### Computed Statuses
 
-Example:
+The card automatically calculates additional status options for better clarity:
 
-`0,10,30,5,0,1,12,0,10,255`
-
-- entry 0: 10:30 dispense 5 portions, dispensed successfully.
-- entry 1: 12:00 dispense 10 portions, pending.
-
-#### Assumed statuses
-
-There are a few entry status options that the card itself calculates and
-displays to bring more clarity into events of the schedule:
-
-`skipped` status is assumed by the card when:
+**`skipped`** status is assumed when:
 
 - the schedule entry is status `pending` and,
 - the current Home Assistant time is greater than the dispense time.
 
-* Useful to know if an entry was not dispensed due to external factors
-  such as a lack of power or the schedule being disabled at the dispense time,
-  but not a failure of the device itself.
+This indicates an entry was not dispensed due to external factors
+such as a lack of power or the schedule being disabled at the dispense time,
+but not a failure of the device itself.
 
-`disabled` status is assumed by the card when:
+**`disabled`** status is assumed when:
 
 - the schedule entry is status `pending` and,
 - the dispense time is greater than current Home Assistant time and,
 - there exists a `switch` entry in the card config and,
 - the `switch` entity is off.
 
-* Useful to know that future dispense entries will **not** be executed because
-  the schedule is currently disabled.
-
-A customizable option using Jinja2 templates to extract the schedule from
-arbitrary entities is also under consideration.
-
-### Custom Device Parsing
-
-The card supports custom device parsing for advanced use cases.
-This allows you to define custom schedules, statuses, and display options for
-devices that do not follow the Xiaomi structure.
+This indicates that future dispense entries will **not** be executed because
+the schedule is currently disabled.
 
 #### `device` Options
 
@@ -210,23 +207,68 @@ devices that do not follow the Xiaomi structure.
 | `status_map`     | **Required** | A mapping of status codes to their corresponding states.                                        |
 | `status_pattern` | **Required** | A regex pattern to extract schedule details from the `entity` state. Named groups are required. |
 
-#### Example `status_map`
+#### Complete Device Configuration Example
+
+Here's a complete example of custom device parsing configuration:
+
+```yaml
+type: custom:dispenser-schedule-card
+entity: sensor.my_custom_feeder_schedule
+switch: switch.my_feeder_schedule_enable
+actions:
+  add: esphome.my_feeder_add_feed
+  edit: esphome.my_feeder_edit_feed
+  remove: esphome.my_feeder_remove_feed
+  toggle: esphome.my_feeder_toggle_feed
+device:
+  type: custom
+  max_entries: 8
+  min_amount: 1
+  max_amount: 20
+  step_amount: 1
+  status_map:
+    0: dispensed
+    1: failed
+    2: pending
+    3: dispensing
+    4: My Custom State
+  status_pattern: "(?<id>[0-9]),(?<hour>[0-9]{1,2}),(?<minute>[0-9]{1,2}),(?<amount>[0-9]{1,2}),(?<status>[0-9]),?"
+unit_of_measurement:
+  one: portion
+  other: portions
+alternate_unit:
+  unit_of_measurement: g
+  conversion_factor: 5
+  approximate: true
+display:
+  failed:
+    color: var(--error-color)
+    icon: mdi:alert-circle
+  My Custom State:
+    color: hotpink
+    icon: mdi:scale
+    label: Custom Status
+```
+
+#### `status_map` Details
 
 The `status_map` defines how status codes from the `entity` state are
-interpreted. For example:
+interpreted. In the example above:
 
-- `0 -> dispensed`: Status code `0` maps to the `dispensed` state.
-- `1 -> failed`: Status code `1` maps to the `failed` state.
-- `2 -> My Custom State`: Status code `2` maps to a custom state called `My Custom State`.
+- `0: dispensed` - Status code `0` maps to the `dispensed` state.
+- `1: failed` - Status code `1` maps to the `failed` state.
+- `2: pending` - Status code `2` maps to the `pending` state.
+- `3: dispensing` - Status code `3` maps to the `dispensing` state.
+- `4: My Custom State` - Status code `4` maps to a custom state.
 
 Mapping to any of the following states is automatically translated in the
 supported languages (case sensitive):
 
 - `dispensed`, `dispensing`, `pending`, `failed`, `skipped`, `disabled`, `unknown`.
 
-Custom labels can be configured via the [`display` option](#example-display-customization)
+Custom labels can be configured via the [`display` option](#display-customization)
 
-#### Example `status_pattern`
+#### `status_pattern` Details
 
 The `status_pattern` uses a regex to extract schedule details from the `entity` state. Named groups are required for the following fields:
 
@@ -236,11 +278,16 @@ The `status_pattern` uses a regex to extract schedule details from the `entity` 
 - `amount`: The amount to dispense (portions, grams, etc.).
 - `status`: The status code of the schedule entry.
 
-Example pattern:
+**Example using Xiaomi format:** The [Xiaomi Smart Pet Feeder](#xiaomi-smart-pet-feeder-mmggfeederfi1) uses this pattern:
 
 ```regex
 (?<id>[0-9]),(?<hour>[0-9]{1,3}),(?<minute>[0-9]{1,3}),(?<amount>[0-9]{1,3}),(?<status>[0-9]{1,3}),?
 ```
+
+Applied to the entity state `0,10,30,5,0,1,12,0,10,255`, this extracts:
+
+- Entry 0: `id=0`, `hour=10`, `minute=30`, `amount=5`, `status=0`
+- Entry 1: `id=1`, `hour=12`, `minute=0`, `amount=10`, `status=255`
 
 ### Display Customization
 
