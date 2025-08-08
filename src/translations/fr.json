@@ -1,7 +1,9 @@
 {
   "ui": {
     "name": "Horaire",
-    "portions": "portions",
+    "portions_one": "portion",
+    "portions_many": "de portions",
+    "portions_other": "portions",
     "empty": "Aucun horaire défini"
   },
   "status": {

@@ -1,7 +1,9 @@
 {
   "ui": {
     "name": "Orar",
-    "portions": "porții",
+    "portions_one": "porție",
+    "portions_few": "porții",
+    "portions_other": "de porții",
     "empty": "Niciun orar definit"
   },
   "status": {

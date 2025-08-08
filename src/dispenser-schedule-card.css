@@ -63,7 +63,7 @@ hui-generic-entity-row.timeline {
   }
 }
 
-hui-generic-entity-row>* {
+hui-generic-entity-row > * {
   --ha-icon-display: flex;
 }
 

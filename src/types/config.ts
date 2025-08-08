@@ -19,9 +19,13 @@ export interface DispenserScheduleCardConfig<T = any> {
     toggle?: string;
   };
   editable?: ConfigEditableOption;
-  unit_of_measurement?: string;
+  unit_of_measurement?:
+    | string
+    | Record<Intl.LDMLPluralRule, string | undefined>;
   alternate_unit?: {
-    unit_of_measurement: string;
+    unit_of_measurement:
+      | string
+      | Record<Intl.LDMLPluralRule, string | undefined>;
     conversion_factor: number;
     approximate?: boolean;
   };

@@ -1,7 +1,9 @@
 {
   "ui": {
     "name": "Horari",
-    "portions": "bocins",
+    "portions_one": "porció",
+    "portions_many": "de porcions",
+    "portions_other": "porcions",
     "empty": "No hi ha cap horari"
   },
   "status": {

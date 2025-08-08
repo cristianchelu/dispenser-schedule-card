@@ -60,7 +60,7 @@ alternate_unit:
 | `switch`              | _Optional_   | An entity_id in the `switch` domain containing the on/off toggle for the schedule.                                                      |
 | `actions`             | _Optional_   | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions.                                                        |
 | `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br> Default `toggle` if `actions` are defined, otherwise `never`. |
-| `unit_of_measurement` | _Optional_   | Optional override for the unit label. <br><br> Default `portions`.                                                                      |
+| `unit_of_measurement` | _Optional_   | Unit label. String or object with plural forms. See [Pluralization](#pluralization). <br><br> Default `portions`.                       |
 | `alternate_unit`      | _Optional_   | Configuration to display a secondary unit of measurement, with a conversion factor.                                                     |
 | `device`              | _Optional_   | See [Custom Device Parsing](#custom-device-parsing)                                                                                     |
 | `display`             | _Optional_   | See [Display customization](#display-customization)                                                                                     |
@@ -78,11 +78,35 @@ alternate_unit:
 
 #### `alternate_unit` options
 
-| Name                  | Required     | Description                                                                    |
-| --------------------- | ------------ | ------------------------------------------------------------------------------ |
-| `unit_of_measurement` | **Required** | Label for the secondary unit of measurement                                    |
-| `conversion_factor`   | **Required** | Number to multiply the primary amount by                                       |
-| `approximate`         | _Optional_   | Whether the alternate unit is an approximation. Adds a `~` prefix to the value |
+| Name                  | Required     | Description                                                                                    |
+| --------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
+| `unit_of_measurement` | **Required** | Secondary unit label. String or object with plural forms. See [Pluralization](#pluralization). |
+| `conversion_factor`   | **Required** | Number to multiply the primary amount by                                                       |
+| `approximate`         | _Optional_   | Whether the alternate unit is an approximation. Adds a `~` prefix to the value                 |
+
+### Pluralization
+
+Both `unit_of_measurement` and `alternate_unit.unit_of_measurement` support pluralization based on [Unicode plural rules](https://www.unicode.org/cldr/charts/43/supplemental/language_plural_rules.html).
+
+Simple string format:
+
+```yaml
+unit_of_measurement: portions
+alternate_unit:
+  unit_of_measurement: grams
+```
+
+Pluralization object format:
+
+```yaml
+unit_of_measurement:
+  one: portion
+  other: portions
+alternate_unit:
+  unit_of_measurement:
+    one: gram
+    other: grams
+```
 
 ## Compatibility
 

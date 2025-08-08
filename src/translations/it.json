@@ -1,7 +1,9 @@
 {
   "ui": {
     "name": "Orario",
-    "portions": "porzioni",
+    "portions_one": "porzione",
+    "portions_many": "di porzioni",
+    "portions_other": "porzioni",
     "empty": "Nessun orario definito"
   },
   "status": {

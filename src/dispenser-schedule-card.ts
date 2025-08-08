@@ -209,8 +209,23 @@ class DispenserScheduleCard extends LitElement {
   renderAmount(amount: number) {
     const { alternate_unit } = this._config;
 
-    const main_unit =
-      this._config.unit_of_measurement ?? localize("ui.portions");
+    let pluralCategory: Intl.LDMLPluralRule = "other";
+    try {
+      const pluralRules = new Intl.PluralRules(this._hass.locale.language, {
+        type: "cardinal",
+      });
+      pluralCategory = pluralRules.select(amount);
+    } catch (error) {}
+
+    let main_unit: string;
+    const unitConfig = this._config.unit_of_measurement;
+    if (typeof unitConfig === "object" && unitConfig !== null) {
+      main_unit = unitConfig[pluralCategory] ?? unitConfig.other ?? "portions";
+    } else if (typeof unitConfig === "string") {
+      main_unit = unitConfig;
+    } else {
+      main_unit = localize(`ui.portions_${pluralCategory}`) ?? "portions";
+    }
     const mainStr = `${amount} ${main_unit}`;
 
     let alternateStr;
@@ -221,7 +236,15 @@ class DispenserScheduleCard extends LitElement {
         unit_of_measurement: alt_unit,
       } = alternate_unit;
       const convertedAmount = amount * conversion_factor;
-      alternateStr = `${approximate ? "~" : ""}${convertedAmount} ${alt_unit}`;
+
+      let alt_unit_display: string;
+      if (typeof alt_unit === "object" && alt_unit !== null) {
+        alt_unit_display = alt_unit[pluralCategory] ?? alt_unit.other ?? "";
+      } else {
+        alt_unit_display = alt_unit;
+      }
+
+      alternateStr = `${approximate ? "~" : ""}${convertedAmount} ${alt_unit_display}`;
     }
 
     return [mainStr, alternateStr].filter(Boolean).join(" ⸱ ");

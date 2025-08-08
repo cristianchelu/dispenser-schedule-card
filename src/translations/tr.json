@@ -1,7 +1,8 @@
 {
   "ui": {
     "name": "Program",
-    "portions": "porsiyon",
+    "portions_one": "porsiyon",
+    "portions_other": "porsiyon",
     "empty": "program tanımlanmamış"
   },
   "status": {
