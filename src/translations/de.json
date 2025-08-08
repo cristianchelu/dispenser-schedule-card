@@ -1,0 +1,17 @@
+{
+  "ui": {
+    "name": "Zeitplan",
+    "portions_one": "Portion",
+    "portions_other": "Portionen",
+    "empty": "Kein Zeitplan definiert"
+  },
+  "status": {
+    "dispensed": "Ausgegeben",
+    "dispensing": "Wird ausgegeben",
+    "pending": "Geplant",
+    "failed": "Fehlgeschlagen",
+    "skipped": "Übersprungen",
+    "disabled": "Deaktiviert",
+    "unknown": "Unbekannt"
+  }
+}

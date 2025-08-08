@@ -1,9 +1,12 @@
 // https://github.com/custom-cards/boilerplate-card/blob/master/src/localize/localize.ts
 
+import * as ca from "./translations/ca.json";
+import * as de from "./translations/de.json";
 import * as en from "./translations/en.json";
-import * as ro from "./translations/ro.json";
-import * as it from "./translations/it.json";
+import * as es from "./translations/es.json";
 import * as fr from "./translations/fr.json";
+import * as it from "./translations/it.json";
+import * as ro from "./translations/ro.json";
 import * as tr from "./translations/tr.json";
 
 type Translations = {
@@ -13,10 +16,13 @@ type Translations = {
 };
 
 const languages: Record<string, Translations> = {
+  ca,
+  de,
   en,
-  ro,
-  it,
+  es,
   fr,
+  it,
+  ro,
   tr,
 };
 

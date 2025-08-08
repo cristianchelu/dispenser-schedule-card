@@ -1,0 +1,17 @@
+{
+  "ui": {
+    "name": "Horario",
+    "portions_one": "porción",
+    "portions_other": "porciones",
+    "empty": "Ningún horario definido"
+  },
+  "status": {
+    "dispensed": "Dispensado",
+    "dispensing": "Dispensando",
+    "pending": "Programado",
+    "failed": "Fallido",
+    "skipped": "Omitido",
+    "disabled": "Desactivado",
+    "unknown": "Desconocido"
+  }
+}

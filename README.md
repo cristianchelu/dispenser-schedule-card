@@ -274,7 +274,9 @@ assistant theme and the label "Task failed successfully", and the custom state
 Translations are currently available for the following languages:
 
 - Català (Catalan)
+- Deutsch (German)
 - English
+- Español (Spanish)
 - Français (French)
 - Italiano (Italian)
 - Română (Romanian)
