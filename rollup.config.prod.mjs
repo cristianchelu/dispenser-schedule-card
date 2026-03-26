@@ -4,13 +4,25 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 import css from "rollup-plugin-import-css";
 import json from "@rollup/plugin-json";
 
-export default {
-  input: "src/dispenser-schedule-card.ts",
-  output: [
-    {
-      file: "dist/dispenser-schedule-card.min.js",
-      plugins: [terser()],
-    },
-  ],
-  plugins: [nodeResolve({}), typescript(), css(), json()],
-};
+export default [
+  {
+    input: "src/dispenser-schedule-card.ts",
+    output: [
+      {
+        file: "dist/dispenser-schedule-card.min.js",
+        plugins: [terser()],
+      },
+    ],
+    plugins: [nodeResolve({}), typescript(), css(), json()],
+  },
+  {
+    input: "src/petkit-schedule-matrix-card.ts",
+    output: [
+      {
+        file: "dist/petkit-schedule-matrix-card.min.js",
+        plugins: [terser()],
+      },
+    ],
+    plugins: [nodeResolve({}), typescript(), css(), json()],
+  },
+];

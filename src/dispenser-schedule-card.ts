@@ -96,7 +96,11 @@ class DispenserScheduleCard extends LitElement {
   }
 
   handleEditEntry(entry: ScheduleEntry) {
-    this._editSchedule = entry;
+    this._editSchedule = {
+      ...entry,
+      amount1: entry.amount1,
+      amount2: entry.amount2,
+    };
   }
 
   handleAddEntry() {
@@ -104,12 +108,18 @@ class DispenserScheduleCard extends LitElement {
       id: null,
       hour: 0,
       minute: 0,
-      amount: this._device.minAmount,
+      amount: this._device.minAmount * (this._device.isDualHopper ? 2 : 1),
+      amount1: this._device.isDualHopper ? this._device.minAmount : undefined,
+      amount2: this._device.isDualHopper ? this._device.minAmount : undefined,
     };
   }
 
   handleRemoveEntry(entry: EditScheduleEntry) {
     if (entry.id === null || !this._config.actions?.remove) {
+      return;
+    }
+    // Delegate to device-specific handler (e.g. PetKit bulk-replace)
+    if (this._device.handleRemove(this._hass, this._schedules, entry, this._scheduleEntity)) {
       return;
     }
     const [domain, action] = this._config.actions.remove.split(".");
@@ -135,6 +145,12 @@ class DispenserScheduleCard extends LitElement {
   handleSaveEntry() {
     const entry = this._editSchedule;
     if (!entry) {
+      return;
+    }
+
+    // Delegate to device-specific handler (e.g. PetKit bulk-replace)
+    if (this._device.handleSave(this._hass, this._schedules, entry, this._scheduleEntity)) {
+      this._editSchedule = null;
       return;
     }
 
@@ -206,8 +222,9 @@ class DispenserScheduleCard extends LitElement {
     return status;
   }
 
-  renderAmount(amount: number) {
+  renderAmount(entry: ScheduleEntry | EditScheduleEntry) {
     const { alternate_unit } = this._config;
+    const amount = entry.amount;
 
     let pluralCategory: Intl.LDMLPluralRule = "other";
     try {
@@ -226,7 +243,14 @@ class DispenserScheduleCard extends LitElement {
     } else {
       main_unit = localize(`ui.portions_${pluralCategory}`) ?? "portions";
     }
-    const mainStr = `${amount} ${main_unit}`;
+
+    // Dual-hopper: show per-hopper breakdown
+    let mainStr: string;
+    if (this._device.isDualHopper && entry.amount1 != null && entry.amount2 != null) {
+      mainStr = `H1: ${entry.amount1} | H2: ${entry.amount2} ${main_unit}`;
+    } else {
+      mainStr = `${amount} ${main_unit}`;
+    }
 
     let alternateStr;
     if (alternate_unit) {
@@ -263,7 +287,7 @@ class DispenserScheduleCard extends LitElement {
 
     const label = display.label ?? displayStatus;
     const statusText = localize(`status.${label}`) ?? label;
-    const secondaryText = this.renderAmount(amount);
+    const secondaryText = this.renderAmount(entry);
 
     const color =
       display?.color || DefaultDisplayConfig[displayStatus]?.color || undefined;
@@ -346,6 +370,18 @@ class DispenserScheduleCard extends LitElement {
   handleAmountChanged(ev: InputEvent, entry: EditScheduleEntry) {
     const amount = parseInt((ev.target as HTMLInputElement).value);
     this._editSchedule = { ...entry, amount };
+  }
+
+  handleAmount1Changed(ev: InputEvent, entry: EditScheduleEntry) {
+    const amount1 = parseInt((ev.target as HTMLInputElement).value);
+    const amount2 = entry.amount2 ?? 0;
+    this._editSchedule = { ...entry, amount1, amount: amount1 + amount2 };
+  }
+
+  handleAmount2Changed(ev: InputEvent, entry: EditScheduleEntry) {
+    const amount2 = parseInt((ev.target as HTMLInputElement).value);
+    const amount1 = entry.amount1 ?? 0;
+    this._editSchedule = { ...entry, amount2, amount: amount1 + amount2 };
   }
 
   renderSwitch() {
@@ -451,15 +487,34 @@ class DispenserScheduleCard extends LitElement {
             @value-changed=${(ev: CustomEvent) =>
               this.handleTimeChanged(ev, entry)}
           ></ha-time-input>
-          <ha-textfield
-            .value=${entry.amount}
-            type="number"
-            no-spinner
-            label=${this._config.unit_of_measurement ?? localize("ui.amount")}
-            max=${this._device.maxAmount}
-            min=${this._device.minAmount}
-            @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
-          ></ha-textfield>
+          ${this._device.isDualHopper
+            ? html`<ha-textfield
+                .value=${entry.amount1 ?? Math.ceil(entry.amount / 2)}
+                type="number"
+                no-spinner
+                label="Hopper 1"
+                max=${this._device.maxAmount}
+                min=${this._device.minAmount}
+                @change=${(ev: InputEvent) => this.handleAmount1Changed(ev, entry)}
+              ></ha-textfield>
+              <ha-textfield
+                .value=${entry.amount2 ?? Math.floor(entry.amount / 2)}
+                type="number"
+                no-spinner
+                label="Hopper 2"
+                max=${this._device.maxAmount}
+                min=${this._device.minAmount}
+                @change=${(ev: InputEvent) => this.handleAmount2Changed(ev, entry)}
+              ></ha-textfield>`
+            : html`<ha-textfield
+                .value=${entry.amount}
+                type="number"
+                no-spinner
+                label=${this._config.unit_of_measurement ?? localize("ui.amount")}
+                max=${this._device.maxAmount}
+                min=${this._device.minAmount}
+                @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
+              ></ha-textfield>`}
         </div>
         <div
           class="edit-row-spacer"

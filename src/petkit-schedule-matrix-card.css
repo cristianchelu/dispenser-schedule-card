@@ -1,0 +1,258 @@
+/* petkit-schedule-matrix-card styles */
+
+:host {
+  --tab-active-color: var(--primary-color, #03a9f4);
+  --tab-inactive-color: var(--disabled-text-color, #999);
+  --row-hover: var(--secondary-background-color, #f5f5f5);
+  --status-dispensed: var(--state-active-color, #4caf50);
+  --status-failed: var(--error-color, #f44336);
+  --status-pending: var(--primary-text-color, #333);
+  --status-skipped: var(--state-inactive-color, #9e9e9e);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px;
+  font-size: 1.1em;
+  font-weight: 500;
+}
+
+.card-header .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px 8px;
+  overflow-x: auto;
+}
+
+.tab-bar button {
+  flex: 1;
+  min-width: 40px;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 8px;
+  background: var(--card-background-color, #fff);
+  color: var(--tab-inactive-color);
+  font-size: 0.8em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--divider-color, #e0e0e0);
+}
+
+.tab-bar button.active {
+  background: var(--tab-active-color);
+  color: #fff;
+  border-color: var(--tab-active-color);
+}
+
+.tab-bar button:hover:not(.active) {
+  background: var(--row-hover);
+}
+
+.schedule-list {
+  padding: 0 8px 8px;
+}
+
+.schedule-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  gap: 12px;
+}
+
+.schedule-row:hover {
+  background: var(--row-hover);
+}
+
+.schedule-row .time {
+  font-weight: 600;
+  font-size: 1em;
+  min-width: 50px;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-row .amounts {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  font-size: 0.9em;
+}
+
+.schedule-row .amounts .hopper {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--secondary-background-color, #f0f0f0);
+  font-size: 0.85em;
+}
+
+.schedule-row .amounts .hopper.h1 {
+  color: var(--info-color, #2196f3);
+}
+
+.schedule-row .amounts .hopper.h2 {
+  color: var(--warning-color, #ff9800);
+}
+
+.schedule-row .status-icon {
+  display: flex;
+  align-items: center;
+}
+
+.schedule-row .status-icon ha-icon {
+  --mdc-icon-size: 18px;
+}
+
+.schedule-row .status-icon.dispensed { color: var(--status-dispensed); }
+.schedule-row .status-icon.failed { color: var(--status-failed); }
+.schedule-row .status-icon.pending { color: var(--status-pending); }
+.schedule-row .status-icon.skipped { color: var(--status-skipped); }
+
+.schedule-row .actions {
+  display: flex;
+  gap: 2px;
+}
+
+.schedule-row .actions ha-icon-button {
+  --mdc-icon-button-size: 32px;
+  --mdc-icon-size: 18px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+/* Edit form */
+.edit-form {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--secondary-background-color, #f5f5f5);
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.edit-form .edit-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.edit-form ha-textfield {
+  flex: 1;
+}
+
+.edit-form .edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Bottom toolbar */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.toolbar mwc-button {
+  --mdc-typography-button-font-size: 0.85em;
+}
+
+/* Apply dialog overlay */
+.apply-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.apply-dialog {
+  background: var(--card-background-color, #fff);
+  border-radius: 16px;
+  padding: 20px;
+  min-width: 280px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.apply-dialog h3 {
+  margin: 0 0 16px;
+  font-size: 1.1em;
+}
+
+.apply-dialog .day-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.apply-dialog .day-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.apply-dialog .day-checkboxes label.current {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.apply-dialog .dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.suspended-badge {
+  font-size: 0.75em;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--error-color, #f44336);
+  color: #fff;
+}
+
+.draft-badge {
+  font-size: 0.75em;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--warning-color, #ff9800);
+  color: #fff;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
