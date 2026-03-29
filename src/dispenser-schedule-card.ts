@@ -455,7 +455,11 @@ class DispenserScheduleCard extends LitElement {
             .value=${entry.amount}
             type="number"
             no-spinner
-            label=${this._config.unit_of_measurement ?? localize("ui.amount")}
+            label=${typeof this._config.unit_of_measurement === "object" &&
+            this._config.unit_of_measurement !== null
+              ? (this._config.unit_of_measurement.other ??
+                localize("ui.amount"))
+              : (this._config.unit_of_measurement ?? localize("ui.amount"))}
             max=${this._device.maxAmount}
             min=${this._device.minAmount}
             @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
