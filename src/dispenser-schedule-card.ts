@@ -378,11 +378,15 @@ class DispenserScheduleCard extends LitElement {
       class="timeline"
     >
       ${this._config.editable === "toggle"
-        ? html`<mwc-button @click=${this.handleEditToggle} class="edit-button">
+        ? html`<ha-button
+            @click=${this.handleEditToggle}
+            class="edit-button"
+            appearance="plain"
+          >
             ${this._hass.localize(
               this._isEditing ? "ui.sidebar.done" : "ui.common.edit"
             )}
-          </mwc-button>`
+          </ha-button>`
         : nothing}
       ${this._isEditing
         ? html`<ha-icon-button
@@ -433,16 +437,16 @@ class DispenserScheduleCard extends LitElement {
         Math.max(this._schedules.length - 1, 0) * (40 + 8) - 24;
       return html`
         <ha-control-button-group>
-          <mwc-button @click=${this.handleCancel} class="cancel-button">
+          <ha-button @click=${this.handleCancel} class="cancel-button">
             ${this._hass.localize("ui.common.cancel")}
-          </mwc-button>
-          <mwc-button
+          </ha-button>
+          <ha-button
             @click=${this.handleSaveEntry}
             class="save-button"
             ?disabled=${this.isSaveDisabled(entry)}
           >
             ${this._hass.localize("ui.common.save")}
-          </mwc-button>
+          </ha-button>
         </ha-control-button-group>
         <div class="edit-row">
           <ha-time-input
