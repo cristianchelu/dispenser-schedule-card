@@ -3,7 +3,14 @@
     "name": "Program",
     "portions_one": "porsiyon",
     "portions_other": "porsiyon",
-    "empty": "program tanımlanmamış"
+    "empty": "program tanımlanmamış",
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "enable": "Etkinleştir",
+    "disable": "Devre Dışı Bırak",
+    "done": "Bitti",
+    "cancel": "İptal",
+    "save": "Kaydet"
   },
   "status": {
     "dispensed": "Verildi",

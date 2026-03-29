@@ -309,21 +309,21 @@ class DispenserScheduleCard extends LitElement {
               </ha-icon-button>
               ${!!actions?.edit
                 ? html`<ha-dropdown-item value="edit" class="edit-entry">
-                    ${this._hass.localize("ui.common.edit")}
+                    ${localize("ui.edit")}
                     <ha-icon slot="icon" icon="mdi:pencil"></ha-icon>
                   </ha-dropdown-item>`
                 : nothing}
               ${!!actions?.remove
                 ? html`<ha-dropdown-item value="remove" class="remove-entry">
-                    ${this._hass.localize("ui.common.delete")}
+                    ${localize("ui.delete")}
                     <ha-icon slot="icon" icon="mdi:delete"></ha-icon>
                   </ha-dropdown-item>`
                 : nothing}
               ${!!actions?.toggle
                 ? html`<ha-dropdown-item value="toggle" class="toggle-entry">
                     ${displayStatus === "disabled"
-                      ? this._hass.localize("ui.common.enable")
-                      : this._hass.localize("ui.common.disable")}
+                      ? localize("ui.enable")
+                      : localize("ui.disable")}
                     <ha-icon
                       slot="icon"
                       icon="${displayStatus === "disabled"
@@ -383,9 +383,7 @@ class DispenserScheduleCard extends LitElement {
             class="edit-button"
             appearance="plain"
           >
-            ${this._hass.localize(
-              this._isEditing ? "ui.sidebar.done" : "ui.common.edit"
-            )}
+            ${this._isEditing ? localize("ui.done") : localize("ui.edit")}
           </ha-button>`
         : nothing}
       ${this._isEditing
@@ -438,14 +436,14 @@ class DispenserScheduleCard extends LitElement {
       return html`
         <ha-control-button-group>
           <ha-button @click=${this.handleCancel} class="cancel-button">
-            ${this._hass.localize("ui.common.cancel")}
+            ${localize("ui.cancel")}
           </ha-button>
           <ha-button
             @click=${this.handleSaveEntry}
             class="save-button"
             ?disabled=${this.isSaveDisabled(entry)}
           >
-            ${this._hass.localize("ui.common.save")}
+            ${localize("ui.save")}
           </ha-button>
         </ha-control-button-group>
         <div class="edit-row">

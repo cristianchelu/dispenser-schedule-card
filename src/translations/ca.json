@@ -4,7 +4,14 @@
     "portions_one": "porció",
     "portions_many": "de porcions",
     "portions_other": "porcions",
-    "empty": "No hi ha cap horari"
+    "empty": "No hi ha cap horari",
+    "edit": "Edita",
+    "delete": "Elimina",
+    "enable": "Activa",
+    "disable": "Desactiva",
+    "done": "Fet",
+    "cancel": "Cancel·la",
+    "save": "Guarda"
   },
   "status": {
     "dispensed": "Lliurats",

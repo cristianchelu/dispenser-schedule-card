@@ -3,7 +3,14 @@
     "name": "Schedule",
     "portions_one": "portion",
     "portions_other": "portions",
-    "empty": "No schedule defined"
+    "empty": "No schedule defined",
+    "edit": "Edit",
+    "delete": "Delete",
+    "enable": "Enable",
+    "disable": "Disable",
+    "done": "Done",
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "status": {
     "dispensed": "Dispensed",

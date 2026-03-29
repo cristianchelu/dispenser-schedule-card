@@ -4,7 +4,14 @@
     "portions_one": "porție",
     "portions_few": "porții",
     "portions_other": "de porții",
-    "empty": "Niciun orar definit"
+    "empty": "Niciun orar definit",
+    "edit": "Editare",
+    "delete": "Ștergere",
+    "enable": "Activare",
+    "disable": "Dezactivare",
+    "done": "Gata",
+    "cancel": "Anulare",
+    "save": "Salvare"
   },
   "status": {
     "dispensed": "Dozat",

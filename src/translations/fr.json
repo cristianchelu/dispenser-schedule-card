@@ -4,7 +4,14 @@
     "portions_one": "portion",
     "portions_many": "de portions",
     "portions_other": "portions",
-    "empty": "Aucun horaire défini"
+    "empty": "Aucun horaire défini",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "done": "Terminé",
+    "cancel": "Annuler",
+    "save": "Enregistrer"
   },
   "status": {
     "dispensed": "Distribuée",

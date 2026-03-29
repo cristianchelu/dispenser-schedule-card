@@ -3,7 +3,14 @@
     "name": "Horario",
     "portions_one": "porción",
     "portions_other": "porciones",
-    "empty": "Ningún horario definido"
+    "empty": "Ningún horario definido",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "enable": "Activar",
+    "disable": "Desactivar",
+    "done": "Listo",
+    "cancel": "Cancelar",
+    "save": "Guardar"
   },
   "status": {
     "dispensed": "Dispensado",

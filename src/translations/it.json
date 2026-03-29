@@ -4,7 +4,14 @@
     "portions_one": "porzione",
     "portions_many": "di porzioni",
     "portions_other": "porzioni",
-    "empty": "Nessun orario definito"
+    "empty": "Nessun orario definito",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "enable": "Attiva",
+    "disable": "Disattiva",
+    "done": "Fatto",
+    "cancel": "Annulla",
+    "save": "Salva"
   },
   "status": {
     "dispensed": "Distribuito",

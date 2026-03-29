@@ -3,7 +3,14 @@
     "name": "Zeitplan",
     "portions_one": "Portion",
     "portions_other": "Portionen",
-    "empty": "Kein Zeitplan definiert"
+    "empty": "Kein Zeitplan definiert",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "done": "Fertig",
+    "cancel": "Abbrechen",
+    "save": "Speichern"
   },
   "status": {
     "dispensed": "Ausgegeben",
