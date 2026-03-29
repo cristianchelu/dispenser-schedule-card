@@ -128,6 +128,20 @@ class DispenserScheduleCard extends LitElement {
     });
   }
 
+  _handleRowMenuAction(entry: ScheduleEntry, ev: CustomEvent) {
+    switch (ev.detail?.item?.value) {
+      case "edit":
+        this.handleEditEntry(entry);
+        break;
+      case "remove":
+        this.handleRemoveEntry(entry);
+        break;
+      case "toggle":
+        this.handleToggleEntry(entry);
+        break;
+    }
+  }
+
   handleCancel() {
     this._editSchedule = null;
   }
@@ -284,55 +298,41 @@ class DispenserScheduleCard extends LitElement {
     >
       <div>
         ${!this._isEditing ? html`<span>${secondaryText}</span>` : nothing}
-        ${this._isEditing
-          ? html`<ha-button-menu
+        ${this._isEditing && hasOverflowActions
+          ? html`<ha-dropdown
               class="edit-menu"
-              .disabled=${!hasOverflowActions}
+              @wa-select=${(ev: CustomEvent) =>
+                this._handleRowMenuAction(entry, ev)}
             >
-              <ha-icon-button slot="trigger" .disabled=${!hasOverflowActions}>
+              <ha-icon-button slot="trigger">
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
               </ha-icon-button>
               ${!!actions?.edit
-                ? html`<ha-list-item
-                    @click=${() => this.handleEditEntry(entry)}
-                    graphic="icon"
-                    class="edit-entry"
-                    hasMeta
-                  >
+                ? html`<ha-dropdown-item value="edit" class="edit-entry">
                     ${this._hass.localize("ui.common.edit")}
-                    <ha-icon slot="graphic" icon="mdi:pencil"></ha-icon>
-                  </ha-list-item>`
+                    <ha-icon slot="icon" icon="mdi:pencil"></ha-icon>
+                  </ha-dropdown-item>`
                 : nothing}
               ${!!actions?.remove
-                ? html`<ha-list-item
-                    @click=${() => this.handleRemoveEntry(entry)}
-                    graphic="icon"
-                    class="remove-entry"
-                    hasMeta
-                  >
+                ? html`<ha-dropdown-item value="remove" class="remove-entry">
                     ${this._hass.localize("ui.common.delete")}
-                    <ha-icon slot="graphic" icon="mdi:delete"></ha-icon>
-                  </ha-list-item>`
+                    <ha-icon slot="icon" icon="mdi:delete"></ha-icon>
+                  </ha-dropdown-item>`
                 : nothing}
               ${!!actions?.toggle
-                ? html`<ha-list-item
-                    @click=${() => this.handleToggleEntry(entry)}
-                    graphic="icon"
-                    class="toggle-entry"
-                    hasMeta
-                  >
+                ? html`<ha-dropdown-item value="toggle" class="toggle-entry">
                     ${displayStatus === "disabled"
                       ? this._hass.localize("ui.common.enable")
                       : this._hass.localize("ui.common.disable")}
                     <ha-icon
-                      slot="graphic"
+                      slot="icon"
                       icon="${displayStatus === "disabled"
                         ? "mdi:toggle-switch"
                         : "mdi:toggle-switch-off"}"
                     ></ha-icon>
-                  </ha-list-item>`
+                  </ha-dropdown-item>`
                 : nothing}
-            </ha-button-menu>`
+            </ha-dropdown>`
           : nothing}
       </div>
     </hui-generic-entity-row>`;
@@ -426,7 +426,7 @@ class DispenserScheduleCard extends LitElement {
 
   renderContent() {
     if (this._config.entity && !this._scheduleEntity) {
-      html`<ha-alert alert-type="warning">
+      return html`<ha-alert alert-type="warning">
         ${createEntityNotFoundWarning(this._hass, this._config.entity)}
       </ha-alert>`;
     }
