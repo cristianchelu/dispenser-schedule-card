@@ -17,38 +17,23 @@ import {
   DisplayConfigEntry,
 } from "./types/config";
 
+import type { HomeAssistant } from "./types/ha";
 import localize from "./localization";
-import Devices from "./devices";
+import { createDevice } from "./devices";
 
 import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 
-const createEntityNotFoundWarning = (hass: any, entityId?: string) =>
+const createEntityNotFoundWarning = (hass: HomeAssistant, entityId?: string) =>
   hass.config.state !== STATE_NOT_RUNNING
     ? hass.localize("ui.panel.lovelace.warning.entity_not_found", {
         entity: entityId || "[empty]",
       })
     : hass.localize("ui.panel.lovelace.warning.starting");
 
-function getFirstGap(arr: Array<number>) {
-  arr.sort((a, b) => a - b);
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] !== i) {
-      return i;
-    }
-  }
-  return arr.length;
-}
-
-function getNextId(arr: Array<number>) {
-  return !arr.length ? 0 : Math.min(getFirstGap(arr), Math.max(...arr) + 1);
-}
-
 @customElement("dispenser-schedule-card")
 class DispenserScheduleCard extends LitElement {
   declare _config: DispenserScheduleCardConfig;
-  declare _hass: any;
-  declare _scheduleEntity: any;
-  declare _switchEntity: any;
+  declare _hass: HomeAssistant;
   declare _isEditing: boolean;
   declare _isReady: boolean;
   declare _schedules: Array<ScheduleEntry>;
@@ -65,8 +50,6 @@ class DispenserScheduleCard extends LitElement {
   static get properties() {
     return {
       _config: { state: true },
-      _scheduleEntity: { state: true },
-      _switchEntity: { state: true },
       _isEditing: { state: true },
       _isReady: { state: true },
       _schedules: { state: true },
@@ -78,21 +61,16 @@ class DispenserScheduleCard extends LitElement {
     return unsafeCSS(DispenserScheduleCardStyles);
   }
 
-  set hass(hass: any) {
+  set hass(hass: HomeAssistant) {
     this._hass = hass;
-    this._scheduleEntity = hass.states[this._config.entity ?? ""];
-    this._switchEntity = hass.states[this._config.switch ?? ""];
-    if (this._scheduleEntity) {
-      this._schedules = this.parseSchedule();
+    if (this._device) {
+      this._device.updateHass(hass);
+      this._schedules = this._device.getSchedule();
     }
   }
 
   handleEditToggle() {
-    if (this._isEditing) {
-      this._isEditing = false;
-    } else {
-      this._isEditing = true;
-    }
+    this._isEditing = !this._isEditing;
   }
 
   handleEditEntry(entry: ScheduleEntry) {
@@ -100,32 +78,15 @@ class DispenserScheduleCard extends LitElement {
   }
 
   handleAddEntry() {
-    this._editSchedule = {
-      id: null,
-      hour: 0,
-      minute: 0,
-      amount: this._device.minAmount,
-    };
+    this._editSchedule = this._device.getNewEntryDefaults();
   }
 
-  handleRemoveEntry(entry: EditScheduleEntry) {
-    if (entry.id === null || !this._config.actions?.remove) {
-      return;
-    }
-    const [domain, action] = this._config.actions.remove.split(".");
-    this._hass.callService(domain, action, {
-      id: entry.id,
-    });
+  handleRemoveEntry(entry: ScheduleEntry) {
+    this._device.removeEntry(entry);
   }
 
-  handleToggleEntry(entry: EditScheduleEntry) {
-    if (entry.id === null || !this._config.actions?.toggle) {
-      return;
-    }
-    const [domain, action] = this._config.actions.toggle.split(".");
-    this._hass.callService(domain, action, {
-      id: entry.id,
-    });
+  handleToggleEntry(entry: ScheduleEntry) {
+    this._device.toggleEntry(entry);
   }
 
   _handleRowMenuAction(entry: ScheduleEntry, ev: CustomEvent) {
@@ -146,78 +107,26 @@ class DispenserScheduleCard extends LitElement {
     this._editSchedule = null;
   }
 
-  handleSaveEntry() {
+  async handleSaveEntry() {
     const entry = this._editSchedule;
-    if (!entry) {
-      return;
-    }
+    if (!entry) return;
 
-    const getAmountKey = (domain: string, action: string) => {
-      // Backwards compatibility for `portions` field
-      return (
-        Object.keys(this._hass.services[domain][action].fields).find((k) =>
-          ["amount", "portions"].includes(k)
-        ) ?? "amount"
-      );
-    };
-
-    if (entry.id === null) {
-      if (!this._config.actions?.add) {
-        return;
-      }
-      const id = getNextId(this._schedules.map((e) => e.id));
-      const [domain, action] = this._config.actions.add.split(".");
-      const amountKey = getAmountKey(domain, action);
-      this._hass.callService(domain, action, {
-        id,
-        hour: entry.hour,
-        minute: entry.minute,
-        [amountKey]: entry.amount,
-      });
+    if (entry.key === null) {
+      await this._device.addEntry(entry);
     } else {
-      if (!this._config.actions?.edit) {
-        return;
-      }
-      const [domain, action] = this._config.actions.edit.split(".");
-      const amountKey = getAmountKey(domain, action);
-      this._hass.callService(domain, action, {
-        id: entry.id,
-        hour: entry.hour,
-        minute: entry.minute,
-        [amountKey]: entry.amount,
-      });
+      await this._device.editEntry(entry);
     }
     this._editSchedule = null;
   }
 
+  /**
+   * Hack to force lazy-load ha-time-input, which isn't available until a
+   * HA entity row that uses it is created.
+   */
   async loadComponents() {
-    // `ha-time-input` is not available until an entity that uses it is lazily loaded
-    // so we need to wait for it to be available before we can enable editing.
     const helpers = await window.loadCardHelpers();
-
     helpers.createRowElement({ type: "time-entity" });
     this._isReady = true;
-  }
-
-  getDisplayStatus(entry: ScheduleEntry) {
-    const { hour, minute, status } = entry;
-
-    const scheduledDate = new Date();
-    scheduledDate.setHours(hour, minute);
-
-    if (status === EntryStatus.PENDING) {
-      // TODO: Handle case of FE timezone different from device timezone
-      const isPastDue = new Date().getTime() > scheduledDate.getTime();
-      if (isPastDue) {
-        return EntryStatus.SKIPPED;
-      }
-
-      if (this._switchEntity?.state === "off") {
-        return EntryStatus.DISABLED;
-      }
-    }
-
-    return status;
   }
 
   renderAmount(amount: number) {
@@ -229,7 +138,7 @@ class DispenserScheduleCard extends LitElement {
         type: "cardinal",
       });
       pluralCategory = pluralRules.select(amount);
-    } catch (error) {}
+    } catch (_error) {}
 
     let main_unit: string;
     const unitConfig = this._config.unit_of_measurement;
@@ -266,11 +175,10 @@ class DispenserScheduleCard extends LitElement {
 
   renderScheduleRow(entry: ScheduleEntry) {
     const { hour, minute, amount } = entry;
-
-    const displayStatus = this.getDisplayStatus(entry);
-
-    const { add, ...actions } = this._config.actions || {};
-    const hasOverflowActions = Object.keys(actions).length > 0;
+    const displayStatus = this._device.getDisplayStatus(entry);
+    const caps = this._device.capabilities;
+    const hasOverflowActions =
+      caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle;
 
     const display: DisplayConfigEntry =
       this._config.display?.[displayStatus] ?? {};
@@ -279,12 +187,14 @@ class DispenserScheduleCard extends LitElement {
     const statusText = localize(`status.${label}`) ?? label;
     const secondaryText = this.renderAmount(amount);
 
+    const displayEntityId = this._device.getDisplayEntity();
     const color =
       display?.color || DefaultDisplayConfig[displayStatus]?.color || undefined;
+
     return html`<hui-generic-entity-row
       .hass=${this._hass}
       .config=${{
-        entity: this._config.entity,
+        entity: displayEntityId,
         name: `${hour}:${minute.toString().padStart(2, "0")}`,
         icon: display?.icon ?? DefaultDisplayConfig[displayStatus]?.icon,
       }}
@@ -307,26 +217,26 @@ class DispenserScheduleCard extends LitElement {
               <ha-icon-button slot="trigger">
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
               </ha-icon-button>
-              ${!!actions?.edit
+              ${caps.canEditEntries
                 ? html`<ha-dropdown-item value="edit" class="edit-entry">
                     ${localize("ui.edit")}
                     <ha-icon slot="icon" icon="mdi:pencil"></ha-icon>
                   </ha-dropdown-item>`
                 : nothing}
-              ${!!actions?.remove
+              ${caps.canRemoveEntries
                 ? html`<ha-dropdown-item value="remove" class="remove-entry">
                     ${localize("ui.delete")}
                     <ha-icon slot="icon" icon="mdi:delete"></ha-icon>
                   </ha-dropdown-item>`
                 : nothing}
-              ${!!actions?.toggle
+              ${caps.hasEntryToggle
                 ? html`<ha-dropdown-item value="toggle" class="toggle-entry">
-                    ${displayStatus === "disabled"
+                    ${displayStatus === EntryStatus.DISABLED
                       ? localize("ui.enable")
                       : localize("ui.disable")}
                     <ha-icon
                       slot="icon"
-                      icon="${displayStatus === "disabled"
+                      icon="${displayStatus === EntryStatus.DISABLED
                         ? "mdi:toggle-switch"
                         : "mdi:toggle-switch-off"}"
                     ></ha-icon>
@@ -349,30 +259,36 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderSwitch() {
-    if (this._config.switch && !this._switchEntity) {
+    const displayEntityId = this._device.getDisplayEntity();
+    const displayInfo = this._device.getDisplayInfo();
+    const globalToggle = this._device.getGlobalToggle();
+
+    if (!this._hass.states[displayEntityId]) {
       return html`<ha-alert alert-type="warning">
-        ${createEntityNotFoundWarning(this._hass, this._config.switch)}
+        ${createEntityNotFoundWarning(this._hass, displayEntityId)}
       </ha-alert>`;
     }
 
-    const isAddDisabled = this._schedules.length >= this._device.maxEntries;
+    const caps = this._device.capabilities;
+    const isAddDisabled = this._schedules.length >= caps.maxEntries;
 
-    const switchElement = this._switchEntity
-      ? html`<ha-entity-toggle
-          .hass=${this._hass}
-          .stateObj=${this._switchEntity}
-        ></ha-entity-toggle>`
+    const switchElement = globalToggle
+      ? html`<ha-switch
+          .checked=${globalToggle.state}
+          @change=${(ev: Event) =>
+            this._device.setGlobalToggle(
+              (ev.target as HTMLInputElement).checked
+            )}
+        ></ha-switch>`
       : nothing;
 
     return html`<hui-generic-entity-row
       .hass=${this._hass}
       .catchInteraction=${false}
       .config=${{
-        entity: this._switchEntity ? this._config.switch : this._config.entity,
+        entity: displayEntityId,
         name: localize("ui.name"),
-        icon: this._switchEntity
-          ? this._switchEntity.attributes.icon
-          : "mdi:calendar-badge",
+        icon: displayInfo.icon ?? "mdi:calendar-badge",
         state_color: true,
       }}
       class="timeline"
@@ -388,7 +304,7 @@ class DispenserScheduleCard extends LitElement {
         : nothing}
       ${this._isEditing
         ? html`<ha-icon-button
-            ?disabled=${isAddDisabled || !this._config.actions?.add}
+            ?disabled=${isAddDisabled || !caps.canAddEntries}
             @click=${this.handleAddEntry}
             class="add-entry"
           >
@@ -398,22 +314,21 @@ class DispenserScheduleCard extends LitElement {
     </hui-generic-entity-row>`;
   }
 
-  parseSchedule() {
-    return this._device.getSchedule(this._scheduleEntity.state);
-  }
-
   isSaveDisabled(entry: EditScheduleEntry) {
-    if (entry.id === null) {
+    const amountConfig = this._device.amountConfig;
+
+    if (entry.key === null) {
+      const amountInvalid =
+        entry.amount < amountConfig.min || entry.amount > amountConfig.max;
       return (
         entry.hour < 0 ||
         entry.hour > 23 ||
         entry.minute < 0 ||
         entry.minute > 59 ||
-        entry.amount < this._device.minAmount ||
-        entry.amount > this._device.maxAmount
+        amountInvalid
       );
     } else {
-      const schedule = this._schedules.find((e) => e.id === entry.id);
+      const schedule = this._schedules.find((e) => e.key === entry.key);
       return (
         schedule?.hour === entry.hour &&
         schedule?.minute === entry.minute &&
@@ -423,16 +338,29 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderContent() {
-    if (this._config.entity && !this._scheduleEntity) {
-      return html`<ha-alert alert-type="warning">
-        ${createEntityNotFoundWarning(this._hass, this._config.entity)}
-      </ha-alert>`;
+    const displayEntityId = this._device.getDisplayEntity();
+
+    if (!this._device.isAvailable()) {
+      const scheduleEntity =
+        this._hass.states[this._device.getWatchedEntities()[0]];
+      if (!scheduleEntity) {
+        return html`<ha-alert alert-type="warning">
+          ${createEntityNotFoundWarning(this._hass, displayEntityId)}
+        </ha-alert>`;
+      }
     }
 
     if (this._editSchedule) {
       const entry = this._editSchedule;
       const spacerHeight =
         Math.max(this._schedules.length - 1, 0) * (40 + 8) - 24;
+      const amountConfig = this._device.amountConfig;
+      const uom = this._config.unit_of_measurement;
+      const amountFieldLabel =
+        (typeof uom === "object" && uom !== null ? uom.other : uom) ??
+        localize("ui.amount") ??
+        "";
+
       return html`
         <ha-control-button-group>
           <ha-button @click=${this.handleCancel} class="cancel-button">
@@ -457,13 +385,9 @@ class DispenserScheduleCard extends LitElement {
             .value=${entry.amount}
             type="number"
             no-spinner
-            label=${typeof this._config.unit_of_measurement === "object" &&
-            this._config.unit_of_measurement !== null
-              ? (this._config.unit_of_measurement.other ??
-                localize("ui.amount"))
-              : (this._config.unit_of_measurement ?? localize("ui.amount"))}
-            max=${this._device.maxAmount}
-            min=${this._device.minAmount}
+            label=${amountFieldLabel}
+            max=${amountConfig.max}
+            min=${amountConfig.min}
             @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
           ></ha-textfield>
         </div>
@@ -475,16 +399,16 @@ class DispenserScheduleCard extends LitElement {
     }
 
     if (this._schedules.length === 0) {
-      const label =
-        this._scheduleEntity?.state === "unavailable"
-          ? this._hass.localize("state.default.unavailable")
-          : localize("ui.empty");
+      const available = this._device.isAvailable();
+      const label = !available
+        ? this._hass.localize("state.default.unavailable")
+        : localize("ui.empty");
 
       return html`<hui-generic-entity-row
         class="empty-row"
         .hass=${this._hass}
         .config=${{
-          entity: this._config.entity,
+          entity: displayEntityId,
           name: label,
           icon: "mdi:calendar-blank-outline",
         }}
@@ -516,9 +440,12 @@ class DispenserScheduleCard extends LitElement {
     return this._schedules ? 1 + this._schedules.length : 3;
   }
 
-  setConfig(config: DispenserScheduleCardConfig<unknown>) {
+  setConfig(config: DispenserScheduleCardConfig) {
+    if (!config.device?.type) {
+      throw new Error("Missing required 'device.type' in card configuration");
+    }
+
     let editable = config.editable ?? "toggle";
-    const deviceType = config.device?.type ?? "xiaomi-smart-feeder";
 
     if (editable === "always") {
       this._isEditing = true;
@@ -528,17 +455,20 @@ class DispenserScheduleCard extends LitElement {
       throw new Error(`Invalid editable option: ${editable}`);
     }
 
-    const actions = config.actions || {};
-    if (Object.keys(actions).length === 0) {
+    this._device = createDevice(config.device, this._hass);
+
+    const caps = this._device.capabilities;
+    const hasAnyEditAction =
+      caps.canAddEntries ||
+      caps.canEditEntries ||
+      caps.canRemoveEntries ||
+      caps.hasEntryToggle;
+
+    if (!hasAnyEditAction) {
       editable = "never";
       this._isEditing = false;
     }
 
-    this._config = {
-      ...config,
-      editable,
-    };
-
-    this._device = new Devices[deviceType](this._config, this._hass);
+    this._config = { ...config, editable };
   }
 }

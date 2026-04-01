@@ -1,4 +1,4 @@
-import { DeviceType } from "../devices";
+import type { DeviceConfig } from "../devices";
 import { EntryStatus } from "./common";
 
 export type DisplayConfigEntry = {
@@ -9,27 +9,19 @@ export type DisplayConfigEntry = {
 
 export type DisplayConfig = Record<string, DisplayConfigEntry>;
 
-export interface DispenserScheduleCardConfig<T = any> {
-  entity: string;
-  switch?: string;
-  actions?: {
-    add?: string;
-    edit?: string;
-    remove?: string;
-    toggle?: string;
-  };
+export interface AlternateUnitConfig {
+  unit_of_measurement: string | Record<Intl.LDMLPluralRule, string | undefined>;
+  conversion_factor: number;
+  approximate?: boolean;
+}
+
+export interface DispenserScheduleCardConfig {
+  device: DeviceConfig;
   editable?: ConfigEditableOption;
   unit_of_measurement?:
     | string
     | Record<Intl.LDMLPluralRule, string | undefined>;
-  alternate_unit?: {
-    unit_of_measurement:
-      | string
-      | Record<Intl.LDMLPluralRule, string | undefined>;
-    conversion_factor: number;
-    approximate?: boolean;
-  };
-  device: T & { type: DeviceType };
+  alternate_unit?: AlternateUnitConfig;
   display?: DisplayConfig;
 }
 

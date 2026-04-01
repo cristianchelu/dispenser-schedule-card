@@ -1,4 +1,4 @@
-import { DispenserScheduleCardConfig } from "./config";
+import { HomeAssistant } from "./ha";
 
 /** Schedule entry status */
 export const EntryStatus = {
@@ -6,7 +6,7 @@ export const EntryStatus = {
   DISPENSED: "dispensed",
   /** Schedule entry failed */
   FAILED: "failed",
-  /** Sechedule entry is actively dispensing */
+  /** Schedule entry is actively dispensing */
   DISPENSING: "dispensing",
   /** Schedule entry not yet triggered */
   PENDING: "pending",
@@ -18,7 +18,8 @@ export const EntryStatus = {
 export type EntryStatus = (typeof EntryStatus)[keyof typeof EntryStatus];
 
 export interface ScheduleEntry {
-  id: number;
+  /** Opaque key for the device to reference this entry. Card never parses it. */
+  key: string;
   hour: number;
   minute: number;
   amount: number;
@@ -26,22 +27,77 @@ export interface ScheduleEntry {
 }
 
 export interface EditScheduleEntry {
-  id: number | null;
+  key: string | null;
   hour: number;
   minute: number;
   amount: number;
 }
 
-export abstract class Device {
-  abstract readonly maxEntries: number;
-  abstract readonly maxAmount: number;
-  abstract readonly minAmount: number;
-  abstract readonly stepAmount: number;
+/**
+ * How the UI constrains amount input fields.
+ * Every amount-capable device converges on this shape.
+ * Hardcoded devices set it as a constant; CustomDevice reads it from YAML config.
+ */
+export interface AmountConfig {
+  min: number;
+  max: number;
+  step: number;
+}
 
+export interface DeviceDisplayInfo {
+  name?: string;
+  icon?: string;
+}
+
+export interface GlobalToggleInfo {
+  state: boolean;
+}
+
+export interface DeviceCapabilities {
+  hasEntryToggle: boolean;
+  hasGlobalToggle: boolean;
+  canAddEntries: boolean;
+  canRemoveEntries: boolean;
+  canEditEntries: boolean;
+  maxEntries: number;
+}
+
+export abstract class Device<
+  TDeviceConfig extends { type: string } = { type: string },
+> {
   constructor(
-    readonly config: DispenserScheduleCardConfig,
-    readonly hass: any
+    protected readonly deviceConfig: TDeviceConfig,
+    protected hass: HomeAssistant
   ) {}
 
-  abstract getSchedule(state: string): Array<ScheduleEntry>;
+  abstract readonly capabilities: DeviceCapabilities;
+  abstract readonly amountConfig: AmountConfig;
+
+  abstract getWatchedEntities(): string[];
+
+  /**
+   * @deprecated Use {@link getDisplayInfo} instead. This method exists only
+   * to feed hui-generic-entity-row and will be removed when that HA internal
+   * component is replaced with a custom row.
+   */
+  abstract getDisplayEntity(): string;
+
+  abstract getDisplayInfo(): DeviceDisplayInfo;
+  abstract isAvailable(): boolean;
+
+  updateHass(hass: HomeAssistant): void {
+    this.hass = hass;
+  }
+
+  abstract getSchedule(): ScheduleEntry[];
+  abstract getGlobalToggle(): GlobalToggleInfo | null;
+  abstract getDisplayStatus(entry: ScheduleEntry): EntryStatus;
+
+  abstract addEntry(entry: EditScheduleEntry): Promise<void>;
+  abstract editEntry(entry: EditScheduleEntry): Promise<void>;
+  abstract removeEntry(entry: ScheduleEntry): Promise<void>;
+  abstract toggleEntry(entry: ScheduleEntry): Promise<void>;
+  abstract setGlobalToggle(enabled: boolean): Promise<void>;
+
+  abstract getNewEntryDefaults(): EditScheduleEntry;
 }
