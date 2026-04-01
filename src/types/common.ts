@@ -14,6 +14,8 @@ export const EntryStatus = {
   SKIPPED: "skipped",
   /** Schedule entry will be skipped until re-enabled */
   DISABLED: "disabled",
+  /** No status available */
+  NONE: "none",
 } as const;
 export type EntryStatus = (typeof EntryStatus)[keyof typeof EntryStatus];
 

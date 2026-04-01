@@ -184,7 +184,10 @@ class DispenserScheduleCard extends LitElement {
       this._config.display?.[displayStatus] ?? {};
 
     const label = display.label ?? displayStatus;
-    const statusText = localize(`status.${label}`) ?? label;
+    const statusText =
+      displayStatus === EntryStatus.NONE
+        ? ""
+        : (localize(`status.${label}`) ?? label);
     const secondaryText = this.renderAmount(amount);
 
     const displayEntityId = this._device.getDisplayEntity();
