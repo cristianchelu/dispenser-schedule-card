@@ -10,7 +10,11 @@
     "disable": "Deaktivieren",
     "done": "Fertig",
     "cancel": "Abbrechen",
-    "save": "Speichern"
+    "save": "Speichern",
+    "amount": "Menge",
+    "repeat": "Wiederholung",
+    "every_day": "Täglich",
+    "empty_today": "Kein Zeitplan für heute definiert"
   },
   "status": {
     "dispensed": "Ausgegeben",

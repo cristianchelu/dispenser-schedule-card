@@ -1,3 +1,13 @@
+export type HassFirstWeekday =
+  | "language"
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
 export interface HassEntity {
   entity_id: string;
   state: string;
@@ -15,7 +25,10 @@ export interface HomeAssistant {
     service: string,
     data?: Record<string, unknown>
   ): Promise<void>;
-  locale: { language: string };
+  locale: {
+    language: string;
+    first_weekday?: HassFirstWeekday;
+  };
   localize(key: string, params?: Record<string, string>): string;
-  config: { state: string };
+  config: { state: string; time_zone?: string };
 }

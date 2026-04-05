@@ -11,7 +11,11 @@
     "disable": "Dezactivare",
     "done": "Gata",
     "cancel": "Anulare",
-    "save": "Salvare"
+    "save": "Salvare",
+    "amount": "Cantitate",
+    "repeat": "Repetare",
+    "every_day": "În fiecare zi",
+    "empty_today": "Niciun orar definit pentru astăzi"
   },
   "status": {
     "dispensed": "Dozat",

@@ -10,6 +10,21 @@ import {
   ScheduleEntry,
   EditScheduleEntry,
 } from "./types/common";
+import {
+  Weekday,
+  formatWeekday,
+  formatWeekdays,
+  getFirstWeekdayOfLocale,
+  weekdaysInLocaleOrder,
+} from "./types/weekday";
+import {
+  canonicalizeWeekdays,
+  getEditableWeekdays,
+  hasSelectedWeekdays,
+  isEveryDayWeekdays,
+  toggleEditableWeekday,
+  weekdaysEqual,
+} from "./types/scheduleWeekdays";
 
 import {
   DefaultDisplayConfig,
@@ -74,7 +89,13 @@ class DispenserScheduleCard extends LitElement {
   }
 
   handleEditEntry(entry: ScheduleEntry) {
-    this._editSchedule = entry;
+    this._editSchedule = {
+      key: entry.key,
+      hour: entry.hour,
+      minute: entry.minute,
+      amount: entry.amount,
+      weekdays: entry.weekdays ? [...entry.weekdays] : undefined,
+    };
   }
 
   handleAddEntry() {
@@ -110,11 +131,17 @@ class DispenserScheduleCard extends LitElement {
   async handleSaveEntry() {
     const entry = this._editSchedule;
     if (!entry) return;
+    const caps = this._device.capabilities;
+    if (caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays)) return;
+
+    const normalizedEntry: EditScheduleEntry = caps.hasWeeklySchedule
+      ? { ...entry, weekdays: canonicalizeWeekdays(entry.weekdays) }
+      : { ...entry, weekdays: undefined };
 
     if (entry.key === null) {
-      await this._device.addEntry(entry);
+      await this._device.addEntry(normalizedEntry);
     } else {
-      await this._device.editEntry(entry);
+      await this._device.editEntry(normalizedEntry);
     }
     this._editSchedule = null;
   }
@@ -127,6 +154,105 @@ class DispenserScheduleCard extends LitElement {
     const helpers = await window.loadCardHelpers();
     helpers.createRowElement({ type: "time-entity" });
     this._isReady = true;
+  }
+
+  getDisplayedScheduleRows(): ScheduleEntry[] {
+    const caps = this._device.capabilities;
+    if (this._isEditing || !caps.hasWeeklySchedule) {
+      return this._schedules;
+    }
+    return this._device.filterScheduleForToday(this._schedules);
+  }
+
+  /** Primary row title: today view is time-only; edit-mode list is time ⸱ amount. */
+  rowPrimaryLabel(entry: ScheduleEntry): string {
+    const time = `${entry.hour}:${entry.minute.toString().padStart(2, "0")}`;
+    if (this._isEditing) {
+      return `${time} ⸱ ${this.renderAmount(entry.amount)}`;
+    }
+    return time;
+  }
+
+  /** Subtitle for edit-mode list rows when the device has a weekly schedule. */
+  weekdaysSubtitle(entry: ScheduleEntry): string {
+    if (!this._device.capabilities.hasWeeklySchedule) return "";
+    const lang = this._hass.locale.language;
+    const every = localize("ui.every_day");
+    if (isEveryDayWeekdays(entry.weekdays)) {
+      return every ?? "";
+    }
+    return formatWeekdays(entry.weekdays, lang);
+  }
+
+  editWeekdaysSummary(entry: EditScheduleEntry): string {
+    const lang = this._hass.locale.language;
+    const every = localize("ui.every_day");
+    if (isEveryDayWeekdays(entry.weekdays)) {
+      return every ?? "";
+    }
+    return formatWeekdays(entry.weekdays, lang);
+  }
+
+  handleWeekdaySelect(ev: CustomEvent) {
+    ev.preventDefault();
+    const item = ev.detail?.item;
+    const editSchedule = this._editSchedule;
+    if (!item || !editSchedule) return;
+
+    const wd = Number(item.value) as Weekday;
+    const checked = item.action === "add";
+
+    this._editSchedule = {
+      ...editSchedule,
+      weekdays: toggleEditableWeekday(editSchedule.weekdays, wd, checked),
+    };
+  }
+
+  handleWeekdayDropdownShow(ev: Event) {
+    const dropdown = ev.currentTarget as HTMLElement | null;
+    if (!dropdown) return;
+    dropdown.style.setProperty(
+      "--weekday-dropdown-width",
+      `${dropdown.getBoundingClientRect().width}px`
+    );
+  }
+
+  renderWeekdaySelect(entry: EditScheduleEntry) {
+    if (!this._device.capabilities.hasWeeklySchedule) return nothing;
+    const lang = this._hass.locale.language;
+    const first = getFirstWeekdayOfLocale(
+      lang,
+      this._hass.locale.first_weekday
+    );
+    const ordered = weekdaysInLocaleOrder(first);
+    const selected = new Set(getEditableWeekdays(entry.weekdays));
+    const repeatLabel = localize("ui.repeat") ?? "Repeat";
+    const summary = this.editWeekdaysSummary(entry);
+
+    return html`<ha-dropdown
+      class="weekday-select"
+      placement="bottom"
+      @wa-show=${this.handleWeekdayDropdownShow}
+      @wa-select=${this.handleWeekdaySelect}
+    >
+      <ha-picker-field
+        slot="trigger"
+        .label=${repeatLabel}
+        .value=${summary}
+        hide-clear-icon
+      ></ha-picker-field>
+      ${ordered.map((wd) => {
+        const checked = selected.has(wd);
+        return html`<ha-dropdown-item
+          .value=${String(wd)}
+          .action=${checked ? "remove" : "add"}
+          type="checkbox"
+          .checked=${checked}
+        >
+          ${formatWeekday(wd, lang, "long")}
+        </ha-dropdown-item>`;
+      })}
+    </ha-dropdown>`;
   }
 
   renderAmount(amount: number) {
@@ -174,7 +300,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderScheduleRow(entry: ScheduleEntry) {
-    const { hour, minute, amount } = entry;
+    const { amount } = entry;
     const displayStatus = this._device.getDisplayStatus(entry);
     const caps = this._device.capabilities;
     const hasOverflowActions =
@@ -184,11 +310,14 @@ class DispenserScheduleCard extends LitElement {
       this._config.display?.[displayStatus] ?? {};
 
     const label = display.label ?? displayStatus;
-    const statusText =
-      displayStatus === EntryStatus.NONE
+    const amountText = this.renderAmount(amount);
+    const rowSecondary = this._isEditing
+      ? caps.hasWeeklySchedule
+        ? this.weekdaysSubtitle(entry)
+        : ""
+      : displayStatus === EntryStatus.NONE
         ? ""
         : (localize(`status.${label}`) ?? label);
-    const secondaryText = this.renderAmount(amount);
 
     const displayEntityId = this._device.getDisplayEntity();
     const color =
@@ -198,11 +327,11 @@ class DispenserScheduleCard extends LitElement {
       .hass=${this._hass}
       .config=${{
         entity: displayEntityId,
-        name: `${hour}:${minute.toString().padStart(2, "0")}`,
+        name: this.rowPrimaryLabel(entry),
         icon: display?.icon ?? DefaultDisplayConfig[displayStatus]?.icon,
       }}
       .catchInteraction=${false}
-      .secondaryText="${this._isEditing ? secondaryText : statusText}"
+      .secondaryText="${rowSecondary}"
       class="timeline ${displayStatus}"
       style=${styleMap({
         "--state-icon-color": color, // >= HA2025.5
@@ -210,7 +339,7 @@ class DispenserScheduleCard extends LitElement {
       })}
     >
       <div>
-        ${!this._isEditing ? html`<span>${secondaryText}</span>` : nothing}
+        ${!this._isEditing ? html`<span>${amountText}</span>` : nothing}
         ${this._isEditing && hasOverflowActions
           ? html`<ha-dropdown
               class="edit-menu"
@@ -319,24 +448,32 @@ class DispenserScheduleCard extends LitElement {
 
   isSaveDisabled(entry: EditScheduleEntry) {
     const amountConfig = this._device.amountConfig;
+    const caps = this._device.capabilities;
 
     if (entry.key === null) {
       const amountInvalid =
         entry.amount < amountConfig.min || entry.amount > amountConfig.max;
+      const weekdaysInvalid =
+        caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays);
       return (
         entry.hour < 0 ||
         entry.hour > 23 ||
         entry.minute < 0 ||
         entry.minute > 59 ||
-        amountInvalid
+        amountInvalid ||
+        weekdaysInvalid
       );
     } else {
       const schedule = this._schedules.find((e) => e.key === entry.key);
-      return (
-        schedule?.hour === entry.hour &&
-        schedule?.minute === entry.minute &&
-        schedule?.amount === entry.amount
-      );
+      if (!schedule) return true;
+      const sameTime =
+        schedule.hour === entry.hour &&
+        schedule.minute === entry.minute &&
+        schedule.amount === entry.amount;
+      const sameWeekdays =
+        !caps.hasWeeklySchedule ||
+        weekdaysEqual(entry.weekdays, schedule.weekdays);
+      return sameTime && sameWeekdays;
     }
   }
 
@@ -394,6 +531,7 @@ class DispenserScheduleCard extends LitElement {
             @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
           ></ha-textfield>
         </div>
+        ${this.renderWeekdaySelect(entry)}
         <div
           class="edit-row-spacer"
           style="flex-basis: ${spacerHeight}px"
@@ -401,11 +539,22 @@ class DispenserScheduleCard extends LitElement {
       `;
     }
 
-    if (this._schedules.length === 0) {
+    const listRows = this.getDisplayedScheduleRows();
+    if (listRows.length === 0) {
       const available = this._device.isAvailable();
-      const label = !available
-        ? this._hass.localize("state.default.unavailable")
-        : localize("ui.empty");
+      const caps = this._device.capabilities;
+      const todayFilteredOut =
+        caps.hasWeeklySchedule &&
+        !this._isEditing &&
+        this._schedules.length > 0;
+      let label: string;
+      if (!available) {
+        label = this._hass.localize("state.default.unavailable");
+      } else if (todayFilteredOut) {
+        label = localize("ui.empty_today") ?? localize("ui.empty") ?? "";
+      } else {
+        label = localize("ui.empty") ?? "";
+      }
 
       return html`<hui-generic-entity-row
         class="empty-row"
@@ -417,7 +566,7 @@ class DispenserScheduleCard extends LitElement {
         }}
       ></hui-generic-entity-row>`;
     }
-    return this._schedules.map(this.renderScheduleRow, this);
+    return listRows.map(this.renderScheduleRow, this);
   }
 
   render() {
@@ -440,7 +589,10 @@ class DispenserScheduleCard extends LitElement {
   }
 
   getCardSize(): number {
-    return this._schedules ? 1 + this._schedules.length : 3;
+    const rows = this._editSchedule
+      ? this._schedules.length
+      : this.getDisplayedScheduleRows().length;
+    return 1 + rows;
   }
 
   setConfig(config: DispenserScheduleCardConfig) {

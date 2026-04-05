@@ -10,7 +10,11 @@
     "disable": "Devre Dışı Bırak",
     "done": "Bitti",
     "cancel": "İptal",
-    "save": "Kaydet"
+    "save": "Kaydet",
+    "amount": "Miktar",
+    "repeat": "Tekrar",
+    "every_day": "Her gün",
+    "empty_today": "Bugün için program tanımlanmamış"
   },
   "status": {
     "dispensed": "Verildi",

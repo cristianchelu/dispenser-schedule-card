@@ -37,6 +37,20 @@
   flex: 1;
 }
 
+.weekday-select {
+  display: block;
+}
+
+.weekday-select ha-dropdown-item {
+  min-width: 100%;
+}
+
+.weekday-select::part(menu) {
+  width: var(--weekday-dropdown-width);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 hui-generic-entity-row {
   position: relative;
 }

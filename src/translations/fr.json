@@ -11,7 +11,11 @@
     "disable": "Désactiver",
     "done": "Terminé",
     "cancel": "Annuler",
-    "save": "Enregistrer"
+    "save": "Enregistrer",
+    "amount": "Quantité",
+    "repeat": "Répétition",
+    "every_day": "Tous les jours",
+    "empty_today": "Aucun horaire défini pour aujourd'hui"
   },
   "status": {
     "dispensed": "Distribuée",

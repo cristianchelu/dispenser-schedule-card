@@ -1,4 +1,8 @@
 import { HomeAssistant } from "./ha";
+import { appliesOnWeekday } from "./scheduleWeekdays";
+import { Weekday, getTodayWeekday } from "./weekday";
+
+export { Weekday };
 
 /** Schedule entry status */
 export const EntryStatus = {
@@ -26,6 +30,7 @@ export interface ScheduleEntry {
   minute: number;
   amount: number;
   status: EntryStatus;
+  weekdays?: readonly Weekday[];
 }
 
 export interface EditScheduleEntry {
@@ -33,6 +38,7 @@ export interface EditScheduleEntry {
   hour: number;
   minute: number;
   amount: number;
+  weekdays?: readonly Weekday[];
 }
 
 /**
@@ -62,6 +68,7 @@ export interface DeviceCapabilities {
   canRemoveEntries: boolean;
   canEditEntries: boolean;
   maxEntries: number;
+  hasWeeklySchedule: boolean;
 }
 
 export abstract class Device<
@@ -94,6 +101,16 @@ export abstract class Device<
   abstract getSchedule(): ScheduleEntry[];
   abstract getGlobalToggle(): GlobalToggleInfo | null;
   abstract getDisplayStatus(entry: ScheduleEntry): EntryStatus;
+
+  /**
+   * Entries that apply on “today” in the HA user timezone.
+   * When `hasWeeklySchedule` is false, returns `entries` unchanged.
+   */
+  filterScheduleForToday(entries: ScheduleEntry[]): ScheduleEntry[] {
+    if (!this.capabilities.hasWeeklySchedule) return entries;
+    const today = getTodayWeekday(this.hass.config.time_zone);
+    return entries.filter((entry) => appliesOnWeekday(entry.weekdays, today));
+  }
 
   abstract addEntry(entry: EditScheduleEntry): Promise<void>;
   abstract editEntry(entry: EditScheduleEntry): Promise<void>;

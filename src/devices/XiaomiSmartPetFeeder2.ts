@@ -8,10 +8,10 @@ import {
   GlobalToggleInfo,
   ScheduleEntry,
 } from "../types/common";
-import { HomeAssistant } from "../types/ha";
 
 const MAX_ENTRIES = 10;
-const ENTRY_REGEX = /^(\d{2})(\d{2})(\d{2})(\d{2})$/;
+const ENTRY_REGEX =
+  /^(?<hour>\d{2})(?<minute>\d{2})(?<amount>\d{2})(?<status>\d{2})$/;
 
 export interface XiaomiSmartPetFeeder2DeviceConfig {
   type: "xiaomi-smart-feeder-2";
@@ -24,17 +24,13 @@ function pad2(n: number): string {
 
 function parseEntryToken(token: string): Omit<ScheduleEntry, "key"> | null {
   const m = token.match(ENTRY_REGEX);
-  if (!m) return null;
-  const hour = parseInt(m[1], 10);
-  const minute = parseInt(m[2], 10);
-  const amount = parseInt(m[3], 10);
-  const statusCode = m[4];
+  if (!m || !m.groups) return null;
+  const hour = parseInt(m.groups.hour, 10);
+  const minute = parseInt(m.groups.minute, 10);
+  const amount = parseInt(m.groups.amount, 10);
+  const statusCode = m.groups.status;
   const status =
-    statusCode === "01"
-      ? EntryStatus.PENDING
-      : statusCode === "00"
-        ? EntryStatus.DISABLED
-        : EntryStatus.DISABLED;
+    statusCode === "01" ? EntryStatus.PENDING : EntryStatus.DISABLED;
   return { hour, minute, amount, status };
 }
 
@@ -78,6 +74,7 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
       canRemoveEntries: true,
       canEditEntries: true,
       maxEntries: MAX_ENTRIES,
+      hasWeeklySchedule: true,
     };
   }
 

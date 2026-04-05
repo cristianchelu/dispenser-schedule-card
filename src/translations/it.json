@@ -11,7 +11,11 @@
     "disable": "Disattiva",
     "done": "Fatto",
     "cancel": "Annulla",
-    "save": "Salva"
+    "save": "Salva",
+    "amount": "Quantità",
+    "repeat": "Ripeti",
+    "every_day": "Ogni giorno",
+    "empty_today": "Nessun orario definito per oggi"
   },
   "status": {
     "dispensed": "Distribuito",

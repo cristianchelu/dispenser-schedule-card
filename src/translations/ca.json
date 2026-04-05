@@ -11,7 +11,11 @@
     "disable": "Desactiva",
     "done": "Fet",
     "cancel": "Cancel·la",
-    "save": "Guarda"
+    "save": "Guarda",
+    "amount": "Quantitat",
+    "repeat": "Repetició",
+    "every_day": "Cada dia",
+    "empty_today": "No hi ha cap horari definit per avui"
   },
   "status": {
     "dispensed": "Lliurats",

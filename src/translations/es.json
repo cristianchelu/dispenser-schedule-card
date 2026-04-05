@@ -10,7 +10,11 @@
     "disable": "Desactivar",
     "done": "Listo",
     "cancel": "Cancelar",
-    "save": "Guardar"
+    "save": "Guardar",
+    "amount": "Cantidad",
+    "repeat": "Repetir",
+    "every_day": "Todos los días",
+    "empty_today": "Ningún horario definido para hoy"
   },
   "status": {
     "dispensed": "Dispensado",

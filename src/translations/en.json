@@ -10,7 +10,11 @@
     "disable": "Disable",
     "done": "Done",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "amount": "Amount",
+    "repeat": "Repeat",
+    "every_day": "Every day",
+    "empty_today": "No schedule defined for today"
   },
   "status": {
     "dispensed": "Dispensed",
