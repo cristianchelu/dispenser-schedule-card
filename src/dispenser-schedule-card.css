@@ -26,15 +26,20 @@
   margin-bottom: -8px;
 }
 
-.edit-row {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-size);
+ha-time-input {
   --ha-icon-display: flex;
 }
 
-.edit-row ha-textfield {
-  flex: 1;
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-field-label {
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-s, 12px);
+  line-height: var(--ha-line-height-condensed, 16px);
 }
 
 .weekday-select {
@@ -87,6 +92,10 @@ hui-generic-entity-row > * {
 
 .edit-entry:not(:disabled) ha-icon {
   color: var(--primary-color);
+}
+
+ha-input {
+  padding-bottom: 0;
 }
 
 .add-entry {

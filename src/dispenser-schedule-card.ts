@@ -237,8 +237,9 @@ class DispenserScheduleCard extends LitElement {
     >
       <ha-picker-field
         slot="trigger"
-        .label=${repeatLabel}
         .value=${summary}
+        .placeholder=${repeatLabel}
+        aria-label=${repeatLabel}
         hide-clear-icon
       ></ha-picker-field>
       ${ordered.map((wd) => {
@@ -386,7 +387,8 @@ class DispenserScheduleCard extends LitElement {
   }
 
   handleAmountChanged(ev: InputEvent, entry: EditScheduleEntry) {
-    const amount = parseInt((ev.target as HTMLInputElement).value);
+    const amountInput = ev.currentTarget as unknown as { value?: string };
+    const amount = parseInt(amountInput.value ?? "", 10);
     this._editSchedule = { ...entry, amount };
   }
 
@@ -492,9 +494,9 @@ class DispenserScheduleCard extends LitElement {
 
     if (this._editSchedule) {
       const entry = this._editSchedule;
-      const spacerHeight =
-        Math.max(this._schedules.length - 1, 0) * (40 + 8) - 24;
       const amountConfig = this._device.amountConfig;
+      const timeFieldLabel = localize("ui.time") ?? "Time";
+      const repeatFieldLabel = localize("ui.repeat") ?? "Repeat";
       const uom = this._config.unit_of_measurement;
       const amountFieldLabel =
         (typeof uom === "object" && uom !== null ? uom.other : uom) ??
@@ -514,28 +516,34 @@ class DispenserScheduleCard extends LitElement {
             ${localize("ui.save")}
           </ha-button>
         </ha-control-button-group>
-        <div class="edit-row">
+        <div class="edit-field">
+          <label class="edit-field-label">${timeFieldLabel}</label>
           <ha-time-input
+            aria-label=${timeFieldLabel}
             .value=${`${entry.hour}:${entry.minute.toString().padStart(2, "0")}`}
             .locale=${this._hass.locale}
             @value-changed=${(ev: CustomEvent) =>
               this.handleTimeChanged(ev, entry)}
           ></ha-time-input>
-          <ha-textfield
-            .value=${entry.amount}
-            type="number"
-            no-spinner
-            label=${amountFieldLabel}
-            max=${amountConfig.max}
-            min=${amountConfig.min}
-            @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
-          ></ha-textfield>
         </div>
-        ${this.renderWeekdaySelect(entry)}
-        <div
-          class="edit-row-spacer"
-          style="flex-basis: ${spacerHeight}px"
-        ></div>
+        <div class="edit-field">
+          <label class="edit-field-label">${amountFieldLabel}</label>
+          <ha-input
+            aria-label=${amountFieldLabel}
+            value=${String(entry.amount)}
+            type="number"
+            without-spin-buttons
+            max=${String(amountConfig.max)}
+            min=${String(amountConfig.min)}
+            @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
+          ></ha-input>
+        </div>
+        ${this._device.capabilities.hasWeeklySchedule
+          ? html`<div class="edit-field">
+              <label class="edit-field-label">${repeatFieldLabel}</label>
+              ${this.renderWeekdaySelect(entry)}
+            </div>`
+          : nothing}
       `;
     }
 
