@@ -86,10 +86,6 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
     return [this.deviceConfig.entity];
   }
 
-  getDisplayEntity(): string {
-    return this.deviceConfig.entity;
-  }
-
   getDisplayInfo(): DeviceDisplayInfo {
     const state = this.hass.states[this.deviceConfig.entity];
     return {

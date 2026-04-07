@@ -1,7 +1,6 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
-import { styleMap } from "lit/directives/style-map.js";
 import { customElement } from "lit/decorators/custom-element.js";
 
 import {
@@ -35,6 +34,7 @@ import {
 import type { HomeAssistant } from "./types/ha";
 import localize from "./localization";
 import { createDevice } from "./devices";
+import { renderEntityRow } from "./rows/entityRow";
 
 import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 
@@ -300,85 +300,98 @@ class DispenserScheduleCard extends LitElement {
     return [mainStr, alternateStr].filter(Boolean).join(" ⸱ ");
   }
 
+  getPrimaryEntityId(): string | undefined {
+    return this._device.getWatchedEntities()[0];
+  }
+
+  getRowStyle(color?: string) {
+    return {
+      "--state-icon-color": color,
+      "--paper-item-icon-color": color,
+    };
+  }
+
   renderScheduleRow(entry: ScheduleEntry) {
-    const { amount } = entry;
     const displayStatus = this._device.getDisplayStatus(entry);
+    const display: DisplayConfigEntry =
+      this._config.display?.[displayStatus] ?? {};
+    const fallback = DefaultDisplayConfig[displayStatus];
+    const icon = display.icon ?? fallback?.icon ?? "mdi:clock-outline";
+    const color = display.color || fallback?.color || undefined;
+    const rowTitle = this.rowPrimaryLabel(entry);
+    const style = this.getRowStyle(color);
+
+    if (!this._isEditing) {
+      const label = display.label ?? displayStatus;
+      const rowSecondary =
+        displayStatus === EntryStatus.NONE
+          ? undefined
+          : (localize(`status.${label}`) ?? label);
+
+      return renderEntityRow({
+        className: `timeline ${displayStatus}`,
+        icon,
+        iconColor: color,
+        nameContent: rowTitle,
+        nameTitle: rowTitle,
+        secondaryContent: rowSecondary,
+        style,
+        valueContent: html`<span>${this.renderAmount(entry.amount)}</span>`,
+      });
+    }
+
     const caps = this._device.capabilities;
+    const rowSecondary = caps.hasWeeklySchedule
+      ? this.weekdaysSubtitle(entry)
+      : undefined;
     const hasOverflowActions =
       caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle;
 
-    const display: DisplayConfigEntry =
-      this._config.display?.[displayStatus] ?? {};
-
-    const label = display.label ?? displayStatus;
-    const amountText = this.renderAmount(amount);
-    const rowSecondary = this._isEditing
-      ? caps.hasWeeklySchedule
-        ? this.weekdaysSubtitle(entry)
-        : ""
-      : displayStatus === EntryStatus.NONE
-        ? ""
-        : (localize(`status.${label}`) ?? label);
-
-    const displayEntityId = this._device.getDisplayEntity();
-    const color =
-      display?.color || DefaultDisplayConfig[displayStatus]?.color || undefined;
-
-    return html`<hui-generic-entity-row
-      .hass=${this._hass}
-      .config=${{
-        entity: displayEntityId,
-        name: this.rowPrimaryLabel(entry),
-        icon: display?.icon ?? DefaultDisplayConfig[displayStatus]?.icon,
-      }}
-      .catchInteraction=${false}
-      .secondaryText="${rowSecondary}"
-      class="timeline ${displayStatus}"
-      style=${styleMap({
-        "--state-icon-color": color, // >= HA2025.5
-        "--paper-item-icon-color": color, // < HA2025.5
-      })}
-    >
-      <div>
-        ${!this._isEditing ? html`<span>${amountText}</span>` : nothing}
-        ${this._isEditing && hasOverflowActions
-          ? html`<ha-dropdown
-              class="edit-menu"
-              @wa-select=${(ev: CustomEvent) =>
-                this._handleRowMenuAction(entry, ev)}
-            >
-              <ha-icon-button slot="trigger">
-                <ha-icon icon="mdi:dots-vertical"></ha-icon>
-              </ha-icon-button>
-              ${caps.canEditEntries
-                ? html`<ha-dropdown-item value="edit" class="edit-entry">
-                    ${localize("ui.edit")}
-                    <ha-icon slot="icon" icon="mdi:pencil"></ha-icon>
-                  </ha-dropdown-item>`
-                : nothing}
-              ${caps.canRemoveEntries
-                ? html`<ha-dropdown-item value="remove" class="remove-entry">
-                    ${localize("ui.delete")}
-                    <ha-icon slot="icon" icon="mdi:delete"></ha-icon>
-                  </ha-dropdown-item>`
-                : nothing}
-              ${caps.hasEntryToggle
-                ? html`<ha-dropdown-item value="toggle" class="toggle-entry">
-                    ${displayStatus === EntryStatus.DISABLED
-                      ? localize("ui.enable")
-                      : localize("ui.disable")}
-                    <ha-icon
-                      slot="icon"
-                      icon="${displayStatus === EntryStatus.DISABLED
-                        ? "mdi:toggle-switch"
-                        : "mdi:toggle-switch-off"}"
-                    ></ha-icon>
-                  </ha-dropdown-item>`
-                : nothing}
-            </ha-dropdown>`
-          : nothing}
-      </div>
-    </hui-generic-entity-row>`;
+    return renderEntityRow({
+      className: `timeline ${displayStatus}`,
+      icon,
+      iconColor: color,
+      nameContent: rowTitle,
+      nameTitle: rowTitle,
+      secondaryContent: rowSecondary || undefined,
+      style,
+      valueContent: hasOverflowActions
+        ? html`<ha-dropdown
+            class="edit-menu"
+            @wa-select=${(ev: CustomEvent) =>
+              this._handleRowMenuAction(entry, ev)}
+          >
+            <ha-icon-button slot="trigger">
+              <ha-icon icon="mdi:dots-vertical"></ha-icon>
+            </ha-icon-button>
+            ${caps.canEditEntries
+              ? html`<ha-dropdown-item value="edit" class="edit-entry">
+                  ${localize("ui.edit")}
+                  <ha-icon slot="icon" icon="mdi:pencil"></ha-icon>
+                </ha-dropdown-item>`
+              : nothing}
+            ${caps.canRemoveEntries
+              ? html`<ha-dropdown-item value="remove" class="remove-entry">
+                  ${localize("ui.delete")}
+                  <ha-icon slot="icon" icon="mdi:delete"></ha-icon>
+                </ha-dropdown-item>`
+              : nothing}
+            ${caps.hasEntryToggle
+              ? html`<ha-dropdown-item value="toggle" class="toggle-entry">
+                  ${displayStatus === EntryStatus.DISABLED
+                    ? localize("ui.enable")
+                    : localize("ui.disable")}
+                  <ha-icon
+                    slot="icon"
+                    icon="${displayStatus === EntryStatus.DISABLED
+                      ? "mdi:toggle-switch"
+                      : "mdi:toggle-switch-off"}"
+                  ></ha-icon>
+                </ha-dropdown-item>`
+              : nothing}
+          </ha-dropdown>`
+        : undefined,
+    });
   }
 
   handleTimeChanged(ev: CustomEvent, entry: EditScheduleEntry) {
@@ -393,13 +406,17 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderSwitch() {
-    const displayEntityId = this._device.getDisplayEntity();
+    const primaryEntityId = this.getPrimaryEntityId();
     const displayInfo = this._device.getDisplayInfo();
     const globalToggle = this._device.getGlobalToggle();
+    const rowTitle = localize("ui.name") ?? displayInfo.name ?? "";
+    const iconColor = globalToggle?.state
+      ? "var(--state-switch-on-color, var(--state-switch-active-color, var(--state-active-color)))"
+      : undefined;
 
-    if (!this._hass.states[displayEntityId]) {
+    if (!primaryEntityId || !this._hass.states[primaryEntityId]) {
       return html`<ha-alert alert-type="warning">
-        ${createEntityNotFoundWarning(this._hass, displayEntityId)}
+        ${createEntityNotFoundWarning(this._hass, primaryEntityId)}
       </ha-alert>`;
     }
 
@@ -416,36 +433,36 @@ class DispenserScheduleCard extends LitElement {
         ></ha-switch>`
       : nothing;
 
-    return html`<hui-generic-entity-row
-      .hass=${this._hass}
-      .catchInteraction=${false}
-      .config=${{
-        entity: displayEntityId,
-        name: localize("ui.name"),
-        icon: displayInfo.icon ?? "mdi:calendar-badge",
-        state_color: true,
-      }}
-      class="timeline"
-    >
-      ${this._config.editable === "toggle"
-        ? html`<ha-button
-            @click=${this.handleEditToggle}
-            class="edit-button"
-            appearance="plain"
-          >
-            ${this._isEditing ? localize("ui.done") : localize("ui.edit")}
-          </ha-button>`
-        : nothing}
-      ${this._isEditing
-        ? html`<ha-icon-button
-            ?disabled=${isAddDisabled || !caps.canAddEntries}
-            @click=${this.handleAddEntry}
-            class="add-entry"
-          >
-            <ha-icon icon="mdi:clock-plus"></ha-icon>
-          </ha-icon-button>`
-        : switchElement}
-    </hui-generic-entity-row>`;
+    return renderEntityRow({
+      className: "header-row timeline",
+      icon: displayInfo.icon ?? "mdi:calendar-badge",
+      iconColor,
+      nameContent: rowTitle,
+      nameTitle: rowTitle,
+      style: this.getRowStyle(iconColor),
+      valueContent: html`
+        <div class="dispenser-entity-row__header-controls">
+          ${this._config.editable === "toggle"
+            ? html`<ha-button
+                @click=${this.handleEditToggle}
+                class="edit-button"
+                appearance="plain"
+              >
+                ${this._isEditing ? localize("ui.done") : localize("ui.edit")}
+              </ha-button>`
+            : nothing}
+          ${this._isEditing
+            ? html`<ha-icon-button
+                ?disabled=${isAddDisabled || !caps.canAddEntries}
+                @click=${this.handleAddEntry}
+                class="add-entry"
+              >
+                <ha-icon icon="mdi:clock-plus"></ha-icon>
+              </ha-icon-button>`
+            : switchElement}
+        </div>
+      `,
+    });
   }
 
   isSaveDisabled(entry: EditScheduleEntry) {
@@ -480,14 +497,15 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderContent() {
-    const displayEntityId = this._device.getDisplayEntity();
+    const primaryEntityId = this.getPrimaryEntityId();
 
     if (!this._device.isAvailable()) {
-      const scheduleEntity =
-        this._hass.states[this._device.getWatchedEntities()[0]];
+      const scheduleEntity = primaryEntityId
+        ? this._hass.states[primaryEntityId]
+        : undefined;
       if (!scheduleEntity) {
         return html`<ha-alert alert-type="warning">
-          ${createEntityNotFoundWarning(this._hass, displayEntityId)}
+          ${createEntityNotFoundWarning(this._hass, primaryEntityId)}
         </ha-alert>`;
       }
     }
@@ -564,15 +582,12 @@ class DispenserScheduleCard extends LitElement {
         label = localize("ui.empty") ?? "";
       }
 
-      return html`<hui-generic-entity-row
-        class="empty-row"
-        .hass=${this._hass}
-        .config=${{
-          entity: displayEntityId,
-          name: label,
-          icon: "mdi:calendar-blank-outline",
-        }}
-      ></hui-generic-entity-row>`;
+      return renderEntityRow({
+        className: "empty-row",
+        icon: "mdi:calendar-blank-outline",
+        nameContent: label,
+        nameTitle: label,
+      });
     }
     return listRows.map(this.renderScheduleRow, this);
   }

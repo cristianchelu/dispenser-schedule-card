@@ -1,6 +1,5 @@
 :host {
   --timeline-width: 1.25pt;
-  --timeline-color: var(--state-icon-color);
   --gap-size: 8px;
   --timeline-inset: 4px;
 }
@@ -12,7 +11,8 @@
 }
 
 .edit-button {
-  margin-right: 1em;
+  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 
 .card-header {
@@ -56,11 +56,71 @@ ha-time-input {
   border-top-right-radius: 0;
 }
 
-hui-generic-entity-row {
+.dispenser-entity-row {
   position: relative;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
 }
 
-hui-generic-entity-row.timeline::before {
+.dispenser-entity-row__row {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  width: 100%;
+  outline: none;
+  transition: background-color 180ms ease-in-out;
+}
+
+.dispenser-entity-row__info {
+  padding-left: 16px;
+  padding-right: 8px;
+  padding-inline-start: 16px;
+  padding-inline-end: 8px;
+  flex: 1 1 30%;
+  min-width: 0;
+}
+
+.dispenser-entity-row__info,
+.dispenser-entity-row__info > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dispenser-entity-row__secondary {
+  color: var(--secondary-text-color);
+}
+
+.dispenser-entity-row state-badge {
+  flex: 0 0 40px;
+}
+
+.dispenser-entity-row__state {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: var(--float-end);
+}
+
+.dispenser-entity-row__value {
+  display: flex;
+  align-items: center;
+  direction: ltr;
+}
+
+.dispenser-entity-row__header-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.dispenser-entity-row__header-controls > * {
+  min-width: 0;
+}
+
+.dispenser-entity-row.timeline::before {
   content: " ";
   display: block;
   position: absolute;
@@ -68,21 +128,15 @@ hui-generic-entity-row.timeline::before {
   left: calc(20px - (var(--timeline-width) / 2));
   width: var(--timeline-width);
   height: calc(var(--timeline-inset) * 2 + var(--gap-size));
-  background-color: var(--timeline-color);
+  background-color: var(--state-icon-color, var(--paper-item-icon-color));
   opacity: 0.2;
 }
 
-hui-generic-entity-row.timeline:first-child::before {
+.dispenser-entity-row.timeline:first-child::before {
   display: none;
 }
 
-hui-generic-entity-row.timeline {
-  &::before {
-    background-color: var(--state-icon-color, --paper-item-icon-color);
-  }
-}
-
-hui-generic-entity-row > * {
+.dispenser-entity-row > * {
   --ha-icon-display: flex;
 }
 

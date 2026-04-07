@@ -90,12 +90,9 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
     return entities;
   }
 
-  getDisplayEntity(): string {
-    return this.deviceConfig.switch ?? this.deviceConfig.entity;
-  }
-
   getDisplayInfo(): DeviceDisplayInfo {
-    const state = this.hass.states[this.getDisplayEntity()];
+    const state =
+      this.hass.states[this.deviceConfig.switch ?? this.deviceConfig.entity];
     return {
       name: state?.attributes.friendly_name,
       icon: state?.attributes.icon,

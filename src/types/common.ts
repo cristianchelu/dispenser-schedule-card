@@ -84,13 +84,6 @@ export abstract class Device<
 
   abstract getWatchedEntities(): string[];
 
-  /**
-   * @deprecated Use {@link getDisplayInfo} instead. This method exists only
-   * to feed hui-generic-entity-row and will be removed when that HA internal
-   * component is replaced with a custom row.
-   */
-  abstract getDisplayEntity(): string;
-
   abstract getDisplayInfo(): DeviceDisplayInfo;
   abstract isAvailable(): boolean;
 
