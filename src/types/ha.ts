@@ -1,3 +1,23 @@
+/** HA material hue names; theme CSS uses `var(--<name>-color)`. */
+export const HAColor = [
+  "red",
+  "pink",
+  "purple",
+  "indigo",
+  "blue",
+  "cyan",
+  "teal",
+  "green",
+  "lime",
+  "yellow",
+  "amber",
+  "orange",
+  "brown",
+  "grey",
+] as const;
+
+export type HAColor = (typeof HAColor)[number];
+
 export type HassFirstWeekday =
   | "language"
   | "monday"

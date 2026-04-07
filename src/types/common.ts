@@ -1,4 +1,4 @@
-import { HomeAssistant } from "./ha";
+import { type HAColor, HomeAssistant } from "./ha";
 import { appliesOnWeekday } from "./scheduleWeekdays";
 import { Weekday, getTodayWeekday } from "./weekday";
 
@@ -28,7 +28,7 @@ export interface ScheduleEntry {
   key: string;
   hour: number;
   minute: number;
-  amount: number;
+  values: number[];
   status: EntryStatus;
   weekdays?: readonly Weekday[];
 }
@@ -37,7 +37,7 @@ export interface EditScheduleEntry {
   key: string | null;
   hour: number;
   minute: number;
-  amount: number;
+  values: number[];
   weekdays?: readonly Weekday[];
 }
 
@@ -50,6 +50,23 @@ export interface AmountConfig {
   min: number;
   max: number;
   step: number;
+}
+
+export const EntryFieldRole = {
+  QUANTITY: "quantity",
+  POSITION: "position",
+} as const;
+export type EntryFieldRole =
+  (typeof EntryFieldRole)[keyof typeof EntryFieldRole];
+
+export interface EntryFieldDescriptor {
+  role: EntryFieldRole;
+  config: AmountConfig;
+  /**
+   * Which physical compartment this field corresponds to, expressed as an HA theme hue
+   * so the card can match the same color coding shown on the device (e.g. feeder bowls).
+   */
+  compartmentColor?: HAColor;
 }
 
 export interface DeviceDisplayInfo {
@@ -80,7 +97,7 @@ export abstract class Device<
   ) {}
 
   abstract readonly capabilities: DeviceCapabilities;
-  abstract readonly amountConfig: AmountConfig;
+  abstract readonly entryFields: EntryFieldDescriptor[];
 
   abstract getWatchedEntities(): string[];
 

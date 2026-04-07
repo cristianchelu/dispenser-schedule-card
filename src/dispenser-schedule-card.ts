@@ -1,14 +1,18 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
+import { styleMap } from "lit/directives/style-map.js";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
 import { customElement } from "lit/decorators/custom-element.js";
 
 import {
   Device,
+  EntryFieldDescriptor,
+  EntryFieldRole,
   EntryStatus,
   ScheduleEntry,
   EditScheduleEntry,
 } from "./types/common";
+import type { TemplateResult } from "lit";
 import {
   Weekday,
   formatWeekday,
@@ -93,7 +97,7 @@ class DispenserScheduleCard extends LitElement {
       key: entry.key,
       hour: entry.hour,
       minute: entry.minute,
-      amount: entry.amount,
+      values: [...entry.values],
       weekdays: entry.weekdays ? [...entry.weekdays] : undefined,
     };
   }
@@ -164,13 +168,42 @@ class DispenserScheduleCard extends LitElement {
     return this._device.filterScheduleForToday(this._schedules);
   }
 
-  /** Primary row title: today view is time-only; edit-mode list is time ⸱ amount. */
-  rowPrimaryLabel(entry: ScheduleEntry): string {
-    const time = `${entry.hour}:${entry.minute.toString().padStart(2, "0")}`;
-    if (this._isEditing) {
-      return `${time} ⸱ ${this.renderAmount(entry.amount)}`;
+  renderTimeString(entry: ScheduleEntry): string {
+    return `${entry.hour}:${entry.minute.toString().padStart(2, "0")}`;
+  }
+
+  /** Accessible label for the row (time + value summary). */
+  scheduleEntryNameTitle(entry: ScheduleEntry): string {
+    const time = this.renderTimeString(entry);
+    const summary = this.renderEntryValues(entry.values);
+    return summary ? `${time} · ${summary}` : time;
+  }
+
+  getEntryFieldValue(
+    entry: Pick<EditScheduleEntry | ScheduleEntry, "values">,
+    fieldIndex: number
+  ): number {
+    const field = this._device.entryFields[fieldIndex];
+    return entry.values[fieldIndex] ?? field?.config.min ?? 0;
+  }
+
+  resolveFieldLabel(field: EntryFieldDescriptor, fieldIndex: number): string {
+    if (field.role === EntryFieldRole.POSITION) {
+      return localize("entry_field.position") ?? localize("ui.amount") ?? "";
     }
-    return time;
+
+    if (this._device.entryFields.length === 1) {
+      const unitConfig = this._config.unit_of_measurement;
+      if (typeof unitConfig === "object" && unitConfig !== null) {
+        return unitConfig.other ?? localize("ui.amount") ?? "";
+      }
+      return unitConfig ?? localize("ui.amount") ?? "";
+    }
+
+    return (
+      localize("entry_field.quantity_n", "{n}", String(fieldIndex + 1)) ??
+      `${localize("ui.amount") ?? "Amount"} ${fieldIndex + 1}`
+    );
   }
 
   /** Subtitle for edit-mode list rows when the device has a weekly schedule. */
@@ -256,7 +289,7 @@ class DispenserScheduleCard extends LitElement {
     </ha-dropdown>`;
   }
 
-  renderAmount(amount: number) {
+  renderQuantityValue(value: number): string {
     const { alternate_unit } = this._config;
 
     let pluralCategory: Intl.LDMLPluralRule = "other";
@@ -264,7 +297,7 @@ class DispenserScheduleCard extends LitElement {
       const pluralRules = new Intl.PluralRules(this._hass.locale.language, {
         type: "cardinal",
       });
-      pluralCategory = pluralRules.select(amount);
+      pluralCategory = pluralRules.select(value);
     } catch (_error) {}
 
     let main_unit: string;
@@ -276,7 +309,7 @@ class DispenserScheduleCard extends LitElement {
     } else {
       main_unit = localize(`ui.portions_${pluralCategory}`) ?? "portions";
     }
-    const mainStr = `${amount} ${main_unit}`;
+    const mainStr = `${value} ${main_unit}`;
 
     let alternateStr;
     if (alternate_unit) {
@@ -285,7 +318,7 @@ class DispenserScheduleCard extends LitElement {
         conversion_factor,
         unit_of_measurement: alt_unit,
       } = alternate_unit;
-      const convertedAmount = amount * conversion_factor;
+      const convertedAmount = value * conversion_factor;
 
       let alt_unit_display: string;
       if (typeof alt_unit === "object" && alt_unit !== null) {
@@ -298,6 +331,95 @@ class DispenserScheduleCard extends LitElement {
     }
 
     return [mainStr, alternateStr].filter(Boolean).join(" ⸱ ");
+  }
+
+  renderEntryValues(values: number[]): string {
+    const fields = this._device.entryFields;
+    if (fields.length === 0) return "";
+
+    if (fields.length === 1) {
+      const field = fields[0];
+      const value = values[0] ?? field.config.min;
+      return field.role === EntryFieldRole.POSITION
+        ? `${this.resolveFieldLabel(field, 0)} ${value}`
+        : this.renderQuantityValue(value);
+    }
+
+    return fields
+      .map((field, fieldIndex) => {
+        const value = values[fieldIndex] ?? field.config.min;
+        const label = this.resolveFieldLabel(field, fieldIndex);
+        return field.role === EntryFieldRole.POSITION
+          ? `${label} ${value}`
+          : `${label}: ${this.renderQuantityValue(value)}`;
+      })
+      .join(" ⸱ ");
+  }
+
+  renderCompactQuantityChips(
+    values: number[],
+    options: { showUnit?: boolean } = {}
+  ): TemplateResult {
+    const { showUnit = true } = options;
+    const fields = this._device.entryFields;
+    const unit = localize("ui.portions_other") ?? "portions";
+    return html`
+      <span class="entry-values-compact">
+        ${fields.map((field, fieldIndex) => {
+          const value = values[fieldIndex] ?? field.config.min;
+          const compartmentColor = field.compartmentColor;
+          return html`<span class="entry-value-chip">
+            <ha-icon
+              class="entry-value-chip-icon"
+              style=${styleMap({
+                color: compartmentColor
+                  ? `var(--${compartmentColor}-color)`
+                  : undefined,
+              })}
+              icon=${`mdi:numeric-${fieldIndex + 1}-box`}
+            ></ha-icon>
+            <span class="entry-value-chip-text">${value}</span>
+          </span>`;
+        })}
+        ${showUnit
+          ? html`<span class="entry-values-compact-unit">${unit}</span>`
+          : nothing}
+      </span>
+    `;
+  }
+
+  renderCompactEntryValues(values: number[]) {
+    const fields = this._device.entryFields;
+    const allQuantity =
+      fields.length > 1 &&
+      fields.every((field) => field.role === EntryFieldRole.QUANTITY);
+
+    if (!allQuantity) {
+      return html`<span>${this.renderEntryValues(values)}</span>`;
+    }
+
+    return this.renderCompactQuantityChips(values, { showUnit: true });
+  }
+
+  renderEditRowNameContent(entry: ScheduleEntry): TemplateResult {
+    const timeStr = this.renderTimeString(entry);
+    const fields = this._device.entryFields;
+    const values = entry.values;
+    const allMultiQuantity =
+      fields.length > 1 &&
+      fields.every((f) => f.role === EntryFieldRole.QUANTITY);
+
+    if (allMultiQuantity) {
+      return html`<span class="entry-edit-primary">
+        <span class="entry-edit-primary-time">${timeStr}</span>
+        ${this.renderCompactQuantityChips(values, { showUnit: false })}
+      </span>`;
+    }
+
+    const summary = this.renderEntryValues(values);
+    return html`<span class="entry-edit-primary"
+      >${timeStr} · ${summary}</span
+    >`;
   }
 
   getPrimaryEntityId(): string | undefined {
@@ -318,8 +440,19 @@ class DispenserScheduleCard extends LitElement {
     const fallback = DefaultDisplayConfig[displayStatus];
     const icon = display.icon ?? fallback?.icon ?? "mdi:clock-outline";
     const color = display.color || fallback?.color || undefined;
-    const rowTitle = this.rowPrimaryLabel(entry);
+    const timeOnly = this.renderTimeString(entry);
+    const nameTitle = this.scheduleEntryNameTitle(entry);
     const style = this.getRowStyle(color);
+    const caps = this._device.capabilities;
+    const hasOverflowActions =
+      caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle;
+    const rowClass = [
+      "timeline",
+      displayStatus,
+      this._isEditing ? "dispenser-entity-row--edit-list" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     if (!this._isEditing) {
       const label = display.label ?? displayStatus;
@@ -329,30 +462,27 @@ class DispenserScheduleCard extends LitElement {
           : (localize(`status.${label}`) ?? label);
 
       return renderEntityRow({
-        className: `timeline ${displayStatus}`,
+        className: rowClass,
         icon,
         iconColor: color,
-        nameContent: rowTitle,
-        nameTitle: rowTitle,
+        nameContent: timeOnly,
+        nameTitle,
         secondaryContent: rowSecondary,
         style,
-        valueContent: html`<span>${this.renderAmount(entry.amount)}</span>`,
+        valueContent: this.renderCompactEntryValues(entry.values),
       });
     }
 
-    const caps = this._device.capabilities;
     const rowSecondary = caps.hasWeeklySchedule
       ? this.weekdaysSubtitle(entry)
       : undefined;
-    const hasOverflowActions =
-      caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle;
 
     return renderEntityRow({
-      className: `timeline ${displayStatus}`,
+      className: rowClass,
       icon,
       iconColor: color,
-      nameContent: rowTitle,
-      nameTitle: rowTitle,
+      nameContent: this.renderEditRowNameContent(entry),
+      nameTitle,
       secondaryContent: rowSecondary || undefined,
       style,
       valueContent: hasOverflowActions
@@ -399,10 +529,34 @@ class DispenserScheduleCard extends LitElement {
     this._editSchedule = { ...entry, hour, minute };
   }
 
-  handleAmountChanged(ev: InputEvent, entry: EditScheduleEntry) {
+  handleValueChanged(
+    entry: EditScheduleEntry,
+    fieldIndex: number,
+    value: number
+  ) {
+    const values = [...entry.values];
+    values[fieldIndex] = value;
+    this._editSchedule = { ...entry, values };
+  }
+
+  handleAmountChanged(
+    ev: InputEvent,
+    entry: EditScheduleEntry,
+    fieldIndex: number
+  ) {
     const amountInput = ev.currentTarget as unknown as { value?: string };
-    const amount = parseInt(amountInput.value ?? "", 10);
-    this._editSchedule = { ...entry, amount };
+    const value = parseInt(amountInput.value ?? "", 10);
+    this.handleValueChanged(entry, fieldIndex, value);
+  }
+
+  handlePositionChanged(
+    ev: CustomEvent,
+    entry: EditScheduleEntry,
+    fieldIndex: number
+  ) {
+    const value = parseInt(ev.detail?.item?.value ?? "", 10);
+    if (Number.isNaN(value)) return;
+    this.handleValueChanged(entry, fieldIndex, value);
   }
 
   renderSwitch() {
@@ -466,12 +620,20 @@ class DispenserScheduleCard extends LitElement {
   }
 
   isSaveDisabled(entry: EditScheduleEntry) {
-    const amountConfig = this._device.amountConfig;
+    const fields = this._device.entryFields;
     const caps = this._device.capabilities;
+    const valuesInvalid = fields.some((field, fieldIndex) => {
+      const value = entry.values[fieldIndex];
+      return (
+        value === undefined ||
+        Number.isNaN(value) ||
+        value < field.config.min ||
+        value > field.config.max
+      );
+    });
+    if (valuesInvalid) return true;
 
     if (entry.key === null) {
-      const amountInvalid =
-        entry.amount < amountConfig.min || entry.amount > amountConfig.max;
       const weekdaysInvalid =
         caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays);
       return (
@@ -479,21 +641,23 @@ class DispenserScheduleCard extends LitElement {
         entry.hour > 23 ||
         entry.minute < 0 ||
         entry.minute > 59 ||
-        amountInvalid ||
         weekdaysInvalid
       );
-    } else {
-      const schedule = this._schedules.find((e) => e.key === entry.key);
-      if (!schedule) return true;
-      const sameTime =
-        schedule.hour === entry.hour &&
-        schedule.minute === entry.minute &&
-        schedule.amount === entry.amount;
-      const sameWeekdays =
-        !caps.hasWeeklySchedule ||
-        weekdaysEqual(entry.weekdays, schedule.weekdays);
-      return sameTime && sameWeekdays;
     }
+
+    const schedule = this._schedules.find((e) => e.key === entry.key);
+    if (!schedule) return true;
+    const sameTime =
+      schedule.hour === entry.hour &&
+      schedule.minute === entry.minute &&
+      schedule.values.length === entry.values.length &&
+      schedule.values.every(
+        (value, fieldIndex) => value === entry.values[fieldIndex]
+      );
+    const sameWeekdays =
+      !caps.hasWeeklySchedule ||
+      weekdaysEqual(entry.weekdays, schedule.weekdays);
+    return sameTime && sameWeekdays;
   }
 
   renderContent() {
@@ -512,14 +676,9 @@ class DispenserScheduleCard extends LitElement {
 
     if (this._editSchedule) {
       const entry = this._editSchedule;
-      const amountConfig = this._device.amountConfig;
+      const fields = this._device.entryFields;
       const timeFieldLabel = localize("ui.time") ?? "Time";
       const repeatFieldLabel = localize("ui.repeat") ?? "Repeat";
-      const uom = this._config.unit_of_measurement;
-      const amountFieldLabel =
-        (typeof uom === "object" && uom !== null ? uom.other : uom) ??
-        localize("ui.amount") ??
-        "";
 
       return html`
         <ha-control-button-group>
@@ -544,18 +703,56 @@ class DispenserScheduleCard extends LitElement {
               this.handleTimeChanged(ev, entry)}
           ></ha-time-input>
         </div>
-        <div class="edit-field">
-          <label class="edit-field-label">${amountFieldLabel}</label>
-          <ha-input
-            aria-label=${amountFieldLabel}
-            value=${String(entry.amount)}
-            type="number"
-            without-spin-buttons
-            max=${String(amountConfig.max)}
-            min=${String(amountConfig.min)}
-            @change=${(ev: InputEvent) => this.handleAmountChanged(ev, entry)}
-          ></ha-input>
-        </div>
+        ${fields.map((field, fieldIndex) => {
+          const label = this.resolveFieldLabel(field, fieldIndex);
+          const value = this.getEntryFieldValue(entry, fieldIndex);
+
+          if (field.role === EntryFieldRole.POSITION) {
+            const options = Array.from(
+              {
+                length: field.config.max - field.config.min + 1,
+              },
+              (_v, optionIndex) => field.config.min + optionIndex
+            );
+            return html`<div class="edit-field">
+              <label class="edit-field-label">${label}</label>
+              <ha-dropdown
+                placement="bottom"
+                @wa-select=${(ev: CustomEvent) =>
+                  this.handlePositionChanged(ev, entry, fieldIndex)}
+              >
+                <ha-picker-field
+                  slot="trigger"
+                  .value=${String(value)}
+                  .placeholder=${label}
+                  aria-label=${label}
+                  hide-clear-icon
+                ></ha-picker-field>
+                ${options.map(
+                  (option) =>
+                    html`<ha-dropdown-item .value=${String(option)}>
+                      ${option}
+                    </ha-dropdown-item>`
+                )}
+              </ha-dropdown>
+            </div>`;
+          }
+
+          return html`<div class="edit-field">
+            <label class="edit-field-label">${label}</label>
+            <ha-input
+              aria-label=${label}
+              .value=${String(value)}
+              type="number"
+              without-spin-buttons
+              max=${String(field.config.max)}
+              min=${String(field.config.min)}
+              step=${String(field.config.step)}
+              @change=${(ev: InputEvent) =>
+                this.handleAmountChanged(ev, entry, fieldIndex)}
+            ></ha-input>
+          </div>`;
+        })}
         ${this._device.capabilities.hasWeeklySchedule
           ? html`<div class="edit-field">
               <label class="edit-field-label">${repeatFieldLabel}</label>

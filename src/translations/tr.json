@@ -17,6 +17,10 @@
     "every_day": "Her gün",
     "empty_today": "Bugün için program tanımlanmamış"
   },
+  "entry_field": {
+    "quantity_n": "Miktar {n}",
+    "position": "Bölme"
+  },
   "status": {
     "dispensed": "Verildi",
     "dispensing": "Veriliyor",

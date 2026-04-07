@@ -18,6 +18,10 @@
     "every_day": "În fiecare zi",
     "empty_today": "Niciun orar definit pentru astăzi"
   },
+  "entry_field": {
+    "quantity_n": "Cantitate {n}",
+    "position": "Compartiment"
+  },
   "status": {
     "dispensed": "Dozat",
     "dispensing": "Se dozează",

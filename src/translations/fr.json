@@ -18,6 +18,10 @@
     "every_day": "Tous les jours",
     "empty_today": "Aucun horaire défini pour aujourd'hui"
   },
+  "entry_field": {
+    "quantity_n": "Quantité {n}",
+    "position": "Compartiment"
+  },
   "status": {
     "dispensed": "Distribuée",
     "dispensing": "En cours de distribution",

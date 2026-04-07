@@ -18,6 +18,10 @@
     "every_day": "Cada dia",
     "empty_today": "No hi ha cap horari definit per avui"
   },
+  "entry_field": {
+    "quantity_n": "Quantitat {n}",
+    "position": "Compartiment"
+  },
   "status": {
     "dispensed": "Lliurats",
     "dispensing": "Lliurant-se",

@@ -17,6 +17,10 @@
     "every_day": "Todos los días",
     "empty_today": "Ningún horario definido para hoy"
   },
+  "entry_field": {
+    "quantity_n": "Cantidad {n}",
+    "position": "Compartimento"
+  },
   "status": {
     "dispensed": "Dispensado",
     "dispensing": "Dispensando",

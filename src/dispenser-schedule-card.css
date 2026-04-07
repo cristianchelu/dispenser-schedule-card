@@ -26,6 +26,60 @@
   margin-bottom: -8px;
 }
 
+.entry-values-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--primary-text-color);
+}
+
+.entry-value-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.entry-value-chip-icon {
+  --mdc-icon-size: 18px;
+  color: var(--secondary-text-color);
+}
+
+.entry-value-chip-text,
+.entry-values-compact-unit {
+  line-height: 1;
+}
+
+.entry-values-compact-unit {
+  color: var(--secondary-text-color);
+}
+
+.entry-edit-primary {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.entry-edit-primary-time {
+  flex: 0 0 auto;
+}
+
+.dispenser-entity-row--edit-list .dispenser-entity-row__info,
+.dispenser-entity-row--edit-list .dispenser-entity-row__info > * {
+  white-space: normal;
+}
+
+.dispenser-entity-row--edit-list .dispenser-entity-row__secondary {
+  white-space: nowrap;
+}
+
+.dispenser-entity-row--edit-list .dispenser-entity-row__state {
+  margin-block: -4px;
+}
+
 ha-time-input {
   --ha-icon-display: flex;
 }
@@ -107,6 +161,31 @@ ha-time-input {
   display: flex;
   align-items: center;
   direction: ltr;
+}
+
+/* Default list (not header, not edit mode): time stays compact; portions use remaining width */
+.dispenser-entity-row.timeline:not(.header-row):not(
+    .dispenser-entity-row--edit-list
+  )
+  .dispenser-entity-row__info {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.dispenser-entity-row.timeline:not(.header-row):not(
+    .dispenser-entity-row--edit-list
+  )
+  .dispenser-entity-row__value {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.dispenser-entity-row.timeline:not(.header-row):not(
+    .dispenser-entity-row--edit-list
+  )
+  .dispenser-entity-row__state {
+  width: 100%;
+  min-width: 0;
 }
 
 .dispenser-entity-row__header-controls {

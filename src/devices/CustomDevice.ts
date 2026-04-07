@@ -4,6 +4,8 @@ import {
   DeviceCapabilities,
   DeviceDisplayInfo,
   EditScheduleEntry,
+  EntryFieldDescriptor,
+  EntryFieldRole,
   EntryStatus,
   GlobalToggleInfo,
   ScheduleEntry,
@@ -74,12 +76,13 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
     };
   }
 
-  get amountConfig(): AmountConfig {
-    return {
+  get entryFields(): EntryFieldDescriptor[] {
+    const config: AmountConfig = {
       min: this.deviceConfig.min_amount,
       max: this.deviceConfig.max_amount,
       step: this.deviceConfig.step_amount,
     };
+    return [{ role: EntryFieldRole.QUANTITY, config }];
   }
 
   getWatchedEntities(): string[] {
@@ -120,7 +123,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
         key: res.groups!.id,
         hour: parseInt(res.groups!.hour),
         minute: parseInt(res.groups!.minute),
-        amount: parseInt(res.groups!.amount),
+        values: [parseInt(res.groups!.amount)],
         status: this.statusMap[parseInt(res.groups!.status)],
       });
       i++;
@@ -190,7 +193,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       id,
       hour: entry.hour,
       minute: entry.minute,
-      [amountKey]: entry.amount,
+      [amountKey]: entry.values[0],
     });
   }
 
@@ -201,7 +204,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       id: parseInt(entry.key),
       hour: entry.hour,
       minute: entry.minute,
-      [amountKey]: entry.amount,
+      [amountKey]: entry.values[0],
     });
   }
 
@@ -226,7 +229,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       key: null,
       hour: 0,
       minute: 0,
-      amount: this.amountConfig.min,
+      values: [this.entryFields[0].config.min],
     };
   }
 }

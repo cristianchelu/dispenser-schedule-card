@@ -17,6 +17,10 @@
     "every_day": "Täglich",
     "empty_today": "Kein Zeitplan für heute definiert"
   },
+  "entry_field": {
+    "quantity_n": "Menge {n}",
+    "position": "Fach"
+  },
   "status": {
     "dispensed": "Ausgegeben",
     "dispensing": "Wird ausgegeben",

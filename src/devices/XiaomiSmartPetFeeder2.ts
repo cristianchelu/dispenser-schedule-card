@@ -1,9 +1,10 @@
 import {
-  AmountConfig,
   Device,
   DeviceCapabilities,
   DeviceDisplayInfo,
   EditScheduleEntry,
+  EntryFieldDescriptor,
+  EntryFieldRole,
   EntryStatus,
   GlobalToggleInfo,
   ScheduleEntry,
@@ -27,20 +28,20 @@ function parseEntryToken(token: string): Omit<ScheduleEntry, "key"> | null {
   if (!m || !m.groups) return null;
   const hour = parseInt(m.groups.hour, 10);
   const minute = parseInt(m.groups.minute, 10);
-  const amount = parseInt(m.groups.amount, 10);
+  const value = parseInt(m.groups.amount, 10);
   const statusCode = m.groups.status;
   const status =
     statusCode === "01" ? EntryStatus.PENDING : EntryStatus.DISABLED;
-  return { hour, minute, amount, status };
+  return { hour, minute, values: [value], status };
 }
 
 function encodeEntryToken(
   hour: number,
   minute: number,
-  amount: number,
+  value: number,
   enabled: boolean
 ): string {
-  return `${pad2(hour)}${pad2(minute)}${pad2(amount)}${enabled ? "01" : "00"}`;
+  return `${pad2(hour)}${pad2(minute)}${pad2(value)}${enabled ? "01" : "00"}`;
 }
 
 function parseRawValue(raw: string | undefined): {
@@ -74,12 +75,17 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
       canRemoveEntries: true,
       canEditEntries: true,
       maxEntries: MAX_ENTRIES,
-      hasWeeklySchedule: true,
+      hasWeeklySchedule: false,
     };
   }
 
-  get amountConfig(): AmountConfig {
-    return { min: 1, max: 15, step: 1 };
+  get entryFields(): EntryFieldDescriptor[] {
+    return [
+      {
+        role: EntryFieldRole.QUANTITY,
+        config: { min: 1, max: 15, step: 1 },
+      },
+    ];
   }
 
   getWatchedEntities(): string[] {
@@ -147,7 +153,7 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
     const { globalToggle, entryTokens } = parseRawValue(state);
     if (entryTokens.length >= MAX_ENTRIES) return;
     entryTokens.push(
-      encodeEntryToken(entry.hour, entry.minute, entry.amount, true)
+      encodeEntryToken(entry.hour, entry.minute, entry.values[0], true)
     );
     await this.writeState(globalToggle, entryTokens);
   }
@@ -166,7 +172,7 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
     entryTokens[idx] = encodeEntryToken(
       entry.hour,
       entry.minute,
-      entry.amount,
+      entry.values[0],
       enabled
     );
     await this.writeState(globalToggle, entryTokens);
@@ -197,7 +203,7 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
     entryTokens[idx] = encodeEntryToken(
       parsed.hour,
       parsed.minute,
-      parsed.amount,
+      parsed.values[0],
       !enabled
     );
     await this.writeState(globalToggle, entryTokens);
@@ -214,7 +220,7 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
       key: null,
       hour: 0,
       minute: 0,
-      amount: this.amountConfig.min,
+      values: this.entryFields.map((field) => field.config.min),
     };
   }
 }

@@ -17,6 +17,10 @@
     "every_day": "Every day",
     "empty_today": "No schedule defined for today"
   },
+  "entry_field": {
+    "quantity_n": "Amount {n}",
+    "position": "Compartment"
+  },
   "status": {
     "dispensed": "Dispensed",
     "dispensing": "Dispensing",
