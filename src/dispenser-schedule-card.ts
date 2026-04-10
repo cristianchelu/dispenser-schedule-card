@@ -42,8 +42,6 @@ import { renderEntityRow } from "./rows/entityRow";
 
 import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 
-import "./editor/dispenser-schedule-card-editor";
-
 const createEntityNotFoundWarning = (hass: HomeAssistant, entityId?: string) =>
   hass.config.state !== STATE_NOT_RUNNING
     ? hass.localize("ui.panel.lovelace.warning.entity_not_found", {
@@ -815,17 +813,6 @@ class DispenserScheduleCard extends LitElement {
       ? this._schedules.length
       : this.getDisplayedScheduleRows().length;
     return 1 + rows;
-  }
-
-  static getStubConfig(): Record<string, unknown> {
-    return {
-      type: "custom:dispenser-schedule-card",
-      device: { type: "xiaomi-smart-feeder-2", entity: "" },
-    };
-  }
-
-  static getConfigElement(): HTMLElement {
-    return document.createElement("dispenser-schedule-card-editor");
   }
 
   setConfig(config: DispenserScheduleCardConfig) {
