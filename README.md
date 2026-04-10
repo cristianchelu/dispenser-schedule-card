@@ -40,12 +40,14 @@ Typical YAML:
 
 ```yaml
 type: custom:dispenser-schedule-card
-entity: sensor.feeder_raw_feed_plan
-switch: switch.feeder_feeding_schedule
-actions:
-  add: esphome.feeder_add_scheduled_feed
-  edit: esphome.feeder_edit_scheduled_feed
-  remove: esphome.feeder_remove_scheduled_feed
+device:
+  type: xiaomi-smart-feeder
+  entity: sensor.feeder_raw_feed_plan
+  switch: switch.feeder_feeding_schedule
+  actions:
+    add: esphome.feeder_add_scheduled_feed
+    edit: esphome.feeder_edit_scheduled_feed
+    remove: esphome.feeder_remove_scheduled_feed
 alternate_unit:
   unit_of_measurement: g
   conversion_factor: 5
@@ -54,18 +56,26 @@ alternate_unit:
 
 ### Options
 
-| Name                  | Required     | Description                                                                                                                             |
-| --------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `entity`              | **Required** | An entity_id in the `sensor` domain containing the schedule                                                                             |
-| `switch`              | _Optional_   | An entity_id in the `switch` domain containing the on/off toggle for the schedule.                                                      |
-| `actions`             | _Optional_   | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions.                                                        |
-| `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br> Default `toggle` if `actions` are defined, otherwise `never`. |
-| `unit_of_measurement` | _Optional_   | Unit label. String or object with plural forms. See [Pluralization](#pluralization). <br><br> Default `portions`.                       |
-| `alternate_unit`      | _Optional_   | Configuration to display a secondary unit of measurement, with a conversion factor.                                                     |
-| `device`              | _Optional_   | See [Custom Device Parsing](#custom-device-parsing)                                                                                     |
-| `display`             | _Optional_   | See [Display customization](#display-customization)                                                                                     |
+| Name                  | Required     | Description                                                                                                                                                 |
+| --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `device`              | **Required** | Device block. Must include `type`: `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, or `custom`. See [Device](#device).                                      |
+| `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br> Default `toggle` when the device supports editing or toggling; otherwise `never`. |
+| `unit_of_measurement` | _Optional_   | Unit label. String or object with plural forms. See [Pluralization](#pluralization). <br><br> Default `portions`.                                           |
+| `alternate_unit`      | _Optional_   | Configuration to display a secondary unit of measurement, with a conversion factor.                                                                         |
+| `display`             | _Optional_   | See [Display customization](#display-customization)                                                                                                         |
 
-#### `actions` options
+### Device
+
+| Name      | Required     | Description                                                                                                                        |
+| --------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `type`    | **Required** | `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, or `custom`.                                                                       |
+| `entity`  | **Required** | An entity_id in the `sensor` domain containing the schedule.                                                                       |
+| `switch`  | _Optional_   | An entity_id in the `switch` domain for the schedule on/off toggle. Supported for `xiaomi-smart-feeder` and `custom`.              |
+| `actions` | _Optional_   | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions. Supported for `xiaomi-smart-feeder` and `custom`. |
+
+For `type: custom`, additional fields are required; see [Custom Device Parsing](#custom-device-parsing).
+
+#### `device.actions` options
 
 | Name     | Required   | Description                                                  |
 | -------- | ---------- | ------------------------------------------------------------ |
@@ -114,6 +124,8 @@ Language for which the pluralization rules apply is always the current logged in
 user's language setting.
 
 ## Compatibility
+
+Minimum Home Assistant version: **2026.4.0**.
 
 ### Xiaomi Smart Pet Feeder (`mmgg.feeder.fi1`)
 
@@ -189,17 +201,18 @@ but not a failure of the device itself.
 
 - the schedule entry is status `pending` and,
 - the dispense time is greater than current Home Assistant time and,
-- there exists a `switch` entry in the card config and,
+- a `switch` is set in the device configuration and,
 - the `switch` entity is off.
 
 This indicates that future dispense entries will **not** be executed because
 the schedule is currently disabled.
 
-#### `device` Options
+#### Custom device fields (`type: custom`)
+
+These fields apply in addition to `entity`, and optional `switch` and `actions`, when `device.type` is `custom`.
 
 | Name             | Required     | Description                                                                                     |
 | ---------------- | ------------ | ----------------------------------------------------------------------------------------------- |
-| `type`           | **Required** | Must be set to `custom` to enable custom parsing.                                               |
 | `max_entries`    | **Required** | Maximum number of schedule entries supported by the device.                                     |
 | `min_amount`     | **Required** | Minimum amount that can be dispensed.                                                           |
 | `max_amount`     | **Required** | Maximum amount that can be dispensed.                                                           |
@@ -213,15 +226,15 @@ Here's a complete example of custom device parsing configuration:
 
 ```yaml
 type: custom:dispenser-schedule-card
-entity: sensor.my_custom_feeder_schedule
-switch: switch.my_feeder_schedule_enable
-actions:
-  add: esphome.my_feeder_add_feed
-  edit: esphome.my_feeder_edit_feed
-  remove: esphome.my_feeder_remove_feed
-  toggle: esphome.my_feeder_toggle_feed
 device:
   type: custom
+  entity: sensor.my_custom_feeder_schedule
+  switch: switch.my_feeder_schedule_enable
+  actions:
+    add: esphome.my_feeder_add_feed
+    edit: esphome.my_feeder_edit_feed
+    remove: esphome.my_feeder_remove_feed
+    toggle: esphome.my_feeder_toggle_feed
   max_entries: 8
   min_amount: 1
   max_amount: 20
