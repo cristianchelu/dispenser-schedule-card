@@ -30,5 +30,8 @@
     "skipped": "Omis",
     "disabled": "Dezactivat",
     "unknown": "Necunoscut"
+  },
+  "errors": {
+    "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }
 }

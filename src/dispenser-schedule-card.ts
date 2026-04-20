@@ -115,6 +115,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   _handleRowMenuAction(entry: ScheduleEntry, ev: CustomEvent) {
+    if (entry.readonly) return;
     switch (ev.detail?.item?.value) {
       case "edit":
         this.handleEditEntry(entry);
@@ -162,7 +163,10 @@ class DispenserScheduleCard extends LitElement {
 
   getDisplayedScheduleRows(): ScheduleEntry[] {
     const caps = this._device.capabilities;
-    if (this._isEditing || !caps.hasWeeklySchedule) {
+    if (this._isEditing) {
+      return this._schedules.filter((entry) => !entry.readonly);
+    }
+    if (!caps.hasWeeklySchedule) {
       return this._schedules;
     }
     return this._device.filterScheduleForToday(this._schedules);
@@ -445,7 +449,8 @@ class DispenserScheduleCard extends LitElement {
     const style = this.getRowStyle(color);
     const caps = this._device.capabilities;
     const hasOverflowActions =
-      caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle;
+      !entry.readonly &&
+      (caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle);
     const rowClass = [
       "timeline",
       displayStatus,
@@ -660,6 +665,17 @@ class DispenserScheduleCard extends LitElement {
     return sameTime && sameWeekdays;
   }
 
+  renderConfigErrors() {
+    const errors = this._device.getConfigErrors();
+    if (errors.length === 0) return nothing;
+    return html`${errors.map((err) => {
+      const message =
+        localize("errors.unresolved_field", "{field}", err.field) ??
+        `Could not auto-resolve ${err.field}. Specify it manually.`;
+      return html`<ha-alert alert-type="error">${message}</ha-alert>`;
+    })}`;
+  }
+
   renderContent() {
     const primaryEntityId = this.getPrimaryEntityId();
 
@@ -801,6 +817,7 @@ class DispenserScheduleCard extends LitElement {
     return html`
       <ha-card>
         <div class="card-content">
+          ${this.renderConfigErrors()}
           ${this._editSchedule ? nothing : this.renderSwitch()}
           ${this.renderContent()}
         </div>
