@@ -61,3 +61,16 @@ export interface HomeAssistant {
   localize(key: string, params?: Record<string, string>): string;
   config: { state: string; time_zone?: string };
 }
+
+/** All non-null entries from `hass.entities` (empty if the map is missing). */
+export function listEntityRegistryEntries(
+  hass: HomeAssistant
+): HassEntityRegistryEntry[] {
+  const entities = hass?.entities;
+  if (!entities) return [];
+  const out: HassEntityRegistryEntry[] = [];
+  for (const entry of Object.values(entities)) {
+    if (entry) out.push(entry);
+  }
+  return out;
+}
