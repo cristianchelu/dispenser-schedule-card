@@ -17,9 +17,10 @@ import { canonicalizeWeekdays } from "../types/scheduleWeekdays";
 import { ALL_WEEKDAYS, getTodayWeekday } from "../types/weekday";
 
 const PETLIBRO_PLATFORM = "petlibro";
-const SCHEDULE_UNIQUE_ID_SUFFIX = "-feeding_schedule";
-const ENABLE_BUTTON_UNIQUE_ID_SUFFIX = "-enable_feeding_plan";
-const DISABLE_BUTTON_UNIQUE_ID_SUFFIX = "-disable_feeding_plan";
+/** Slug suffixes on `entity_id` (after `_` or `-`) for auto-discovery. */
+const SCHEDULE_ENTITY_SLUG = "feeding_schedule";
+const ENABLE_BUTTON_ENTITY_SLUG = "enable_feeding_plan";
+const DISABLE_BUTTON_ENTITY_SLUG = "disable_feeding_plan";
 
 /** Attribute keys that are not feeding plans. */
 const RESERVED_ATTRIBUTE_KEYS = new Set([
@@ -80,7 +81,7 @@ interface GlobalToggleAdapter {
 }
 
 function listRegistryEntries(hass: HomeAssistant): HassEntityRegistryEntry[] {
-  const entities = hass.entities;
+  const entities = hass?.entities;
   if (!entities) return [];
   const out: HassEntityRegistryEntry[] = [];
   for (const entry of Object.values(entities)) {
@@ -102,19 +103,41 @@ function findPetlibroEntityByDevice(
   );
 }
 
-function findByUniqueIdSuffix(
+function entityIdEndsWithSlug(
+  entityId: string,
+  slug: string,
+  domainPrefix?: string
+): boolean {
+  if (domainPrefix && !entityId.startsWith(`${domainPrefix}.`)) {
+    return false;
+  }
+  const byUnderscore = entityId.endsWith(`_${slug}`);
+  const byDash = entityId.endsWith(`-${slug}`);
+  if (!byUnderscore && !byDash) {
+    return false;
+  }
+  // HACK: CHANGEME
+  // PetLibro also exposes `binary_sensor.*_today_s_feeding_schedule`, which still
+  // ends with `_feeding_schedule` but is today's summary, not the full plan payload
+  // (no `plan_*` attributes). Never treat it as the schedule entity.
+  if (
+    slug === SCHEDULE_ENTITY_SLUG &&
+    entityId.endsWith("_today_s_feeding_schedule")
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function findPetlibroEntityBySlug(
   hass: HomeAssistant,
   deviceId: string,
-  suffix: string,
+  slug: string,
   domainPrefix?: string
 ): string | undefined {
-  const entry = findPetlibroEntityByDevice(hass, deviceId, (e) => {
-    const matchesSuffix = !!e.unique_id && e.unique_id.endsWith(suffix);
-    const matchesDomain =
-      !domainPrefix || e.entity_id.startsWith(`${domainPrefix}.`);
-    return matchesSuffix && matchesDomain;
-  });
-  return entry?.entity_id;
+  return findPetlibroEntityByDevice(hass, deviceId, (e) =>
+    entityIdEndsWithSlug(e.entity_id, slug, domainPrefix)
+  )?.entity_id;
 }
 
 function buildSwitchAdapter(entityId: string): GlobalToggleAdapter {
@@ -170,10 +193,10 @@ function resolveConfig(
   let scheduleEntity = config.entity ?? null;
   if (!scheduleEntity && config.device_id) {
     scheduleEntity =
-      findByUniqueIdSuffix(
+      findPetlibroEntityBySlug(
         hass,
         config.device_id,
-        SCHEDULE_UNIQUE_ID_SUFFIX,
+        SCHEDULE_ENTITY_SLUG,
         "binary_sensor"
       ) ?? null;
   }
@@ -207,22 +230,22 @@ function resolveConfig(
     } else {
       const stateEntity =
         scheduleEntity ??
-        findByUniqueIdSuffix(
+        findPetlibroEntityBySlug(
           hass,
           config.device_id,
-          SCHEDULE_UNIQUE_ID_SUFFIX,
+          SCHEDULE_ENTITY_SLUG,
           "binary_sensor"
         );
-      const onButton = findByUniqueIdSuffix(
+      const onButton = findPetlibroEntityBySlug(
         hass,
         config.device_id,
-        ENABLE_BUTTON_UNIQUE_ID_SUFFIX,
+        ENABLE_BUTTON_ENTITY_SLUG,
         "button"
       );
-      const offButton = findByUniqueIdSuffix(
+      const offButton = findPetlibroEntityBySlug(
         hass,
         config.device_id,
-        DISABLE_BUTTON_UNIQUE_ID_SUFFIX,
+        DISABLE_BUTTON_ENTITY_SLUG,
         "button"
       );
       if (stateEntity && onButton && offButton) {
