@@ -10,48 +10,244 @@ import {
   EntryStatus,
   GlobalToggleInfo,
   ScheduleEntry,
-  Weekday,
 } from "../types/common";
-import { HassEntityRegistryEntry, HomeAssistant } from "../types/ha";
+import {
+  HassEntityRegistryEntry,
+  HomeAssistant,
+  listEntityRegistryEntries,
+} from "../types/ha";
 import { canonicalizeWeekdays } from "../types/scheduleWeekdays";
-import { ALL_WEEKDAYS, getTodayWeekday } from "../types/weekday";
+import {
+  ALL_WEEKDAYS,
+  getTodayWeekday,
+  sortWeekdays,
+  Weekday,
+} from "../types/weekday";
+
+// --- PetLibro registry discovery (platform + device_id) ---
 
 const PETLIBRO_PLATFORM = "petlibro";
-/** Slug suffixes on `entity_id` (after `_` or `-`) for auto-discovery. */
-const SCHEDULE_ENTITY_SLUG = "feeding_schedule";
+
 const ENABLE_BUTTON_ENTITY_SLUG = "enable_feeding_plan";
 const DISABLE_BUTTON_ENTITY_SLUG = "disable_feeding_plan";
 
-/** Attribute keys that are not feeding plans. */
-const RESERVED_ATTRIBUTE_KEYS = new Set([
-  "device_class",
-  "icon",
-  "friendly_name",
-  "unit_of_measurement",
-  "state_class",
-  "attribution",
-  "supported_features",
-  "assumed_state",
-  "restored",
-]);
+function findPetlibroEntityByDevice(
+  hass: HomeAssistant,
+  deviceId: string,
+  predicate: (entry: HassEntityRegistryEntry) => boolean
+): HassEntityRegistryEntry | undefined {
+  return listEntityRegistryEntries(hass).find(
+    (entry) =>
+      entry.platform === PETLIBRO_PLATFORM &&
+      entry.device_id === deviceId &&
+      predicate(entry)
+  );
+}
 
-const FEED_STATE_TO_STATUS: Record<string, EntryStatus> = {
-  "Pending": EntryStatus.PENDING,
-  "Completed": EntryStatus.DISPENSED,
-  "Skipped": EntryStatus.SKIPPED,
-  "Skipped, Time Passed": EntryStatus.SKIPPED,
+function entityIdEndsWithSlug(
+  entityId: string,
+  slug: string,
+  domainPrefix?: string
+): boolean {
+  if (domainPrefix && !entityId.startsWith(`${domainPrefix}.`)) {
+    return false;
+  }
+  return entityId.endsWith(`_${slug}`) || entityId.endsWith(`-${slug}`);
+}
+
+/** Used for button entities (enable/disable feeding plan). */
+function findPetlibroEntityBySlug(
+  hass: HomeAssistant,
+  deviceId: string,
+  slug: string,
+  domainPrefix?: string
+): string | undefined {
+  return findPetlibroEntityByDevice(hass, deviceId, (e) =>
+    entityIdEndsWithSlug(e.entity_id, slug, domainPrefix)
+  )?.entity_id;
+}
+
+/** Full schedule `binary_sensor`: `attributes.schedule_type === "full"`. */
+function findPetlibroScheduleEntity(
+  hass: HomeAssistant,
+  deviceId: string
+): string | undefined {
+  for (const entry of listEntityRegistryEntries(hass)) {
+    if (
+      entry.platform !== PETLIBRO_PLATFORM ||
+      entry.device_id !== deviceId ||
+      !entry.entity_id.startsWith("binary_sensor.")
+    ) {
+      continue;
+    }
+    const a = hass.states[entry.entity_id]?.attributes as
+      | Record<string, unknown>
+      | undefined;
+    if (a?.schedule_type === "full") {
+      return entry.entity_id;
+    }
+  }
+  return undefined;
+}
+
+// --- Schedule attributes → card model; service payload helpers ---
+
+/**
+ * Plan `state` strings from the integration (values only; numeric codes are irrelevant).
+ */
+const PETLIBRO_STATE_TO_STATUS: Record<string, EntryStatus> = {
+  pending: EntryStatus.PENDING,
+  to_be_skipped: EntryStatus.SKIPPED,
+  dispensed: EntryStatus.DISPENSED,
+  skipped: EntryStatus.SKIPPED,
+  state_5: EntryStatus.NONE,
+  unknown: EntryStatus.NONE,
+  not_for_today: EntryStatus.SKIPPED,
 };
 
-/** Per-plan attribute shape on the petlibro `feeding_schedule` binary_sensor. */
-interface PetLibroPlanAttribute {
-  planID?: number;
-  time?: string;
-  amount_raw?: number;
-  enabled?: boolean;
-  repeat_days?: string;
-  sound?: boolean;
-  feed_state?: string;
+function parseTime(time: string | undefined): { hour: number; minute: number } {
+  if (!time) return { hour: 0, minute: 0 };
+  const [hStr, mStr] = time.split(":");
+  const hour = parseInt(hStr ?? "", 10);
+  const minute = parseInt(mStr ?? "", 10);
+  return {
+    hour: Number.isFinite(hour) ? hour : 0,
+    minute: Number.isFinite(minute) ? minute : 0,
+  };
 }
+
+/** Integration `repeat_days`: **1 = Monday … 7 = Sunday** (card `Weekday` enum). */
+function repeatDaysToWeekdays(days: unknown): Weekday[] | null {
+  if (!Array.isArray(days)) return null;
+  const out: Weekday[] = [];
+  for (const v of days) {
+    const n = typeof v === "number" ? v : parseInt(String(v), 10);
+    if (!Number.isFinite(n) || n < 1 || n > 7) return null;
+    out.push(n as Weekday);
+  }
+  if (out.length === 0) return null;
+  return out;
+}
+
+function planEntryKey(
+  plan: Record<string, unknown>,
+  fallbackKey: string
+): string | null {
+  const pid = plan.planID ?? plan.plan_id ?? plan.id;
+  if (typeof pid === "number" && Number.isFinite(pid)) return String(pid);
+  if (typeof pid === "string" && pid.trim() !== "") return pid.trim();
+  if (typeof plan.label === "string" && plan.label.length > 0) {
+    return `label:${plan.label}`;
+  }
+  return fallbackKey || null;
+}
+
+function coerceNumericPlanId(plan: Record<string, unknown>): number | null {
+  const pid = plan.planID ?? plan.plan_id ?? plan.id;
+  if (typeof pid === "number" && Number.isFinite(pid)) return pid;
+  if (typeof pid === "string") {
+    const n = parseInt(pid.trim(), 10);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function planToScheduleEntry(
+  planRaw: Record<string, unknown>,
+  fallbackKey: string,
+  today: Weekday
+): ScheduleEntry | null {
+  const keyStr = planEntryKey(planRaw, fallbackKey);
+  if (!keyStr) return null;
+  if (
+    coerceNumericPlanId(planRaw) === null &&
+    planRaw.planID === undefined &&
+    typeof planRaw.label !== "string"
+  ) {
+    return null;
+  }
+
+  const time = typeof planRaw.time === "string" ? planRaw.time : undefined;
+  const { hour, minute } = parseTime(time);
+  const amount =
+    typeof planRaw.amount_raw === "number" ? planRaw.amount_raw : 0;
+  const enabled = planRaw.enabled !== false;
+  const execState =
+    typeof planRaw.state === "string" && planRaw.state.trim() !== ""
+      ? planRaw.state.trim()
+      : typeof planRaw.feed_state === "string" &&
+          planRaw.feed_state.trim() !== ""
+        ? planRaw.feed_state.trim()
+        : undefined;
+  const baseStatus =
+    execState === undefined
+      ? EntryStatus.PENDING
+      : (PETLIBRO_STATE_TO_STATUS[execState] ?? EntryStatus.PENDING);
+  const status = enabled ? baseStatus : EntryStatus.DISABLED;
+
+  const repeatDays = repeatDaysToWeekdays(planRaw.repeat_days);
+  if (repeatDays === null) {
+    if (execState && execState !== "not_for_today") {
+      return {
+        key: keyStr,
+        hour,
+        minute,
+        values: [amount],
+        status,
+        weekdays: [today],
+        readonly: true,
+      };
+    }
+    return null;
+  }
+
+  const uniqueSorted = sortWeekdays([...new Set(repeatDays)]);
+  const isAllDays = uniqueSorted.length === ALL_WEEKDAYS.length;
+  const weekdays = isAllDays ? undefined : canonicalizeWeekdays(uniqueSorted);
+
+  return {
+    key: keyStr,
+    hour,
+    minute,
+    values: [amount],
+    status,
+    weekdays,
+  };
+}
+
+/**
+ * Reads only `attributes.schedule`: array of plans, or a single object map
+ * normalized with `Object.values` (prefer array from the integration).
+ */
+function parseScheduleAttributes(
+  attrs: Record<string, unknown>,
+  today: Weekday
+): ScheduleEntry[] {
+  const raw = attrs.schedule;
+  let items: unknown[] = [];
+  if (Array.isArray(raw)) {
+    items = raw;
+  } else if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    items = Object.values(raw as Record<string, unknown>);
+  } else {
+    return [];
+  }
+
+  const entries: ScheduleEntry[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const row = planToScheduleEntry(
+      item as Record<string, unknown>,
+      `idx:${i}`,
+      today
+    );
+    if (row) entries.push(row);
+  }
+  return entries.sort((a, b) => a.hour - b.hour || a.minute - b.minute);
+}
+
+// --- Device ---
 
 export type PetLibroGlobalToggleConfig =
   | string
@@ -68,76 +264,11 @@ export interface PetLibroDeviceConfig {
   switch?: PetLibroGlobalToggleConfig;
 }
 
-/**
- * Adapter that hides whether the global toggle is implemented as a single
- * switch entity or as the petlibro binary_sensor + 2-buttons compound. The
- * rest of the device code only sees this interface.
- */
 interface GlobalToggleAdapter {
   watchedEntities: string[];
   getState(hass: HomeAssistant): boolean | null;
   turnOn(hass: HomeAssistant): Promise<void>;
   turnOff(hass: HomeAssistant): Promise<void>;
-}
-
-function listRegistryEntries(hass: HomeAssistant): HassEntityRegistryEntry[] {
-  const entities = hass?.entities;
-  if (!entities) return [];
-  const out: HassEntityRegistryEntry[] = [];
-  for (const entry of Object.values(entities)) {
-    if (entry) out.push(entry);
-  }
-  return out;
-}
-
-function findPetlibroEntityByDevice(
-  hass: HomeAssistant,
-  deviceId: string,
-  predicate: (entry: HassEntityRegistryEntry) => boolean
-): HassEntityRegistryEntry | undefined {
-  return listRegistryEntries(hass).find(
-    (entry) =>
-      entry.platform === PETLIBRO_PLATFORM &&
-      entry.device_id === deviceId &&
-      predicate(entry)
-  );
-}
-
-function entityIdEndsWithSlug(
-  entityId: string,
-  slug: string,
-  domainPrefix?: string
-): boolean {
-  if (domainPrefix && !entityId.startsWith(`${domainPrefix}.`)) {
-    return false;
-  }
-  const byUnderscore = entityId.endsWith(`_${slug}`);
-  const byDash = entityId.endsWith(`-${slug}`);
-  if (!byUnderscore && !byDash) {
-    return false;
-  }
-  // HACK: CHANGEME
-  // PetLibro also exposes `binary_sensor.*_today_s_feeding_schedule`, which still
-  // ends with `_feeding_schedule` but is today's summary, not the full plan payload
-  // (no `plan_*` attributes). Never treat it as the schedule entity.
-  if (
-    slug === SCHEDULE_ENTITY_SLUG &&
-    entityId.endsWith("_today_s_feeding_schedule")
-  ) {
-    return false;
-  }
-  return true;
-}
-
-function findPetlibroEntityBySlug(
-  hass: HomeAssistant,
-  deviceId: string,
-  slug: string,
-  domainPrefix?: string
-): string | undefined {
-  return findPetlibroEntityByDevice(hass, deviceId, (e) =>
-    entityIdEndsWithSlug(e.entity_id, slug, domainPrefix)
-  )?.entity_id;
 }
 
 function buildSwitchAdapter(entityId: string): GlobalToggleAdapter {
@@ -192,13 +323,7 @@ function resolveConfig(
 
   let scheduleEntity = config.entity ?? null;
   if (!scheduleEntity && config.device_id) {
-    scheduleEntity =
-      findPetlibroEntityBySlug(
-        hass,
-        config.device_id,
-        SCHEDULE_ENTITY_SLUG,
-        "binary_sensor"
-      ) ?? null;
+    scheduleEntity = findPetlibroScheduleEntity(hass, config.device_id) ?? null;
   }
   if (!scheduleEntity) {
     errors.push({ field: "device.entity" });
@@ -228,14 +353,7 @@ function resolveConfig(
     if (switchEntityId) {
       toggle = buildSwitchAdapter(switchEntityId);
     } else {
-      const stateEntity =
-        scheduleEntity ??
-        findPetlibroEntityBySlug(
-          hass,
-          config.device_id,
-          SCHEDULE_ENTITY_SLUG,
-          "binary_sensor"
-        );
+      const stateEntity = scheduleEntity;
       const onButton = findPetlibroEntityBySlug(
         hass,
         config.device_id,
@@ -255,39 +373,6 @@ function resolveConfig(
   }
 
   return { scheduleEntity, toggle, errors };
-}
-
-function parseTime(time: string | undefined): { hour: number; minute: number } {
-  if (!time) return { hour: 0, minute: 0 };
-  const [hStr, mStr] = time.split(":");
-  const hour = parseInt(hStr ?? "", 10);
-  const minute = parseInt(mStr ?? "", 10);
-  return {
-    hour: Number.isFinite(hour) ? hour : 0,
-    minute: Number.isFinite(minute) ? minute : 0,
-  };
-}
-
-function parseRepeatDays(raw: string | undefined): Weekday[] | null {
-  if (!raw || raw.trim() === "") return null;
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return null;
-    const days: Weekday[] = [];
-    for (const v of parsed) {
-      const n = typeof v === "number" ? v : parseInt(String(v), 10);
-      if (n >= 1 && n <= 7) days.push(n as Weekday);
-    }
-    if (days.length === 0) return null;
-    return days;
-  } catch {
-    return null;
-  }
-}
-
-function mapFeedState(feedState: string | undefined): EntryStatus {
-  if (!feedState) return EntryStatus.PENDING;
-  return FEED_STATE_TO_STATUS[feedState] ?? EntryStatus.PENDING;
 }
 
 export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
@@ -361,53 +446,9 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     const state = this.hass.states[entityId];
     if (!state) return [];
 
+    const attrs = state.attributes as Record<string, unknown>;
     const today = getTodayWeekday(this.hass.config.time_zone);
-    const entries: ScheduleEntry[] = [];
-
-    for (const [attrKey, attrValue] of Object.entries(state.attributes)) {
-      if (RESERVED_ATTRIBUTE_KEYS.has(attrKey)) continue;
-      if (!attrValue || typeof attrValue !== "object") continue;
-      if (Array.isArray(attrValue)) continue;
-
-      const plan = attrValue as PetLibroPlanAttribute;
-      if (typeof plan.planID !== "number") continue;
-
-      const { hour, minute } = parseTime(plan.time);
-      const amount = typeof plan.amount_raw === "number" ? plan.amount_raw : 0;
-      const enabled = plan.enabled !== false;
-      const baseStatus = mapFeedState(plan.feed_state);
-      const status = enabled ? baseStatus : EntryStatus.DISABLED;
-
-      const repeatDays = parseRepeatDays(plan.repeat_days);
-      if (repeatDays === null) {
-        if (plan.feed_state && plan.feed_state !== "Not Scheduled Today") {
-          entries.push({
-            key: String(plan.planID),
-            hour,
-            minute,
-            values: [amount],
-            status,
-            weekdays: [today],
-            readonly: true,
-          });
-        }
-        continue;
-      }
-
-      const isAllDays = repeatDays.length === ALL_WEEKDAYS.length;
-      const weekdays = isAllDays ? undefined : canonicalizeWeekdays(repeatDays);
-
-      entries.push({
-        key: String(plan.planID),
-        hour,
-        minute,
-        values: [amount],
-        status,
-        weekdays,
-      });
-    }
-
-    return entries.sort((a, b) => a.hour - b.hour || a.minute - b.minute);
+    return parseScheduleAttributes(attrs, today);
   }
 
   getGlobalToggle(): GlobalToggleInfo | null {
@@ -444,10 +485,9 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     entry: EditScheduleEntry
   ): Record<string, unknown> {
     const time = `${String(entry.hour).padStart(2, "0")}:${String(entry.minute).padStart(2, "0")}`;
-    const days =
-      entry.weekdays === undefined
-        ? ALL_WEEKDAYS.map((d) => String(d))
-        : entry.weekdays.map((d) => String(d));
+    const days = (
+      entry.weekdays === undefined ? ALL_WEEKDAYS : [...entry.weekdays]
+    ).map((d) => String(d));
     return {
       device_id: this.deviceConfig.device_id,
       time,
