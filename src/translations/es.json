@@ -29,5 +29,8 @@
     "skipped": "Omitido",
     "disabled": "Desactivado",
     "unknown": "Desconocido"
+  },
+  "errors": {
+    "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }
 }

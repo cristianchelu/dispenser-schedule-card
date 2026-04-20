@@ -31,6 +31,12 @@ export interface ScheduleEntry {
   values: number[];
   status: EntryStatus;
   weekdays?: readonly Weekday[];
+  /**
+   * Marks an entry the card cannot safely roundtrip (e.g. a one-time feed
+   * surfaced for visibility in today's view but not editable). The card
+   * hides edit/remove/toggle affordances and excludes it from the edit list.
+   */
+  readonly?: boolean;
 }
 
 export interface EditScheduleEntry {
@@ -88,6 +94,15 @@ export interface DeviceCapabilities {
   hasWeeklySchedule: boolean;
 }
 
+/**
+ * Structured, opaque config error reported by a device. The `field` is a
+ * YAML path (e.g. "device.entity") and is rendered verbatim through a
+ * single generic, reusable translation key.
+ */
+export interface DeviceConfigError {
+  field: string;
+}
+
 export abstract class Device<
   TDeviceConfig extends { type: string } = { type: string },
 > {
@@ -100,6 +115,15 @@ export abstract class Device<
   abstract readonly entryFields: EntryFieldDescriptor[];
 
   abstract getWatchedEntities(): string[];
+
+  /**
+   * Structured config issues to surface at the top of the card. Default
+   * implementation reports none; devices with auto-discovery can return
+   * unresolved YAML field paths so the user knows what to set manually.
+   */
+  getConfigErrors(): DeviceConfigError[] {
+    return [];
+  }
 
   abstract getDisplayInfo(): DeviceDisplayInfo;
   abstract isAvailable(): boolean;

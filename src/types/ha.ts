@@ -37,8 +37,17 @@ export interface HassEntity {
   };
 }
 
+/** Subset of the HA entity registry entry surfaced via `hass.entities`. */
+export interface HassEntityRegistryEntry {
+  entity_id: string;
+  device_id?: string | null;
+  platform?: string;
+  unique_id?: string;
+}
+
 export interface HomeAssistant {
   states: Record<string, HassEntity | undefined>;
+  entities?: Record<string, HassEntityRegistryEntry | undefined>;
   services: Record<string, Record<string, { fields: Record<string, unknown> }>>;
   callService(
     domain: string,
