@@ -58,7 +58,7 @@ alternate_unit:
 
 | Name                  | Required     | Description                                                                                                                                                 |
 | --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `device`              | **Required** | Device block. Must include `type`: `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, or `custom`. See [Device](#device).                                      |
+| `device`              | **Required** | Device block. Must include `type`: `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, `petlibro`, or `custom`. See [Device](#device).                          |
 | `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br> Default `toggle` when the device supports editing or toggling; otherwise `never`. |
 | `unit_of_measurement` | _Optional_   | Unit label. String or object with plural forms. See [Pluralization](#pluralization). <br><br> Default `portions`.                                           |
 | `alternate_unit`      | _Optional_   | Configuration to display a secondary unit of measurement, with a conversion factor.                                                                         |
@@ -66,14 +66,15 @@ alternate_unit:
 
 ### Device
 
-| Name      | Required     | Description                                                                                                                        |
-| --------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `type`    | **Required** | `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, or `custom`.                                                                       |
-| `entity`  | **Required** | An entity_id in the `sensor` domain containing the schedule.                                                                       |
-| `switch`  | _Optional_   | An entity_id in the `switch` domain for the schedule on/off toggle. Supported for `xiaomi-smart-feeder` and `custom`.              |
-| `actions` | _Optional_   | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions. Supported for `xiaomi-smart-feeder` and `custom`. |
+| Name        | Required             | Description                                                                                                                                                                                                           |
+| ----------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`      | **Required**         | `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, `petlibro`, or `custom`.                                                                                                                                              |
+| `entity`    | _Conditionally req._ | An entity_id in the `sensor` domain containing the schedule. Required for all types except `petlibro`, where it defaults to the auto-discovered `binary_sensor.*_feeding_schedule`.                                   |
+| `switch`    | _Optional_           | An entity_id in the `switch` domain for the schedule on/off toggle. Supported for `xiaomi-smart-feeder` and `custom`. For `petlibro`, also accepts an object form, see [PetLibro Dry Feeders](#petlibro-dry-feeders). |
+| `actions`   | _Optional_           | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions. Supported for `xiaomi-smart-feeder` and `custom`.                                                                                    |
+| `device_id` | _Conditionally req._ | Home Assistant device id used for service calls and entity auto-discovery. Required for `petlibro`.                                                                                                                   |
 
-For `type: custom`, additional fields are required; see [Custom Device Parsing](#custom-device-parsing).
+For `type: custom`, additional fields are required; see [Custom Device Parsing](#custom-device-parsing). For `type: petlibro`, see [PetLibro Dry Feeders](#petlibro-dry-feeders).
 
 #### `device.actions` options
 
@@ -157,6 +158,60 @@ logic is not handled by the device itself.
 ### PetKit Feeders (Fresh Element, YumShare)
 
 The [`homeassistant_petkit`](https://github.com/Jezza34000/homeassistant_petkit) custom integration by [@Jezza34000](https://github.com/Jezza34000) is compatible with this card.
+
+### PetLibro Dry Feeders
+
+Supported via the [`jjjonesjr33/petlibro`](https://github.com/jjjonesjr33/petlibro) custom integration (requires the schedule-control changes from [PR #209](https://github.com/jjjonesjr33/petlibro/pull/209) or later).
+
+In the simplest configuration, only the device id is required — the schedule binary sensor and the global enable/disable buttons are auto-discovered from the integration's standard entity naming:
+
+```yaml
+type: custom:dispenser-schedule-card
+device:
+  type: petlibro
+  device_id: abc123def456...
+```
+
+If any of the entities can't be auto-resolved (e.g. you renamed them), the card displays an inline error naming the YAML field you need to set manually.
+
+#### PetLibro device options
+
+| Name        | Required     | Description                                                                                                                                                              |
+| ----------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `type`      | **Required** | Must be `petlibro`.                                                                                                                                                      |
+| `device_id` | **Required** | The Home Assistant device id of the PetLibro feeder. Used both as the target of `petlibro.add_feeding_plan`/`edit_feeding_plan` and to auto-discover the entities below. |
+| `entity`    | _Optional_   | Override the schedule binary_sensor (default: auto-discovered `binary_sensor.*_feeding_schedule`).                                                                       |
+| `switch`    | _Optional_   | Global schedule on/off toggle. String form (single switch entity_id) or object form for the current button-based shape. Defaults to auto-discovery; see examples below.  |
+
+The `switch` field accepts either form:
+
+```yaml
+# Future / single-switch (preferred when the integration adds a switch entity)
+switch: switch.jets_feeder_feeding_schedule
+
+# Current compound shape (binary_sensor for state + 2 buttons for on/off)
+switch:
+  state_entity: binary_sensor.jets_feeder_feeding_schedule
+  on_button: button.jets_feeder_enable_feeding_schedule
+  off_button: button.jets_feeder_disable_feeding_schedule
+```
+
+> The integration follows a deliberate naming distinction: **Schedule** = the whole collection of plans (the global toggle), **Plan** = a single feed event. The entities above are the Schedule-level ones. Per-plan buttons (`..._enable_selected_plan`, `..._skip_selected_plan_today`, etc.) are not used by this card — they require a multi-step select+press dance the integration only exposes via its `select` entity.
+
+#### PetLibro capabilities
+
+| Capability               | Supported         | Notes                                                                                                                                                    |
+| ------------------------ | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Read schedule            | Yes               | All recurring plans plus today's manual feeds.                                                                                                           |
+| Add / edit feeding plans | Yes               | Via `petlibro.add_feeding_plan` / `edit_feeding_plan`.                                                                                                   |
+| Global enable / disable  | Yes               | Via the resolved `switch` adapter (single switch or button pair).                                                                                        |
+| Per-plan toggle / delete | No                | The integration only exposes these via select+button; not callable as direct services.                                                                   |
+| Per-plan skip / un-skip  | No                | Same reason.                                                                                                                                             |
+| One-time / manual feeds  | View-only (today) | Shown in today's view as read-only; hidden from the edit list to avoid converting them to recurring on save. Continue managing them in the PetLibro app. |
+
+#### PetLibro amounts
+
+The card reads the raw portion count (`amount_raw`) directly from the integration. Use the standard [`unit_of_measurement`](#options) and [`alternate_unit`](#alternate_unit-options) options if you want to display grams, ounces, etc.
 
 ### DIY ESPHome projects
 
