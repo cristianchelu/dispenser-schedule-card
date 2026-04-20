@@ -70,7 +70,7 @@ alternate_unit:
 | ----------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `type`      | **Required**         | `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, `petlibro`, or `custom`.                                                                                                                                                       |
 | `entity`    | _Conditionally req._ | An entity_id in the `sensor` domain containing the schedule. Required for all types except `petlibro`, where the card picks the PetLibro `binary_sensor` with **`attributes.schedule_type: full`** (or set `entity` manually). |
-| `switch`    | _Optional_           | An entity_id in the `switch` domain for the schedule on/off toggle. Supported for `xiaomi-smart-feeder` and `custom`. For `petlibro`, also accepts an object form, see [PetLibro Dry Feeders](#petlibro-dry-feeders).          |
+| `switch`    | _Optional_           | An entity_id in the `switch` domain for the schedule on/off toggle. Supported for `xiaomi-smart-feeder` and `custom`. For `petlibro`, defaults to the schedule `binary_sensor` + `petlibro.toggle_feeding_schedule`; optional override (string or object), see [PetLibro Dry Feeders](#petlibro-dry-feeders). |
 | `actions`   | _Optional_           | `add`, `edit`, `remove`, and `toggle` (enable/disable individual entry) actions. Supported for `xiaomi-smart-feeder` and `custom`.                                                                                             |
 | `device_id` | _Conditionally req._ | Home Assistant device id used for service calls and entity auto-discovery. Required for `petlibro`.                                                                                                                            |
 
@@ -171,7 +171,7 @@ Supported via the [`jjjonesjr33/petlibro`](https://github.com/jjjonesjr33/petlib
 | Plans         | **`attributes.schedule`**: array of plan objects (or a map normalized by the card with `Object.values`—prefer an array from the integration).  |
 | `repeat_days` | **`number[]` only**, **1 = Monday … 7 = Sunday** (matches the card’s weekday model).                                                           |
 | Plan state    | **`state`**: `pending`, `to_be_skipped`, `dispensed`, `skipped`, `state_5`, `unknown`, `not_for_today`. Legacy **`feed_state`** is still read. |
-| Services      | `petlibro.add_feeding_plan` / `edit_feeding_plan` use **`days`** as `"1"`…`"7"` strings (same convention as `repeat_days`).                    |
+| Services      | `petlibro.add_feeding_plan` / `edit_feeding_plan` use **`days`** as `"1"`…`"7"` strings (same convention as `repeat_days`). Per-plan **`delete_feeding_plan`** (`device_id`, `plan_id`) and **`toggle_feeding_plan`** (`device_id`, `plan_id`, `enable`) match add/edit. Whole schedule on/off: **`toggle_feeding_schedule`** (`device_id`, `enable`). |
 
 Minimal YAML:
 
@@ -187,11 +187,11 @@ device:
 | `type`      | **Required** | `petlibro`.                                                                                                                                                                                                                              |
 | `device_id` | **Required** | Home Assistant device id (service target + discovery).                                                                                                                                                                                   |
 | `entity`    | _Optional_   | Override the schedule `binary_sensor` if discovery fails.                                                                                                                                                                                |
-| `switch`    | _Optional_   | Global on/off: `switch.*` entity_id, or `{ state_entity, on_button, off_button }`. If omitted, the card uses a switch on the device or the `*_enable_feeding_plan` / `*_disable_feeding_plan` buttons with the schedule entity as state. |
+| `switch`    | _Optional_   | Override global on/off: `switch.*` entity_id, or `{ state_entity, on_button, off_button }`. If omitted, the card uses the schedule **`binary_sensor`** state (`on` / `off`) and calls **`petlibro.toggle_feeding_schedule`** (`device_id`, `enable`). If the schedule entity is missing (e.g. discovery failed) but `device_id` is set, a **`switch.*`** on the device is still used when found. |
 
 ```yaml
 switch: switch.my_feeder_feeding_schedule
-# or
+# or legacy two-step buttons (state + press)
 switch:
   state_entity: binary_sensor.my_feeder_feeding_schedule
   on_button: button.my_feeder_enable_feeding_plan
@@ -204,8 +204,8 @@ switch:
 | ------------------------ | --------- | -------------------------------------------------- |
 | Read schedule            | Yes       | From `attributes.schedule`.                        |
 | Add / edit feeding plans | Yes       | `petlibro.add_feeding_plan` / `edit_feeding_plan`. |
-| Global enable / disable  | Yes       | Switch or button pair as above.                    |
-| Per-plan toggle / delete | No        | Not exposed as direct services.                    |
+| Global enable / disable  | Yes       | Default: schedule `binary_sensor` + `toggle_feeding_schedule`; optional `switch` YAML as above. |
+| Per-plan toggle / delete | Yes       | `petlibro.toggle_feeding_plan` / `delete_feeding_plan` (needs a recent integration). |
 
 #### PetLibro amounts
 

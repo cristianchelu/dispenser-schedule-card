@@ -28,9 +28,6 @@ import {
 
 const PETLIBRO_PLATFORM = "petlibro";
 
-const ENABLE_BUTTON_ENTITY_SLUG = "enable_feeding_plan";
-const DISABLE_BUTTON_ENTITY_SLUG = "disable_feeding_plan";
-
 function findPetlibroEntityByDevice(
   hass: HomeAssistant,
   deviceId: string,
@@ -42,29 +39,6 @@ function findPetlibroEntityByDevice(
       entry.device_id === deviceId &&
       predicate(entry)
   );
-}
-
-function entityIdEndsWithSlug(
-  entityId: string,
-  slug: string,
-  domainPrefix?: string
-): boolean {
-  if (domainPrefix && !entityId.startsWith(`${domainPrefix}.`)) {
-    return false;
-  }
-  return entityId.endsWith(`_${slug}`) || entityId.endsWith(`-${slug}`);
-}
-
-/** Used for button entities (enable/disable feeding plan). */
-function findPetlibroEntityBySlug(
-  hass: HomeAssistant,
-  deviceId: string,
-  slug: string,
-  domainPrefix?: string
-): string | undefined {
-  return findPetlibroEntityByDevice(hass, deviceId, (e) =>
-    entityIdEndsWithSlug(e.entity_id, slug, domainPrefix)
-  )?.entity_id;
 }
 
 /** Full schedule `binary_sensor`: `attributes.schedule_type === "full"`. */
@@ -309,6 +283,35 @@ function buildCompoundAdapter(
   };
 }
 
+/**
+ * Whole-schedule on/off: read `on`/`off` from the schedule `binary_sensor`,
+ * write via `petlibro.toggle_feeding_schedule` (integration refreshes state).
+ */
+function buildPetlibroScheduleToggleAdapter(
+  deviceId: string,
+  scheduleEntityId: string
+): GlobalToggleAdapter {
+  return {
+    watchedEntities: [scheduleEntityId],
+    getState: (hass) => {
+      const state = hass.states[scheduleEntityId]?.state;
+      if (state === "on") return true;
+      if (state === "off") return false;
+      return null;
+    },
+    turnOn: (hass) =>
+      hass.callService("petlibro", "toggle_feeding_schedule", {
+        device_id: deviceId,
+        enable: true,
+      }),
+    turnOff: (hass) =>
+      hass.callService("petlibro", "toggle_feeding_schedule", {
+        device_id: deviceId,
+        enable: false,
+      }),
+  };
+}
+
 interface ResolvedConfig {
   scheduleEntity: string | null;
   toggle: GlobalToggleAdapter | null;
@@ -344,6 +347,8 @@ function resolveConfig(
       config.switch.on_button,
       config.switch.off_button
     );
+  } else if (config.device_id && scheduleEntity) {
+    toggle = buildPetlibroScheduleToggleAdapter(config.device_id, scheduleEntity);
   } else if (config.device_id) {
     const switchEntityId = findPetlibroEntityByDevice(
       hass,
@@ -352,23 +357,6 @@ function resolveConfig(
     )?.entity_id;
     if (switchEntityId) {
       toggle = buildSwitchAdapter(switchEntityId);
-    } else {
-      const stateEntity = scheduleEntity;
-      const onButton = findPetlibroEntityBySlug(
-        hass,
-        config.device_id,
-        ENABLE_BUTTON_ENTITY_SLUG,
-        "button"
-      );
-      const offButton = findPetlibroEntityBySlug(
-        hass,
-        config.device_id,
-        DISABLE_BUTTON_ENTITY_SLUG,
-        "button"
-      );
-      if (stateEntity && onButton && offButton) {
-        toggle = buildCompoundAdapter(stateEntity, onButton, offButton);
-      }
     }
   }
 
@@ -391,10 +379,10 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   get capabilities(): DeviceCapabilities {
     const hasDeviceId = !!this.deviceConfig.device_id;
     return {
-      hasEntryToggle: false,
+      hasEntryToggle: hasDeviceId,
       hasGlobalToggle: !!this.resolved.toggle,
       canAddEntries: hasDeviceId,
-      canRemoveEntries: false,
+      canRemoveEntries: hasDeviceId,
       canEditEntries: hasDeviceId,
       maxEntries: 99,
       hasWeeklySchedule: true,
@@ -515,14 +503,26 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     });
   }
 
-  async removeEntry(_entry: ScheduleEntry): Promise<void> {
-    // Not supported in v1: the integration only exposes per-plan deletion via
-    // a select+button two-step. Capabilities flag this off so the UI never
-    // calls into here.
+  async removeEntry(entry: ScheduleEntry): Promise<void> {
+    if (!this.deviceConfig.device_id) return;
+    const planId = parseInt(entry.key, 10);
+    if (!Number.isFinite(planId)) return;
+    await this.hass.callService("petlibro", "delete_feeding_plan", {
+      device_id: this.deviceConfig.device_id,
+      plan_id: planId,
+    });
   }
 
-  async toggleEntry(_entry: ScheduleEntry): Promise<void> {
-    // Same rationale as removeEntry.
+  async toggleEntry(entry: ScheduleEntry): Promise<void> {
+    if (!this.deviceConfig.device_id) return;
+    const planId = parseInt(entry.key, 10);
+    if (!Number.isFinite(planId)) return;
+    const enable = entry.status === EntryStatus.DISABLED;
+    await this.hass.callService("petlibro", "toggle_feeding_plan", {
+      device_id: this.deviceConfig.device_id,
+      plan_id: planId,
+      enable,
+    });
   }
 
   async setGlobalToggle(enabled: boolean): Promise<void> {
