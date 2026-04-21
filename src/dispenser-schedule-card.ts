@@ -79,6 +79,7 @@ class DispenserScheduleCard extends LitElement {
   declare _isReady: boolean;
   declare _schedules: Array<ScheduleEntry>;
   declare _editSchedule: EditScheduleEntry | null;
+  declare _isSaving: boolean;
   declare _device: Device;
 
   private _entryLabelInputEl: ConstraintValidatableElement | null = null;
@@ -96,6 +97,7 @@ class DispenserScheduleCard extends LitElement {
     this._isReady = false;
     this._schedules = [];
     this._editSchedule = null;
+    this._isSaving = false;
   }
 
   static get properties() {
@@ -105,6 +107,7 @@ class DispenserScheduleCard extends LitElement {
       _isReady: { state: true },
       _schedules: { state: true },
       _editSchedule: { state: true },
+      _isSaving: { state: true },
     };
   }
 
@@ -186,12 +189,17 @@ class DispenserScheduleCard extends LitElement {
       ? { ...entry, weekdays: canonicalizeWeekdays(entry.weekdays) }
       : { ...entry, weekdays: undefined };
 
-    if (entry.key === null) {
-      await this._device.addEntry(normalizedEntry);
-    } else {
-      await this._device.editEntry(normalizedEntry);
+    this._isSaving = true;
+    try {
+      if (entry.key === null) {
+        await this._device.addEntry(normalizedEntry);
+      } else {
+        await this._device.editEntry(normalizedEntry);
+      }
+      this._editSchedule = null;
+    } finally {
+      this._isSaving = false;
     }
-    this._editSchedule = null;
   }
 
   /**
@@ -798,15 +806,21 @@ class DispenserScheduleCard extends LitElement {
 
       return html`
         <ha-control-button-group>
-          <ha-button @click=${this.handleCancel} class="cancel-button">
+          <ha-button
+            @click=${this.handleCancel}
+            class="cancel-button"
+            ?disabled=${this._isSaving}
+          >
             ${localize("ui.cancel")}
           </ha-button>
           <ha-button
             @click=${this.handleSaveEntry}
             class="save-button"
-            ?disabled=${this.isSaveDisabled(entry)}
+            ?disabled=${this._isSaving || this.isSaveDisabled(entry)}
           >
-            ${localize("ui.save")}
+            ${this._isSaving
+              ? html`<ha-spinner size="tiny"></ha-spinner>`
+              : localize("ui.save")}
           </ha-button>
         </ha-control-button-group>
         <div class="edit-field">
