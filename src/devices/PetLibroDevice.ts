@@ -32,7 +32,7 @@ interface PetlibroScheduleEntry {
   amount_ml: number;
   amount_raw: number;
   enabled: boolean;
-  repeat_days: number[];
+  repeat_days?: number[] | null;
   sound: boolean;
   state: PetlibroState;
   state_label: string;
@@ -251,7 +251,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       canAddEntries: hasDeviceId,
       canRemoveEntries: hasDeviceId,
       canEditEntries: hasDeviceId,
-      maxEntries: 99,
+      maxEntries: 10,
       hasWeeklySchedule: true,
       hasTodaySkip: hasDeviceId,
       hasEntryLabel: hasDeviceId
@@ -310,7 +310,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
 
     const key = planID.toString();
 
-    const weekdays = repeatDaysToWeekdays(repeat_days);
+    const weekdays = repeatDaysToWeekdays(repeat_days ?? []);
 
     this._planApiStateByEntryKey.set(key, state);
     return {
@@ -333,6 +333,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
 
     const attrs = state.attributes as unknown as PetlibroEntityAttributes;
     return attrs.schedule
+      .filter((item) => (item.repeat_days?.length ?? 0) > 0)
       .map((item) => this._planToScheduleEntry(item))
       .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
   }
@@ -352,9 +353,11 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     entry: EditScheduleEntry
   ): Record<string, unknown> {
     const time = stringifyTime(entry.hour, entry.minute);
-    const days = (
-      entry.weekdays === undefined ? ALL_WEEKDAYS : [...entry.weekdays]
-    ).map((d) => String(d));
+    const selected =
+      entry.weekdays && entry.weekdays.length > 0
+        ? [...entry.weekdays]
+        : ALL_WEEKDAYS;
+    const days = selected.map((d) => String(d));
     return {
       device_id: this.deviceConfig.device_id,
       time,
