@@ -15,7 +15,9 @@
     "amount": "Menge",
     "repeat": "Wiederholung",
     "every_day": "Täglich",
-    "empty_today": "Kein Zeitplan für heute"
+    "empty_today": "Kein Zeitplan für heute",
+    "skip_today": "Überspringen",
+    "unskip_today": "Fortsetzen"
   },
   "entry_field": {
     "quantity_n": "Menge {n}",

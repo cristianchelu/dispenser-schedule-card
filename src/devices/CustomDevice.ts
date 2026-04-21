@@ -73,6 +73,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       canEditEntries: !!actions?.edit,
       maxEntries: this.deviceConfig.max_entries,
       hasWeeklySchedule: false,
+      hasTodaySkip: false,
     };
   }
 

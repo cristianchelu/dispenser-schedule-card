@@ -76,6 +76,7 @@ export default class XiaomiSmartPetFeeder2 extends Device<XiaomiSmartPetFeeder2D
       canEditEntries: true,
       maxEntries: MAX_ENTRIES,
       hasWeeklySchedule: false,
+      hasTodaySkip: false,
     };
   }
 

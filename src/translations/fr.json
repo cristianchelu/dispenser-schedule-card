@@ -16,7 +16,9 @@
     "amount": "Quantité",
     "repeat": "Répétition",
     "every_day": "Tous les jours",
-    "empty_today": "Aucun horaire pour aujourd'hui"
+    "empty_today": "Aucun horaire pour aujourd'hui",
+    "skip_today": "Ignorer",
+    "unskip_today": "Reprendre"
   },
   "entry_field": {
     "quantity_n": "Quantité {n}",

@@ -92,6 +92,8 @@ export interface DeviceCapabilities {
   canEditEntries: boolean;
   maxEntries: number;
   hasWeeklySchedule: boolean;
+  /** One-off skip / un-skip for today only (e.g. PetLibro `skip_feeding_plan`). */
+  hasTodaySkip: boolean;
 }
 
 /**
@@ -144,6 +146,27 @@ export abstract class Device<
     if (!this.capabilities.hasWeeklySchedule) return entries;
     const today = getTodayWeekday(this.hass.config.time_zone);
     return entries.filter((entry) => appliesOnWeekday(entry.weekdays, today));
+  }
+
+  /** Whether this entry runs on today's weekday (always true without weekly schedule). */
+  entryAppliesToday(entry: ScheduleEntry): boolean {
+    if (!this.capabilities.hasWeeklySchedule) return true;
+    const today = getTodayWeekday(this.hass.config.time_zone);
+    return appliesOnWeekday(entry.weekdays, today);
+  }
+
+  /** Show “skip for today” in the row menu (devices with `hasTodaySkip` may override). */
+  canSkipEntryForToday(_entry: ScheduleEntry): boolean {
+    return false;
+  }
+
+  /** Show “un-skip for today” in the row menu (devices with `hasTodaySkip` may override). */
+  canUnskipEntryForToday(_entry: ScheduleEntry): boolean {
+    return false;
+  }
+
+  setEntrySkipForToday(_entry: ScheduleEntry, _skip: boolean): Promise<void> {
+    return Promise.resolve();
   }
 
   abstract addEntry(entry: EditScheduleEntry): Promise<void>;
