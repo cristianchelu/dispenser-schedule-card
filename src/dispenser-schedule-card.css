@@ -96,6 +96,21 @@ ha-time-input {
   line-height: var(--ha-line-height-condensed, 16px);
 }
 
+.entry-label-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--outline-color);
+  border-radius: var(--ha-border-radius-sm, 4px);
+  background-color: var(--card-background-color, var(--ha-card-background));
+  color: var(--primary-text-color);
+  font: inherit;
+}
+
+.entry-label-input:invalid {
+  border-color: var(--error-color);
+}
+
 .weekday-select {
   display: block;
 }

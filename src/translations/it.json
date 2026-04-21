@@ -22,7 +22,8 @@
   },
   "entry_field": {
     "quantity_n": "Quantità {n}",
-    "position": "Scomparto"
+    "position": "Scomparto",
+    "label": "Etichetta"
   },
   "status": {
     "dispensed": "Distribuito",

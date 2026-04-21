@@ -21,7 +21,8 @@
   },
   "entry_field": {
     "quantity_n": "Cantidad {n}",
-    "position": "Compartimento"
+    "position": "Compartimento",
+    "label": "Etiqueta"
   },
   "status": {
     "dispensed": "Dispensado",

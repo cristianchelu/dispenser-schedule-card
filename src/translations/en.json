@@ -21,7 +21,8 @@
   },
   "entry_field": {
     "quantity_n": "Amount {n}",
-    "position": "Compartment"
+    "position": "Compartment",
+    "label": "Label"
   },
   "status": {
     "dispensed": "Dispensed",

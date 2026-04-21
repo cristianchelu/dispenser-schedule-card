@@ -21,7 +21,8 @@
   },
   "entry_field": {
     "quantity_n": "Miktar {n}",
-    "position": "Bölme"
+    "position": "Bölme",
+    "label": "Etiket"
   },
   "status": {
     "dispensed": "Verildi",

@@ -74,6 +74,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       maxEntries: this.deviceConfig.max_entries,
       hasWeeklySchedule: false,
       hasTodaySkip: false,
+      hasEntryLabel: false,
     };
   }
 

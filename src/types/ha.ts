@@ -32,6 +32,9 @@ export interface HassEntity {
   entity_id: string;
   device_id?: string | null;
   platform?: string;
+}
+
+export interface HassState {
   state: string;
   attributes: Record<string, unknown> & {
     icon?: string;
@@ -40,7 +43,7 @@ export interface HassEntity {
 }
 
 export interface HomeAssistant {
-  states: Record<string, HassEntity | undefined>;
+  states: Record<string, HassState | undefined>;
   entities: Record<string, HassEntity | undefined>;
   services: Record<string, Record<string, { fields: Record<string, unknown> }>>;
   callService(
@@ -56,15 +59,16 @@ export interface HomeAssistant {
   config: { state: string; time_zone?: string };
 }
 
-export function findEntityRegistryEntry(
-  hass: HomeAssistant,
-  predicate: (entry: HassEntity) => boolean
-): HassEntity | undefined {
-  const entities = hass.entities;
-  if (!entities) return undefined;
-  for (const entityId in entities) {
-    const entry = entities[entityId];
-    if (entry && predicate(entry)) return entry;
-  }
-  return undefined;
-}
+/**
+ * Placeholder until Lovelace sets `hass` (setConfig often runs first).
+ * Devices sync real state on the first `updateHass` / `set hass`.
+ */
+export const EMPTY_HOME_ASSISTANT: HomeAssistant = {
+  states: {},
+  entities: {},
+  services: {},
+  callService: async () => {},
+  locale: { language: "en" },
+  localize: () => "",
+  config: { state: "RUNNING" },
+};

@@ -22,7 +22,8 @@
   },
   "entry_field": {
     "quantity_n": "Quantité {n}",
-    "position": "Compartiment"
+    "position": "Compartiment",
+    "label": "Libellé"
   },
   "status": {
     "dispensed": "Distribuée",
