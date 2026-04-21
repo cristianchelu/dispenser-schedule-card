@@ -259,3 +259,9 @@ ha-input {
   --paper-item-icon-color: var(--disabled-text-color);
   --state-icon-color: var(--disabled-text-color);
 }
+
+.save-button ha-spinner {
+  --ha-spinner-indicator-color: currentColor;
+  display: inline-flex;
+  vertical-align: middle;
+}
