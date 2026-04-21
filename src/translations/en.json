@@ -15,7 +15,9 @@
     "amount": "Amount",
     "repeat": "Repeat",
     "every_day": "Every day",
-    "empty_today": "No schedule defined for today"
+    "empty_today": "No schedule defined for today",
+    "skip_today": "Skip",
+    "unskip_today": "Resume"
   },
   "entry_field": {
     "quantity_n": "Amount {n}",

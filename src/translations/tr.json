@@ -15,7 +15,9 @@
     "amount": "Miktar",
     "repeat": "Tekrar",
     "every_day": "Her gün",
-    "empty_today": "Bugün için program tanımlanmamış"
+    "empty_today": "Bugün için program tanımlanmamış",
+    "skip_today": "Atla",
+    "unskip_today": "Sürdür"
   },
   "entry_field": {
     "quantity_n": "Miktar {n}",

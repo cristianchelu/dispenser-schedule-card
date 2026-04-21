@@ -16,7 +16,9 @@
     "amount": "Quantitat",
     "repeat": "Repetició",
     "every_day": "Cada dia",
-    "empty_today": "No hi ha cap horari definit per avui"
+    "empty_today": "No hi ha cap horari definit per avui",
+    "skip_today": "Omet",
+    "unskip_today": "Reprèn"
   },
   "entry_field": {
     "quantity_n": "Quantitat {n}",

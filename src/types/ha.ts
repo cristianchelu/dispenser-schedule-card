@@ -30,6 +30,8 @@ export type HassFirstWeekday =
 
 export interface HassEntity {
   entity_id: string;
+  device_id?: string | null;
+  platform?: string;
   state: string;
   attributes: Record<string, unknown> & {
     icon?: string;
@@ -37,17 +39,9 @@ export interface HassEntity {
   };
 }
 
-/** Subset of the HA entity registry entry surfaced via `hass.entities`. */
-export interface HassEntityRegistryEntry {
-  entity_id: string;
-  device_id?: string | null;
-  platform?: string;
-  unique_id?: string;
-}
-
 export interface HomeAssistant {
   states: Record<string, HassEntity | undefined>;
-  entities?: Record<string, HassEntityRegistryEntry | undefined>;
+  entities: Record<string, HassEntity | undefined>;
   services: Record<string, Record<string, { fields: Record<string, unknown> }>>;
   callService(
     domain: string,
@@ -62,15 +56,15 @@ export interface HomeAssistant {
   config: { state: string; time_zone?: string };
 }
 
-/** All non-null entries from `hass.entities` (empty if the map is missing). */
-export function listEntityRegistryEntries(
-  hass: HomeAssistant
-): HassEntityRegistryEntry[] {
-  const entities = hass?.entities;
-  if (!entities) return [];
-  const out: HassEntityRegistryEntry[] = [];
-  for (const entry of Object.values(entities)) {
-    if (entry) out.push(entry);
+export function findEntityRegistryEntry(
+  hass: HomeAssistant,
+  predicate: (entry: HassEntity) => boolean
+): HassEntity | undefined {
+  const entities = hass.entities;
+  if (!entities) return undefined;
+  for (const entityId in entities) {
+    const entry = entities[entityId];
+    if (entry && predicate(entry)) return entry;
   }
-  return out;
+  return undefined;
 }

@@ -16,7 +16,9 @@
     "amount": "Cantitate",
     "repeat": "Repetare",
     "every_day": "În fiecare zi",
-    "empty_today": "Niciun orar definit pentru astăzi"
+    "empty_today": "Niciun orar definit pentru astăzi",
+    "skip_today": "Omite",
+    "unskip_today": "Reia"
   },
   "entry_field": {
     "quantity_n": "Cantitate {n}",
