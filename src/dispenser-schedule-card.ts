@@ -1,4 +1,5 @@
 import { html, LitElement, nothing, unsafeCSS } from "lit";
+import { ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
 
@@ -35,7 +36,7 @@ import {
   DisplayConfigEntry,
 } from "./types/config";
 
-import type { HomeAssistant } from "./types/ha";
+import { type HomeAssistant, EMPTY_HOME_ASSISTANT } from "./types/ha";
 import localize from "./localization";
 import { createDevice } from "./devices";
 import { renderEntityRow } from "./rows/entityRow";
@@ -49,6 +50,27 @@ const createEntityNotFoundWarning = (hass: HomeAssistant, entityId?: string) =>
       })
     : hass.localize("ui.panel.lovelace.warning.starting");
 
+/** `ha-input` and similar expose the same validation API as native inputs. */
+type ConstraintValidatableElement = Element & {
+  checkValidity: () => boolean;
+  reportValidity: () => boolean;
+};
+
+function asConstraintValidatable(
+  el: Element | undefined
+): ConstraintValidatableElement | null {
+  if (
+    el &&
+    "checkValidity" in el &&
+    typeof (el as ConstraintValidatableElement).checkValidity === "function" &&
+    "reportValidity" in el &&
+    typeof (el as ConstraintValidatableElement).reportValidity === "function"
+  ) {
+    return el as ConstraintValidatableElement;
+  }
+  return null;
+}
+
 @customElement("dispenser-schedule-card")
 class DispenserScheduleCard extends LitElement {
   declare _config: DispenserScheduleCardConfig;
@@ -58,6 +80,16 @@ class DispenserScheduleCard extends LitElement {
   declare _schedules: Array<ScheduleEntry>;
   declare _editSchedule: EditScheduleEntry | null;
   declare _device: Device;
+
+  private _entryLabelInputEl: ConstraintValidatableElement | null = null;
+
+  private _onEntryLabelInputRef = (el: Element | undefined) => {
+    const input = asConstraintValidatable(el);
+    if (input !== this._entryLabelInputEl) {
+      this._entryLabelInputEl = input;
+      this.requestUpdate();
+    }
+  };
 
   constructor() {
     super();
@@ -98,6 +130,7 @@ class DispenserScheduleCard extends LitElement {
       hour: entry.hour,
       minute: entry.minute,
       values: [...entry.values],
+      label: entry.label ?? "",
       weekdays: entry.weekdays ? [...entry.weekdays] : undefined,
     };
   }
@@ -143,6 +176,10 @@ class DispenserScheduleCard extends LitElement {
     const entry = this._editSchedule;
     if (!entry) return;
     const caps = this._device.capabilities;
+    if (caps.hasEntryLabel !== false) {
+      const labelEl = this._entryLabelInputEl;
+      if (!labelEl || !labelEl.reportValidity()) return;
+    }
     if (caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays)) return;
 
     const normalizedEntry: EditScheduleEntry = caps.hasWeeklySchedule
@@ -598,6 +635,14 @@ class DispenserScheduleCard extends LitElement {
     this.handleValueChanged(entry, fieldIndex, value);
   }
 
+  handleEntryLabelInput(ev: Event) {
+    const edit = this._editSchedule;
+    if (!edit) return;
+    const host = ev.currentTarget as Element & { value?: string };
+    const value = host.value ?? "";
+    this._editSchedule = { ...edit, label: value };
+  }
+
   handlePositionChanged(
     ev: CustomEvent,
     entry: EditScheduleEntry,
@@ -682,6 +727,12 @@ class DispenserScheduleCard extends LitElement {
     });
     if (valuesInvalid) return true;
 
+    if (caps.hasEntryLabel !== false) {
+      const labelEl = this._entryLabelInputEl;
+      if (!labelEl) return true;
+      if (!labelEl.checkValidity()) return true;
+    }
+
     if (entry.key === null) {
       const weekdaysInvalid =
         caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays);
@@ -706,7 +757,8 @@ class DispenserScheduleCard extends LitElement {
     const sameWeekdays =
       !caps.hasWeeklySchedule ||
       weekdaysEqual(entry.weekdays, schedule.weekdays);
-    return sameTime && sameWeekdays;
+    const sameLabel = (schedule.label ?? "") === (entry.label ?? "");
+    return sameTime && sameWeekdays && sameLabel;
   }
 
   renderConfigErrors() {
@@ -737,8 +789,12 @@ class DispenserScheduleCard extends LitElement {
     if (this._editSchedule) {
       const entry = this._editSchedule;
       const fields = this._device.entryFields;
+      const caps = this._device.capabilities;
       const timeFieldLabel = localize("ui.time") ?? "Time";
       const repeatFieldLabel = localize("ui.repeat") ?? "Repeat";
+      const entryLabelFieldLabel = localize("entry_field.label") ?? "Label";
+      const labelConstraints =
+        caps.hasEntryLabel !== false ? caps.hasEntryLabel : null;
 
       return html`
         <ha-control-button-group>
@@ -763,6 +819,16 @@ class DispenserScheduleCard extends LitElement {
               this.handleTimeChanged(ev, entry)}
           ></ha-time-input>
         </div>
+        ${labelConstraints
+          ? html`<div class="edit-field">
+              <label class="edit-field-label">${entryLabelFieldLabel}</label>
+              <ha-input
+                .value=${entry.label ?? ""}
+                @input=${this.handleEntryLabelInput}
+                ${ref(this._onEntryLabelInputRef)}
+              ></ha-input>
+            </div>`
+          : nothing}
         ${fields.map((field, fieldIndex) => {
           const label = this.resolveFieldLabel(field, fieldIndex);
           const value = this.getEntryFieldValue(entry, fieldIndex);
@@ -891,7 +957,10 @@ class DispenserScheduleCard extends LitElement {
       throw new Error(`Invalid editable option: ${editable}`);
     }
 
-    this._device = createDevice(config.device, this._hass);
+    this._device = createDevice(
+      config.device,
+      this._hass ?? EMPTY_HOME_ASSISTANT
+    );
 
     const caps = this._device.capabilities;
     const hasAnyEditAction =
