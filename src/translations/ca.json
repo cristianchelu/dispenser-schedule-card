@@ -22,7 +22,8 @@
   },
   "entry_field": {
     "quantity_n": "Quantitat {n}",
-    "position": "Compartiment"
+    "position": "Compartiment",
+    "label": "Etiqueta"
   },
   "status": {
     "dispensed": "Lliurats",

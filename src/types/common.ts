@@ -29,6 +29,8 @@ export interface ScheduleEntry {
   hour: number;
   minute: number;
   values: number[];
+  /** Plan label (e.g. PetLibro); optional for devices without `hasEntryLabel`. */
+  label?: string;
   status: EntryStatus;
   weekdays?: readonly Weekday[];
   /**
@@ -44,6 +46,8 @@ export interface EditScheduleEntry {
   hour: number;
   minute: number;
   values: number[];
+  /** Set when `DeviceCapabilities.hasEntryLabel` is not `false`. */
+  label?: string;
   weekdays?: readonly Weekday[];
 }
 
@@ -84,6 +88,15 @@ export interface GlobalToggleInfo {
   state: boolean;
 }
 
+/** Declarative HTML constraint payload for the entry label field (native validation). */
+export interface EntryLabelConstraints {
+  required?: boolean;
+  minLength: number;
+  maxLength: number;
+  /** Value for the input `pattern` attribute (e.g. no spaces). */
+  pattern: string;
+}
+
 export interface DeviceCapabilities {
   hasEntryToggle: boolean;
   hasGlobalToggle: boolean;
@@ -94,6 +107,10 @@ export interface DeviceCapabilities {
   hasWeeklySchedule: boolean;
   /** One-off skip / un-skip for today only (e.g. PetLibro `skip_feeding_plan`). */
   hasTodaySkip: boolean;
+  /**
+   * When not `false`, the add/edit form shows a label text field with these constraints.
+   */
+  hasEntryLabel: false | EntryLabelConstraints;
 }
 
 /**

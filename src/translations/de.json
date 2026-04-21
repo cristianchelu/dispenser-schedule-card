@@ -21,7 +21,8 @@
   },
   "entry_field": {
     "quantity_n": "Menge {n}",
-    "position": "Fach"
+    "position": "Fach",
+    "label": "Bezeichnung"
   },
   "status": {
     "dispensed": "Ausgegeben",

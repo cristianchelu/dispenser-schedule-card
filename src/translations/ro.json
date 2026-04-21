@@ -22,7 +22,8 @@
   },
   "entry_field": {
     "quantity_n": "Cantitate {n}",
-    "position": "Compartiment"
+    "position": "Compartiment",
+    "label": "Etichetă"
   },
   "status": {
     "dispensed": "Dozat",

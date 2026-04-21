@@ -11,7 +11,7 @@ import {
   GlobalToggleInfo,
   ScheduleEntry,
 } from "../types/common";
-import { findEntityRegistryEntry, HomeAssistant } from "../types/ha";
+import { HomeAssistant } from "../types/ha";
 import { ALL_WEEKDAYS, sortWeekdays, Weekday } from "../types/weekday";
 
 type PetlibroState =
@@ -164,6 +164,24 @@ function buildPetlibroScheduleToggleAdapter(
   };
 }
 
+function findPetlibroScheduleEntity(
+  hass: HomeAssistant,
+  deviceId: string
+): string | undefined {
+  const entities = hass.entities;
+  if (!entities) return undefined;
+  for (const entityId in entities) {
+    const entity = entities[entityId];
+    if (!entity) continue;
+    if (entity.device_id !== deviceId) continue;
+
+    if (hass.states[entityId]!.attributes!.schedule_type === "full") {
+      return entityId;
+    }
+  }
+  return undefined;
+}
+
 interface ResolvedConfig {
   scheduleEntity: string | null;
   toggle: GlobalToggleAdapter | null;
@@ -176,16 +194,12 @@ function resolveConfig(
 ): ResolvedConfig {
   const errors: DeviceConfigError[] = [];
 
-  let scheduleEntity = config.entity ?? null;
+  let scheduleEntity = config.entity;
+
   if (!scheduleEntity && config.device_id) {
-    scheduleEntity =
-      findEntityRegistryEntry(
-        hass,
-        (e) =>
-          e.device_id === config.device_id &&
-          e.attributes?.schedule_type === "full"
-      )?.entity_id ?? null;
+    scheduleEntity = findPetlibroScheduleEntity(hass, config.device_id);
   }
+
   if (!scheduleEntity) {
     errors.push({ field: "device.entity" });
   }
@@ -210,18 +224,9 @@ function resolveConfig(
       config.device_id,
       scheduleEntity
     );
-  } else if (config.device_id) {
-    const switchEntityId = findEntityRegistryEntry(
-      hass,
-      (e) =>
-        e.device_id === config.device_id && e.entity_id.startsWith("switch.")
-    )?.entity_id;
-    if (switchEntityId) {
-      toggle = buildSwitchAdapter(switchEntityId);
-    }
   }
 
-  return { scheduleEntity, toggle, errors };
+  return { scheduleEntity: scheduleEntity ?? null, toggle, errors };
 }
 
 export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
@@ -249,6 +254,14 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       maxEntries: 99,
       hasWeeklySchedule: true,
       hasTodaySkip: hasDeviceId,
+      hasEntryLabel: hasDeviceId
+        ? {
+            required: false,
+            minLength: 1,
+            maxLength: 20,
+            pattern: "^\\S+$",
+          }
+        : false,
     };
   }
 
@@ -305,6 +318,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       hour,
       minute,
       values: [plan.amount_raw],
+      label: plan.label,
       status: enabled ? PETLIBRO_STATE_TO_STATUS[state] : EntryStatus.DISABLED,
       weekdays,
     };
@@ -318,7 +332,9 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     if (!state) return [];
 
     const attrs = state.attributes as unknown as PetlibroEntityAttributes;
-    return attrs.schedule.map((item) => this._planToScheduleEntry(item));
+    return attrs.schedule
+      .map((item) => this._planToScheduleEntry(item))
+      .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
   }
 
   getGlobalToggle(): GlobalToggleInfo | null {
@@ -344,6 +360,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       time,
       portions: entry.values[0],
       days,
+      label: entry.label ?? "",
     };
   }
 
@@ -392,6 +409,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     if (!this.capabilities.hasTodaySkip || entry.readonly) return false;
     if (!this.entryAppliesToday(entry)) return false;
     const state = this._planApiStateByEntryKey.get(entry.key);
+    // debugger;
     return state === "not_for_today";
   }
 
@@ -422,6 +440,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       hour: 0,
       minute: 0,
       values: [this.entryFields[0].config.min],
+      label: "",
       weekdays: undefined,
     };
   }
