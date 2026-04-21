@@ -400,17 +400,12 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   canSkipEntryForToday(entry: ScheduleEntry): boolean {
-    if (!this.capabilities.hasTodaySkip || entry.readonly) return false;
-    if (!this.entryAppliesToday(entry)) return false;
     return entry.status === EntryStatus.PENDING;
   }
 
   canUnskipEntryForToday(entry: ScheduleEntry): boolean {
-    if (!this.capabilities.hasTodaySkip || entry.readonly) return false;
-    if (!this.entryAppliesToday(entry)) return false;
     const state = this._planApiStateByEntryKey.get(entry.key);
-    // debugger;
-    return state === "not_for_today";
+    return state === "to_be_skipped";
   }
 
   async setEntrySkipForToday(
