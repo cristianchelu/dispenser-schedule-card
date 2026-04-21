@@ -126,6 +126,12 @@ class DispenserScheduleCard extends LitElement {
       case "toggle":
         this.handleToggleEntry(entry);
         break;
+      case "skip_today":
+        void this._device.setEntrySkipForToday(entry, true);
+        break;
+      case "unskip_today":
+        void this._device.setEntrySkipForToday(entry, false);
+        break;
     }
   }
 
@@ -448,9 +454,17 @@ class DispenserScheduleCard extends LitElement {
     const nameTitle = this.scheduleEntryNameTitle(entry);
     const style = this.getRowStyle(color);
     const caps = this._device.capabilities;
+    const showSkipToday =
+      caps.hasTodaySkip && this._device.canSkipEntryForToday(entry);
+    const showUnskipToday =
+      caps.hasTodaySkip && this._device.canUnskipEntryForToday(entry);
     const hasOverflowActions =
       !entry.readonly &&
-      (caps.canEditEntries || caps.canRemoveEntries || caps.hasEntryToggle);
+      (caps.canEditEntries ||
+        caps.canRemoveEntries ||
+        caps.hasEntryToggle ||
+        showSkipToday ||
+        showUnskipToday);
     const rowClass = [
       "timeline",
       displayStatus,
@@ -521,6 +535,36 @@ class DispenserScheduleCard extends LitElement {
                     icon="${displayStatus === EntryStatus.DISABLED
                       ? "mdi:toggle-switch"
                       : "mdi:toggle-switch-off"}"
+                    style=${styleMap({
+                      color:
+                        displayStatus === EntryStatus.DISABLED
+                          ? "var(--primary-color)"
+                          : "var(--state-inactive-color)",
+                    })}
+                  ></ha-icon>
+                </ha-dropdown-item>`
+              : nothing}
+            ${showSkipToday
+              ? html`<ha-dropdown-item
+                  value="skip_today"
+                  class="skip-today-entry"
+                >
+                  ${localize("ui.skip_today")}
+                  <ha-icon slot="icon" icon="mdi:calendar-remove"></ha-icon>
+                </ha-dropdown-item>`
+              : nothing}
+            ${showUnskipToday
+              ? html`<ha-dropdown-item
+                  value="unskip_today"
+                  class="unskip-today-entry"
+                >
+                  ${localize("ui.unskip_today")}
+                  <ha-icon
+                    slot="icon"
+                    icon="mdi:calendar-refresh"
+                    style=${styleMap({
+                      color: "var(--primary-color)",
+                    })}
                   ></ha-icon>
                 </ha-dropdown-item>`
               : nothing}
@@ -854,7 +898,8 @@ class DispenserScheduleCard extends LitElement {
       caps.canAddEntries ||
       caps.canEditEntries ||
       caps.canRemoveEntries ||
-      caps.hasEntryToggle;
+      caps.hasEntryToggle ||
+      caps.hasTodaySkip;
 
     if (!hasAnyEditAction) {
       editable = "never";

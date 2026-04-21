@@ -16,7 +16,9 @@
     "amount": "Quantità",
     "repeat": "Ripeti",
     "every_day": "Ogni giorno",
-    "empty_today": "Nessun orario per oggi"
+    "empty_today": "Nessun orario per oggi",
+    "skip_today": "Salta",
+    "unskip_today": "Riprendi"
   },
   "entry_field": {
     "quantity_n": "Quantità {n}",
