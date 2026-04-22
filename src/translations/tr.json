@@ -3,7 +3,7 @@
     "name": "Program",
     "portions_one": "porsiyon",
     "portions_other": "porsiyon",
-    "empty": "program tanımlanmamış",
+    "empty": "Program yok",
     "edit": "Düzenle",
     "delete": "Sil",
     "enable": "Etkinleştir",
@@ -15,7 +15,7 @@
     "amount": "Miktar",
     "repeat": "Tekrar",
     "every_day": "Her gün",
-    "empty_today": "Bugün için program tanımlanmamış"
+    "empty_today": "Bugün için program yok"
   },
   "entry_field": {
     "quantity_n": "Miktar {n}",

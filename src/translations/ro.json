@@ -4,7 +4,7 @@
     "portions_one": "porție",
     "portions_few": "porții",
     "portions_other": "de porții",
-    "empty": "Niciun orar definit",
+    "empty": "Niciun orar",
     "edit": "Editare",
     "delete": "Ștergere",
     "enable": "Activare",
@@ -16,7 +16,7 @@
     "amount": "Cantitate",
     "repeat": "Repetare",
     "every_day": "În fiecare zi",
-    "empty_today": "Niciun orar definit pentru astăzi"
+    "empty_today": "Niciun orar pentru astăzi"
   },
   "entry_field": {
     "quantity_n": "Cantitate {n}",

@@ -3,7 +3,7 @@
     "name": "Schedule",
     "portions_one": "portion",
     "portions_other": "portions",
-    "empty": "No schedule defined",
+    "empty": "No schedule",
     "edit": "Edit",
     "delete": "Delete",
     "enable": "Enable",
@@ -15,7 +15,7 @@
     "amount": "Amount",
     "repeat": "Repeat",
     "every_day": "Every day",
-    "empty_today": "No schedule defined for today"
+    "empty_today": "No schedule for today"
   },
   "entry_field": {
     "quantity_n": "Amount {n}",

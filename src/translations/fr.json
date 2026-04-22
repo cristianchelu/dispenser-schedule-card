@@ -4,7 +4,7 @@
     "portions_one": "portion",
     "portions_many": "de portions",
     "portions_other": "portions",
-    "empty": "Aucun horaire défini",
+    "empty": "Aucun horaire",
     "edit": "Modifier",
     "delete": "Supprimer",
     "enable": "Activer",
@@ -16,7 +16,7 @@
     "amount": "Quantité",
     "repeat": "Répétition",
     "every_day": "Tous les jours",
-    "empty_today": "Aucun horaire défini pour aujourd'hui"
+    "empty_today": "Aucun horaire pour aujourd'hui"
   },
   "entry_field": {
     "quantity_n": "Quantité {n}",

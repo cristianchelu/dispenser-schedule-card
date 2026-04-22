@@ -3,7 +3,7 @@
     "name": "Zeitplan",
     "portions_one": "Portion",
     "portions_other": "Portionen",
-    "empty": "Kein Zeitplan definiert",
+    "empty": "Kein Zeitplan",
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "enable": "Aktivieren",
@@ -15,7 +15,7 @@
     "amount": "Menge",
     "repeat": "Wiederholung",
     "every_day": "Täglich",
-    "empty_today": "Kein Zeitplan für heute definiert"
+    "empty_today": "Kein Zeitplan für heute"
   },
   "entry_field": {
     "quantity_n": "Menge {n}",

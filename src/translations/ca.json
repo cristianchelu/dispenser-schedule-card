@@ -4,7 +4,7 @@
     "portions_one": "porció",
     "portions_many": "de porcions",
     "portions_other": "porcions",
-    "empty": "No hi ha cap horari",
+    "empty": "Cap horari",
     "edit": "Edita",
     "delete": "Elimina",
     "enable": "Activa",
@@ -16,7 +16,7 @@
     "amount": "Quantitat",
     "repeat": "Repetició",
     "every_day": "Cada dia",
-    "empty_today": "No hi ha cap horari definit per avui"
+    "empty_today": "Cap horari per avui"
   },
   "entry_field": {
     "quantity_n": "Quantitat {n}",
