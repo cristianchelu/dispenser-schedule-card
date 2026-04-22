@@ -186,6 +186,25 @@ export abstract class Device<
     return Promise.resolve();
   }
 
+  /**
+   * Device-native status data for an entry, layered on top of the closed
+   * `EntryStatus` returned by `getDisplayStatus`.
+   *
+   * - `statusKey`: opaque device-native identifier used both for
+   *   `display:` config lookup and for the row's `data-native-status`
+   *   DOM attribute (e.g. PetLibro `"to_be_skipped"`, custom
+   *   `"My Custom State"`).
+   * - `statusLabel`: pre-localized human-readable label from the
+   *   integration, used as the default secondary text when no user
+   *   override exists.
+   */
+  getEntryStatusInfo(_entry: ScheduleEntry): {
+    statusKey?: string;
+    statusLabel?: string;
+  } {
+    return {};
+  }
+
   abstract addEntry(entry: EditScheduleEntry): Promise<void>;
   abstract editEntry(entry: EditScheduleEntry): Promise<void>;
   abstract removeEntry(entry: ScheduleEntry): Promise<void>;

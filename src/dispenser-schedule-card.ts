@@ -33,7 +33,6 @@ import {
 import {
   DefaultDisplayConfig,
   DispenserScheduleCardConfig,
-  DisplayConfigEntry,
 } from "./types/config";
 
 import { type HomeAssistant, EMPTY_HOME_ASSISTANT } from "./types/ha";
@@ -490,11 +489,18 @@ class DispenserScheduleCard extends LitElement {
 
   renderScheduleRow(entry: ScheduleEntry) {
     const displayStatus = this._device.getDisplayStatus(entry);
-    const display: DisplayConfigEntry =
-      this._config.display?.[displayStatus] ?? {};
+    const { statusKey, statusLabel } = this._device.getEntryStatusInfo(entry);
+
+    const keyCfg = statusKey ? this._config.display?.[statusKey] : undefined;
+    const statusCfg = this._config.display?.[displayStatus];
     const fallback = DefaultDisplayConfig[displayStatus];
-    const icon = display.icon ?? fallback?.icon ?? "mdi:clock-outline";
-    const color = display.color || fallback?.color || undefined;
+
+    const icon =
+      keyCfg?.icon ?? statusCfg?.icon ?? fallback?.icon ?? "mdi:clock-outline";
+    const color =
+      keyCfg?.color || statusCfg?.color || fallback?.color || undefined;
+    const overrideLabel = keyCfg?.label ?? statusCfg?.label;
+
     const timeOnly = this.renderTimeString(entry);
     const nameTitle = this.scheduleEntryNameTitle(entry);
     const style = this.getRowStyle(color);
@@ -519,11 +525,12 @@ class DispenserScheduleCard extends LitElement {
       .join(" ");
 
     if (!this._isEditing) {
-      const label = display.label ?? displayStatus;
       const rowSecondary =
-        displayStatus === EntryStatus.NONE
-          ? undefined
-          : (localize(`status.${label}`) ?? label);
+        overrideLabel ??
+        statusLabel ??
+        (displayStatus !== EntryStatus.NONE
+          ? (localize(`status.${displayStatus}`) ?? displayStatus)
+          : undefined);
 
       return renderEntityRow({
         className: rowClass,
@@ -533,6 +540,7 @@ class DispenserScheduleCard extends LitElement {
         nameTitle,
         secondaryContent: rowSecondary,
         style,
+        nativeStatus: statusKey,
         valueContent: this.renderCompactEntryValues(entry.values),
       });
     }
@@ -549,6 +557,7 @@ class DispenserScheduleCard extends LitElement {
       nameTitle,
       secondaryContent: rowSecondary || undefined,
       style,
+      nativeStatus: statusKey,
       valueContent: hasOverflowActions
         ? html`<ha-dropdown
             class="edit-menu"

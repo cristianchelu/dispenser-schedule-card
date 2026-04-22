@@ -53,7 +53,7 @@ const PETLIBRO_STATE_TO_STATUS: Record<PetlibroState, EntryStatus> = {
   skipped: EntryStatus.SKIPPED,
   state_5: EntryStatus.NONE,
   unknown: EntryStatus.NONE,
-  not_for_today: EntryStatus.SKIPPED,
+  not_for_today: EntryStatus.PENDING,
 };
 
 function parseTime(time: string): { hour: number; minute: number } {
@@ -231,7 +231,10 @@ function resolveConfig(
 
 export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   private resolved: ResolvedConfig;
-  private readonly _planApiStateByEntryKey = new Map<string, PetlibroState>();
+  private readonly _planMetaByEntryKey = new Map<
+    string,
+    Pick<PetlibroScheduleEntry, "state" | "state_label">
+  >();
 
   constructor(deviceConfig: PetLibroDeviceConfig, hass: HomeAssistant) {
     super(deviceConfig, hass);
@@ -305,20 +308,32 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   private _planToScheduleEntry(plan: PetlibroScheduleEntry): ScheduleEntry {
-    const { planID, enabled, state, repeat_days, time } = plan;
+    const {
+      planID,
+      enabled,
+      state,
+      repeat_days,
+      time,
+      state_label,
+      label,
+      amount_raw,
+    } = plan;
     const { hour, minute } = parseTime(time);
 
     const key = planID.toString();
 
     const weekdays = repeatDaysToWeekdays(repeat_days ?? []);
 
-    this._planApiStateByEntryKey.set(key, state);
+    this._planMetaByEntryKey.set(key, {
+      state,
+      state_label,
+    });
     return {
       key,
       hour,
       minute,
-      values: [plan.amount_raw],
-      label: plan.label,
+      values: [amount_raw],
+      label: label,
       status: enabled ? PETLIBRO_STATE_TO_STATUS[state] : EntryStatus.DISABLED,
       weekdays,
     };
@@ -326,7 +341,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
 
   getSchedule(): ScheduleEntry[] {
     const entityId = this.resolved.scheduleEntity;
-    this._planApiStateByEntryKey.clear();
+    this._planMetaByEntryKey.clear();
     if (!entityId) return [];
     const state = this.hass.states[entityId];
     if (!state) return [];
@@ -403,12 +418,22 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   canSkipEntryForToday(entry: ScheduleEntry): boolean {
-    return entry.status === EntryStatus.PENDING;
+    const meta = this._planMetaByEntryKey.get(entry.key);
+    if (!meta) return false;
+    return meta.state === "pending";
   }
 
   canUnskipEntryForToday(entry: ScheduleEntry): boolean {
-    const state = this._planApiStateByEntryKey.get(entry.key);
-    return state === "to_be_skipped";
+    return this._planMetaByEntryKey.get(entry.key)?.state === "to_be_skipped";
+  }
+
+  getEntryStatusInfo(entry: ScheduleEntry): {
+    statusKey?: string;
+    statusLabel?: string;
+  } {
+    const meta = this._planMetaByEntryKey.get(entry.key);
+    if (!meta) return {};
+    return { statusKey: meta.state, statusLabel: meta.state_label };
   }
 
   async setEntrySkipForToday(
