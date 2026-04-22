@@ -383,6 +383,50 @@ This will display the `failed` status in the `--success-color` of the home
 assistant theme and the label "Task failed successfully", and the custom state
 `My Custom State`, in hot pink with the `mdi:scale` icon.
 
+#### Integration-specific status keys
+
+Some devices surface integration-specific status identifiers on top of the
+card's standard statuses. PetLibro, for example, distinguishes `to_be_skipped`
+(a feeding plan that will be skipped for today only) and `not_for_today` (a
+plan whose weekday schedule does not include today) — both of which the card
+buckets into the generic `skipped` status by default. You can target these
+specific keys in the `display` map:
+
+```yaml
+display:
+  skipped:
+    icon: mdi:ghost
+  to_be_skipped:
+    label: Tomorrow
+```
+
+Overrides layer **per field** from most specific to least specific:
+`display[<native-key>].icon` falls back to `display[<closed-status>].icon`,
+which falls back to the card default. The same applies to `color` and
+`label`. A partial override at one level never shadows overrides at the
+other — the example above keeps the custom `mdi:ghost` icon for
+`to_be_skipped` entries while also using the "Tomorrow" label for them.
+
+When a native status label is not overridden, the secondary text defaults
+to the integration's own (already localized) label instead of the generic
+bucket name.
+
+#### Styling rows via CSS
+
+Rows expose a `data-native-status="<key>"` attribute for integration-specific
+states, so stylesheets can target them safely without relying on brittle or
+user-controlled class names:
+
+```css
+.dispenser-entity-row[data-native-status="to_be_skipped"] {
+  opacity: 0.6;
+}
+```
+
+This also replaces the (previously undocumented) behaviour in `CustomDevice`
+where an unknown value in `status_map` used to leak into the row's CSS class
+list. Use the `data-native-status` selector instead.
+
 ## Languages
 
 Translations are currently available for the following languages:

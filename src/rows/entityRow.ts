@@ -13,6 +13,13 @@ export interface EntityRowOptions {
   secondaryContent?: unknown;
   valueContent?: unknown;
   style?: RowStyleMap;
+  /**
+   * Optional device-native status identifier. Rendered as a
+   * `data-native-status` attribute on the outer row element so user
+   * stylesheets can target integration-specific states without us
+   * interpolating untrusted strings into the class list.
+   */
+  nativeStatus?: string;
 }
 
 export function renderEntityRow(options: EntityRowOptions) {
@@ -23,7 +30,11 @@ export function renderEntityRow(options: EntityRowOptions) {
     .join(" ");
 
   return html`
-    <div class=${className} style=${styleMap(options.style ?? {})}>
+    <div
+      class=${className}
+      style=${styleMap(options.style ?? {})}
+      data-native-status=${options.nativeStatus ?? nothing}
+    >
       <div class="dispenser-entity-row__row">
         <state-badge
           .overrideIcon=${options.icon}

@@ -46,21 +46,25 @@ function getNextId(arr: Array<number>): number {
   return !arr.length ? 0 : Math.min(getFirstGap(arr), Math.max(...arr) + 1);
 }
 
+const KNOWN_ENTRY_STATUSES = new Set<string>(Object.values(EntryStatus));
+
 export default class CustomDevice extends Device<CustomDeviceConfig> {
   readonly statusPattern: RegExp;
-  readonly statusMap: Record<string, EntryStatus>;
+  readonly statusMap: Record<string, string>;
+  private readonly _customStatusByEntryKey = new Map<string, string>();
 
   constructor(deviceConfig: CustomDeviceConfig, hass: HomeAssistant) {
     super(deviceConfig, hass);
 
     this.statusPattern = new RegExp(deviceConfig.status_pattern);
-    this.statusMap = deviceConfig.status_map.reduce<
-      Record<string, EntryStatus>
-    >((acc, item) => {
-      const [key, value] = item.split(" -> ");
-      acc[key] = value as EntryStatus;
-      return acc;
-    }, {});
+    this.statusMap = deviceConfig.status_map.reduce<Record<string, string>>(
+      (acc, item) => {
+        const [key, value] = item.split(" -> ");
+        acc[key] = value;
+        return acc;
+      },
+      {}
+    );
   }
 
   get capabilities(): DeviceCapabilities {
@@ -110,6 +114,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
   }
 
   getSchedule(): ScheduleEntry[] {
+    this._customStatusByEntryKey.clear();
     const state = this.hass.states[this.deviceConfig.entity]?.state;
     if (!state) return [];
 
@@ -121,18 +126,34 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       (res = regex.exec(state)) !== null &&
       i < this.deviceConfig.max_entries
     ) {
+      const id = res.groups!.id;
+      const mapped = this.statusMap[parseInt(res.groups!.status)];
+      const isKnown = KNOWN_ENTRY_STATUSES.has(mapped);
+      const status = isKnown ? (mapped as EntryStatus) : EntryStatus.NONE;
+      if (!isKnown && mapped !== undefined) {
+        this._customStatusByEntryKey.set(id, mapped);
+      }
       schedules.push({
-        key: res.groups!.id,
+        key: id,
         hour: parseInt(res.groups!.hour),
         minute: parseInt(res.groups!.minute),
         values: [parseInt(res.groups!.amount)],
-        status: this.statusMap[parseInt(res.groups!.status)],
+        status,
       });
       i++;
     }
     return schedules
       .filter(({ hour }) => hour !== 255)
       .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
+  }
+
+  getEntryStatusInfo(entry: ScheduleEntry): {
+    statusKey?: string;
+    statusLabel?: string;
+  } {
+    const custom = this._customStatusByEntryKey.get(entry.key);
+    if (!custom) return {};
+    return { statusKey: custom, statusLabel: custom };
   }
 
   getGlobalToggle(): GlobalToggleInfo | null {
