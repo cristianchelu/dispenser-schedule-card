@@ -54,7 +54,6 @@ interface PetlibroScheduleEntry {
 }
 
 interface PetlibroEntityAttributes {
-  schedule_type: "full" | "today";
   schedule: PetlibroScheduleEntry[];
   feed_conv_factor: number;
 }
@@ -190,7 +189,7 @@ function findPetlibroScheduleEntity(
     if (!entity) continue;
     if (entity.device_id !== deviceId) continue;
 
-    if (hass.states[entityId]!.attributes!.schedule_type === "full") {
+    if (!!hass.states[entityId]!.attributes!.schedule) {
       return entityId;
     }
   }
@@ -370,7 +369,9 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   filterScheduleForToday(entries: ScheduleEntry[]): ScheduleEntry[] {
-    return entries.filter((entry) => this._planByEntryKey.get(entry.key)?.today);
+    return entries.filter(
+      (entry) => this._planByEntryKey.get(entry.key)?.today
+    );
   }
 
   entryAppliesToday(entry: ScheduleEntry): boolean {
