@@ -161,8 +161,7 @@ export abstract class Device<
    */
   filterScheduleForToday(entries: ScheduleEntry[]): ScheduleEntry[] {
     if (!this.capabilities.hasWeeklySchedule) return entries;
-    const today = getTodayWeekday(this.hass.config.time_zone);
-    return entries.filter((entry) => appliesOnWeekday(entry.weekdays, today));
+    return entries.filter((entry) => this.entryAppliesToday(entry));
   }
 
   /** Whether this entry runs on today's weekday (always true without weekly schedule). */

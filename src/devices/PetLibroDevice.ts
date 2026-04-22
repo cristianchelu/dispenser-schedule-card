@@ -21,20 +21,35 @@ type PetlibroState =
   | "skipped"
   | "state_5"
   | "unknown"
-  | "not_for_today";
+  | "not_recurring";
 interface PetlibroScheduleEntry {
+  /** Petlibro ID */
+  id: number;
+  /** Human-readable label (e.g. Breakfast)*/
   label: string;
-  planID: number;
+  /** Dispense time (e.g. 08:00)*/
   time: string;
+  /** Whether the entry should be shown in the today view */
+  today: boolean;
+  /** Dispense amount in cups */
   amount_cups: number;
+  /** Dispense amount in ounces */
   amount_oz: number;
+  /** Dispense amount in grams */
   amount_g: number;
+  /** Dispense amount in milliliters */
   amount_ml: number;
+  /** Dispense amount in raw units (portions) */
   amount_raw: number;
+  /** Whether the entry is enabled by the user*/
   enabled: boolean;
+  /** Days of the week on which the entry should be dispensed */
   repeat_days?: number[] | null;
+  /** Whether to play a calling sound when dispensing */
   sound: boolean;
+  /** Status of schedule entry */
   state: PetlibroState;
+  /** Translated status label */
   state_label: string;
 }
 
@@ -53,7 +68,7 @@ const PETLIBRO_STATE_TO_STATUS: Record<PetlibroState, EntryStatus> = {
   skipped: EntryStatus.SKIPPED,
   state_5: EntryStatus.NONE,
   unknown: EntryStatus.NONE,
-  not_for_today: EntryStatus.PENDING,
+  not_recurring: EntryStatus.PENDING,
 };
 
 function parseTime(time: string): { hour: number; minute: number } {
@@ -231,10 +246,7 @@ function resolveConfig(
 
 export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   private resolved: ResolvedConfig;
-  private readonly _planMetaByEntryKey = new Map<
-    string,
-    Pick<PetlibroScheduleEntry, "state" | "state_label">
-  >();
+  private readonly _planByEntryKey = new Map<string, PetlibroScheduleEntry>();
 
   constructor(deviceConfig: PetLibroDeviceConfig, hass: HomeAssistant) {
     super(deviceConfig, hass);
@@ -309,7 +321,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
 
   private _planToScheduleEntry(plan: PetlibroScheduleEntry): ScheduleEntry {
     const {
-      planID,
+      id,
       enabled,
       state,
       repeat_days,
@@ -320,14 +332,11 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     } = plan;
     const { hour, minute } = parseTime(time);
 
-    const key = planID.toString();
+    const key = id.toString();
 
     const weekdays = repeatDaysToWeekdays(repeat_days ?? []);
 
-    this._planMetaByEntryKey.set(key, {
-      state,
-      state_label,
-    });
+    this._planByEntryKey.set(key, plan);
     return {
       key,
       hour,
@@ -341,7 +350,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
 
   getSchedule(): ScheduleEntry[] {
     const entityId = this.resolved.scheduleEntity;
-    this._planMetaByEntryKey.clear();
+    this._planByEntryKey.clear();
     if (!entityId) return [];
     const state = this.hass.states[entityId];
     if (!state) return [];
@@ -358,6 +367,14 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     const state = this.resolved.toggle.getState(this.hass);
     if (state === null) return null;
     return { state };
+  }
+
+  filterScheduleForToday(entries: ScheduleEntry[]): ScheduleEntry[] {
+    return entries.filter((entry) => this._planByEntryKey.get(entry.key)?.today);
+  }
+
+  entryAppliesToday(entry: ScheduleEntry): boolean {
+    return this._planByEntryKey.get(entry.key)?.today ?? false;
   }
 
   getDisplayStatus(entry: ScheduleEntry): EntryStatus {
@@ -418,20 +435,20 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   canSkipEntryForToday(entry: ScheduleEntry): boolean {
-    const meta = this._planMetaByEntryKey.get(entry.key);
+    const meta = this._planByEntryKey.get(entry.key);
     if (!meta) return false;
     return meta.state === "pending";
   }
 
   canUnskipEntryForToday(entry: ScheduleEntry): boolean {
-    return this._planMetaByEntryKey.get(entry.key)?.state === "to_be_skipped";
+    return this._planByEntryKey.get(entry.key)?.state === "to_be_skipped";
   }
 
   getEntryStatusInfo(entry: ScheduleEntry): {
     statusKey?: string;
     statusLabel?: string;
   } {
-    const meta = this._planMetaByEntryKey.get(entry.key);
+    const meta = this._planByEntryKey.get(entry.key);
     if (!meta) return {};
     return { statusKey: meta.state, statusLabel: meta.state_label };
   }
