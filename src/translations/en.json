@@ -33,6 +33,10 @@
     "disabled": "Disabled",
     "unknown": "Unknown"
   },
+  "status_petlibro": {
+    "to_be_skipped": "To be skipped",
+    "state_5": "Unknown state 5"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

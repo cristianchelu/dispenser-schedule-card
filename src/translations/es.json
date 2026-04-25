@@ -33,6 +33,10 @@
     "disabled": "Desactivado",
     "unknown": "Desconocido"
   },
+  "status_petlibro": {
+    "to_be_skipped": "Por omitir",
+    "state_5": "Estado desconocido 5"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

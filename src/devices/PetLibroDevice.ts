@@ -9,18 +9,13 @@ import {
   EntryFieldRole,
   EntryStatus,
   GlobalToggleInfo,
+  NativeStatusDisplay,
   ScheduleEntry,
 } from "../types/common";
 import { HomeAssistant } from "../types/ha";
 import { ALL_WEEKDAYS, sortWeekdays, Weekday } from "../types/weekday";
+import localize from "../localization";
 
-type PetlibroState =
-  | "pending"
-  | "to_be_skipped"
-  | "dispensed"
-  | "skipped"
-  | "state_5"
-  | "unknown";
 interface PetlibroScheduleEntry {
   /** Petlibro ID */
   id: number;
@@ -49,7 +44,7 @@ interface PetlibroScheduleEntry {
   /** Whether to play a calling sound when dispensing */
   sound: boolean;
   /** Status of schedule entry */
-  state: PetlibroState;
+  state: string;
 }
 
 interface PetlibroEntityAttributes {
@@ -59,14 +54,42 @@ interface PetlibroEntityAttributes {
 
 const PETLIBRO_PLATFORM = "petlibro";
 
-const PETLIBRO_STATE_TO_STATUS: Record<PetlibroState, EntryStatus> = {
-  pending: EntryStatus.PENDING,
-  to_be_skipped: EntryStatus.SKIPPED,
-  dispensed: EntryStatus.DISPENSED,
-  skipped: EntryStatus.SKIPPED,
-  state_5: EntryStatus.NONE,
-  unknown: EntryStatus.NONE,
-};
+function petlibroStateToStatus(state: string): EntryStatus {
+  switch (state) {
+    case "pending":
+      return EntryStatus.PENDING;
+    case "to_be_skipped":
+    case "skipped":
+      return EntryStatus.SKIPPED;
+    case "dispensed":
+      return EntryStatus.DISPENSED;
+    default:
+      return EntryStatus.UNKNOWN;
+  }
+}
+
+function getPetlibroNativeStatusDisplay(
+  state: string
+): NativeStatusDisplay | undefined {
+  switch (state) {
+    case "to_be_skipped":
+      return {
+        key: state,
+        label: localize("status_petlibro.to_be_skipped") ?? state,
+        icon: "mdi:debug-step-over",
+        color: "var(--warning-color)",
+      };
+    case "state_5":
+      return {
+        key: state,
+        label: localize("status_petlibro.state_5") ?? state,
+        icon: "mdi:help-circle-outline",
+        color: "var(--state-inactive-color)",
+      };
+    default:
+      return undefined;
+  }
+}
 
 function parseTime(time: string): { hour: number; minute: number } {
   const [hStr, mStr] = time.split(":");
@@ -354,7 +377,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       minute,
       values: [amount_raw],
       label,
-      status: enabled ? PETLIBRO_STATE_TO_STATUS[state] : EntryStatus.DISABLED,
+      status: enabled ? petlibroStateToStatus(state) : EntryStatus.DISABLED,
       weekdays,
     };
   }
@@ -458,13 +481,20 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     return this._planByEntryKey.get(entry.key)?.state === "to_be_skipped";
   }
 
-  getEntryStatusInfo(entry: ScheduleEntry): {
-    statusKey?: string;
-    statusLabel?: string;
-  } {
+  getNativeStatusDisplay(
+    entry: ScheduleEntry
+  ): NativeStatusDisplay | undefined {
     const meta = this._planByEntryKey.get(entry.key);
-    if (!meta) return {};
-    return { statusKey: meta.state, statusLabel: meta.state };
+    if (!meta) return undefined;
+    if (!meta.enabled && meta.state === "dispensed") {
+      return {
+        key: "dispensed",
+        label: localize("status.dispensed"),
+        icon: "mdi:alert-circle-check-outline",
+        color: "var(--state-active-color)",
+      };
+    }
+    return getPetlibroNativeStatusDisplay(meta.state);
   }
 
   async setEntrySkipForToday(

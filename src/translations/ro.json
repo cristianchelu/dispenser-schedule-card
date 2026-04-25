@@ -34,6 +34,10 @@
     "disabled": "Dezactivat",
     "unknown": "Necunoscut"
   },
+  "status_petlibro": {
+    "to_be_skipped": "Va fi omis",
+    "state_5": "Stare necunoscută 5"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

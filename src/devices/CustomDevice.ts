@@ -8,6 +8,7 @@ import {
   EntryFieldRole,
   EntryStatus,
   GlobalToggleInfo,
+  NativeStatusDisplay,
   ScheduleEntry,
   isEntryStatus,
 } from "../types/common";
@@ -50,7 +51,10 @@ function getNextId(arr: Array<number>): number {
 export default class CustomDevice extends Device<CustomDeviceConfig> {
   readonly statusPattern: RegExp;
   readonly statusMap: Record<string, string>;
-  private readonly _customStatusByEntryKey = new Map<string, string>();
+  private readonly _customStatusByEntryKey = new Map<
+    string,
+    NativeStatusDisplay
+  >();
 
   constructor(deviceConfig: CustomDeviceConfig, hass: HomeAssistant) {
     super(deviceConfig, hass);
@@ -130,7 +134,10 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       const isKnown = isEntryStatus(mapped);
       const status = isKnown ? mapped : EntryStatus.NONE;
       if (!isKnown && mapped !== undefined) {
-        this._customStatusByEntryKey.set(id, mapped);
+        this._customStatusByEntryKey.set(id, {
+          key: mapped,
+          label: mapped,
+        });
       }
       schedules.push({
         key: id,
@@ -146,13 +153,11 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
   }
 
-  getEntryStatusInfo(entry: ScheduleEntry): {
-    statusKey?: string;
-    statusLabel?: string;
-  } {
+  getNativeStatusDisplay(
+    entry: ScheduleEntry
+  ): NativeStatusDisplay | undefined {
     const custom = this._customStatusByEntryKey.get(entry.key);
-    if (!custom) return {};
-    return { statusKey: custom, statusLabel: custom };
+    return custom;
   }
 
   getGlobalToggle(): GlobalToggleInfo | null {

@@ -1,11 +1,5 @@
 import type { DeviceConfig } from "../devices";
-import { EntryStatus } from "./common";
-
-export type DisplayConfigEntry = {
-  icon?: string;
-  color?: string;
-  label?: string;
-};
+import { EntryStatus, type DisplayConfigEntry } from "./common";
 
 export type DisplayConfig = Record<string, DisplayConfigEntry>;
 
@@ -54,11 +48,15 @@ export const DefaultDisplayConfig: DisplayConfig = {
     color: "",
   },
   [EntryStatus.SKIPPED]: {
-    icon: "mdi:clock-remove-outline",
+    icon: "mdi:debug-step-over",
     color: "var(--state-inactive-color)",
   },
   [EntryStatus.DISABLED]: {
-    icon: "mdi:clock-alert-outline",
+    icon: "mdi:alert-circle-outline",
+    color: "var(--state-inactive-color)",
+  },
+  [EntryStatus.UNKNOWN]: {
+    icon: "mdi:help-circle-outline",
     color: "var(--state-inactive-color)",
   },
 };
