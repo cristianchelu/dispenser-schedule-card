@@ -111,24 +111,13 @@ function mapHassFirstWeekday(
 
 /** First day of week for UI: ISO weekday 1–7. */
 export function getFirstWeekdayOfLocale(
-  language: string,
   firstWeekdayFromHass?: HassFirstWeekday
 ): Weekday {
   if (firstWeekdayFromHass !== undefined) {
     const fromHass = mapHassFirstWeekday(firstWeekdayFromHass);
     if (fromHass !== undefined) return fromHass;
   }
-  try {
-    const loc = new Intl.Locale(language) as unknown as {
-      weekInfo?: { firstDay?: string };
-    };
-    const weekStart = loc.weekInfo?.firstDay;
-    if (weekStart === "mon") return Weekday.Monday;
-    if (weekStart === "sun") return Weekday.Sunday;
-    if (weekStart === "sat") return Weekday.Saturday;
-  } catch {
-    /* ignore */
-  }
+
   return Weekday.Monday;
 }
 
