@@ -9,6 +9,7 @@ import {
   EntryStatus,
   GlobalToggleInfo,
   ScheduleEntry,
+  isEntryStatus,
 } from "../types/common";
 import { HomeAssistant } from "../types/ha";
 
@@ -45,8 +46,6 @@ function getFirstGap(arr: Array<number>): number {
 function getNextId(arr: Array<number>): number {
   return !arr.length ? 0 : Math.min(getFirstGap(arr), Math.max(...arr) + 1);
 }
-
-const KNOWN_ENTRY_STATUSES = new Set<string>(Object.values(EntryStatus));
 
 export default class CustomDevice extends Device<CustomDeviceConfig> {
   readonly statusPattern: RegExp;
@@ -128,8 +127,8 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
     ) {
       const id = res.groups!.id;
       const mapped = this.statusMap[parseInt(res.groups!.status)];
-      const isKnown = KNOWN_ENTRY_STATUSES.has(mapped);
-      const status = isKnown ? (mapped as EntryStatus) : EntryStatus.NONE;
+      const isKnown = isEntryStatus(mapped);
+      const status = isKnown ? mapped : EntryStatus.NONE;
       if (!isKnown && mapped !== undefined) {
         this._customStatusByEntryKey.set(id, mapped);
       }

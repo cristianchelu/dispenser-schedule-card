@@ -22,6 +22,12 @@ export const EntryStatus = {
   NONE: "none",
 } as const;
 export type EntryStatus = (typeof EntryStatus)[keyof typeof EntryStatus];
+export const isEntryStatus = (status: unknown): status is EntryStatus => {
+  return (
+    typeof status === "string" &&
+    Object.values(EntryStatus).includes(status as EntryStatus)
+  );
+};
 
 export interface ScheduleEntry {
   /** Opaque key for the device to reference this entry. Card never parses it. */
