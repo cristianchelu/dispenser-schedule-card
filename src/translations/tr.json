@@ -33,6 +33,10 @@
     "disabled": "Devre dışı",
     "unknown": "Bilinmeyen"
   },
+  "status_petlibro": {
+    "to_be_skipped": "Atlanacak",
+    "state_5": "Bilinmeyen durum 5"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

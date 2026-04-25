@@ -18,7 +18,9 @@ export const EntryStatus = {
   SKIPPED: "skipped",
   /** Schedule entry will be skipped until re-enabled */
   DISABLED: "disabled",
-  /** No status available */
+  /** The device or card cannot determine the status */
+  UNKNOWN: "unknown",
+  /** No status available to report */
   NONE: "none",
 } as const;
 export type EntryStatus = (typeof EntryStatus)[keyof typeof EntryStatus];
@@ -97,6 +99,17 @@ export interface DeviceDisplayInfo {
 
 export interface GlobalToggleInfo {
   state: boolean;
+}
+
+export interface DisplayConfigEntry {
+  icon?: string;
+  color?: string;
+  label?: string;
+}
+
+export interface NativeStatusDisplay extends DisplayConfigEntry {
+  /** Device-native sub-status key for `display:` lookup and CSS attributes. */
+  key: string;
 }
 
 /** Declarative HTML constraint payload for the entry label field (native validation). */
@@ -196,23 +209,11 @@ export abstract class Device<
     return Promise.resolve();
   }
 
-  /**
-   * Device-native status data for an entry, layered on top of the closed
-   * `EntryStatus` returned by `getDisplayStatus`.
-   *
-   * - `statusKey`: opaque device-native identifier used both for
-   *   `display:` config lookup and for the row's `data-native-status`
-   *   DOM attribute (e.g. PetLibro `"to_be_skipped"`, custom
-   *   `"My Custom State"`).
-   * - `statusLabel`: pre-localized human-readable label from the
-   *   integration, used as the default secondary text when no user
-   *   override exists.
-   */
-  getEntryStatusInfo(_entry: ScheduleEntry): {
-    statusKey?: string;
-    statusLabel?: string;
-  } {
-    return {};
+  /** Optional device-native sub-status display layered over `entry.status`. */
+  getNativeStatusDisplay(
+    _entry: ScheduleEntry
+  ): NativeStatusDisplay | undefined {
+    return undefined;
   }
 
   abstract addEntry(entry: EditScheduleEntry): Promise<void>;

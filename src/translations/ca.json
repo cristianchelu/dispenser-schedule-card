@@ -34,6 +34,10 @@
     "disabled": "Desactivat",
     "unknown": "Desconegut"
   },
+  "status_petlibro": {
+    "to_be_skipped": "Pendent d'ometre",
+    "state_5": "Estat desconegut 5"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

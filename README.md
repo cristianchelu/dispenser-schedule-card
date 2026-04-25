@@ -165,13 +165,19 @@ Supported via the [`jjjonesjr33/petlibro`](https://github.com/jjjonesjr33/petlib
 
 **Integration contract (schedule entity):**
 
-| Topic         | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Discovery     | `binary_sensor` on the device with **`attributes.schedule_type: full`**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Plans         | **`attributes.schedule`**: array of plan objects (or a map normalized by the card with `Object.values`—prefer an array from the integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `repeat_days` | **`number[]` only**, **1 = Monday … 7 = Sunday** (matches the card’s weekday model).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Plan state    | **`state`**: `pending`, `to_be_skipped`, `dispensed`, `skipped`, `state_5`, `unknown`, `not_for_today`. Legacy **`feed_state`** is still read.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Services      | `petlibro.add_feeding_plan` / `edit_feeding_plan` use **`days`** as `"1"`…`"7"` strings (same convention as `repeat_days`). Per-plan **`delete_feeding_plan`** (`device_id`, `plan_id`) and **`toggle_feeding_plan`** (`device_id`, `plan_id`, `enable`) match add/edit. Whole schedule on/off: **`toggle_feeding_schedule`** (`device_id`, `enable`). **Skip today only** (does not disable the recurring plan): **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`) — requires an integration build that registers this service; skipped plans surface as **`not_for_today`** in `state`. |
+| Topic         | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discovery     | `binary_sensor` on the device with **`attributes.schedule_type: full`**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Plans         | **`attributes.schedule`**: array of plan objects (or a map normalized by the card with `Object.values`—prefer an array from the integration).                                                                                                                                                                                                                                                                                                                                                                                           |
+| `repeat_days` | **`number[]` only**, **1 = Monday … 7 = Sunday** (matches the card’s weekday model).                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Plan state    | **`state`**: `pending`, `to_be_skipped`, `dispensed`, `skipped`, `state_5`, `unknown`. Legacy **`feed_state`** is still read.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Services      | `petlibro.add_feeding_plan` / `edit_feeding_plan` use **`days`** as `"1"`…`"7"` strings (same convention as `repeat_days`). Per-plan **`delete_feeding_plan`** (`device_id`, `plan_id`) and **`toggle_feeding_plan`** (`device_id`, `plan_id`, `enable`) match add/edit. Whole schedule on/off: **`toggle_feeding_schedule`** (`device_id`, `enable`). **Skip today only** (does not disable the recurring plan): **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`) — requires an integration build that registers this service. |
+
+PetLibro states that are more specific than the card's canonical statuses act
+as sub-statuses for display. For example, `to_be_skipped` is canonically
+`skipped`, while `state_5` is canonically `unknown`. These native keys have
+card-owned labels and default icon/color presentation, and you can still
+override them with the top-level [`display`](#status-display-options) option.
 
 Minimal YAML:
 
@@ -206,7 +212,7 @@ switch:
 | Add / edit feeding plans | Yes       | `petlibro.add_feeding_plan` / `edit_feeding_plan`.                                                                                               |
 | Global enable / disable  | Yes       | Default: schedule `binary_sensor` + `toggle_feeding_schedule`; optional `switch` YAML as above.                                                  |
 | Per-plan toggle / delete | Yes       | `petlibro.toggle_feeding_plan` / `delete_feeding_plan` (needs a recent integration).                                                             |
-| Skip / un-skip for today | Yes       | Edit mode row menu: **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`). Un-skip is offered when the plan’s `state` is **`not_for_today`**. |
+| Skip / un-skip for today | Yes       | Edit mode row menu: **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`). Un-skip is offered when the plan’s `state` is **`to_be_skipped`**. |
 
 #### PetLibro amounts
 
@@ -385,12 +391,11 @@ assistant theme and the label "Task failed successfully", and the custom state
 
 #### Integration-specific status keys
 
-Some devices surface integration-specific status identifiers on top of the
-card's standard statuses. PetLibro, for example, distinguishes `to_be_skipped`
-(a feeding plan that will be skipped for today only) and `not_for_today` (a
-plan whose weekday schedule does not include today) — both of which the card
-buckets into the generic `skipped` status by default. You can target these
-specific keys in the `display` map:
+Some devices surface native sub-status identifiers on top of the card's
+canonical statuses. PetLibro, for example, distinguishes `to_be_skipped` (a
+feeding plan that will be skipped for today only) from the canonical `skipped`
+status used for row logic. You can target these native keys in the `display`
+map:
 
 ```yaml
 display:
@@ -401,15 +406,15 @@ display:
 ```
 
 Overrides layer **per field** from most specific to least specific:
-`display[<native-key>].icon` falls back to `display[<closed-status>].icon`,
+`display[<native-key>].icon` falls back to `display[<canonical-status>].icon`,
 which falls back to the card default. The same applies to `color` and
 `label`. A partial override at one level never shadows overrides at the
 other — the example above keeps the custom `mdi:ghost` icon for
 `to_be_skipped` entries while also using the "Tomorrow" label for them.
 
-When a native status label is not overridden, the secondary text defaults
-to the integration's own (already localized) label instead of the generic
-bucket name.
+When a native status label is not overridden, the secondary text defaults to the
+device-provided native label when one exists, then the localized canonical
+status label.
 
 #### Styling rows via CSS
 

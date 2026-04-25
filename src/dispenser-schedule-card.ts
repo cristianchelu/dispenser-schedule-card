@@ -306,10 +306,7 @@ class DispenserScheduleCard extends LitElement {
   renderWeekdaySelect(entry: EditScheduleEntry) {
     if (!this._device.capabilities.hasWeeklySchedule) return nothing;
     const lang = this._hass.locale.language;
-    const first = getFirstWeekdayOfLocale(
-      lang,
-      this._hass.locale.first_weekday
-    );
+    const first = getFirstWeekdayOfLocale(this._hass.locale.first_weekday);
     const ordered = weekdaysInLocaleOrder(first);
     const selected = new Set(getEditableWeekdays(entry.weekdays));
     const repeatLabel = localize("ui.repeat") ?? "Repeat";
@@ -488,16 +485,24 @@ class DispenserScheduleCard extends LitElement {
 
   renderScheduleRow(entry: ScheduleEntry) {
     const displayStatus = this._device.getDisplayStatus(entry);
-    const { statusKey, statusLabel } = this._device.getEntryStatusInfo(entry);
+    const native = this._device.getNativeStatusDisplay(entry);
 
-    const keyCfg = statusKey ? this._config.display?.[statusKey] : undefined;
+    const keyCfg = native ? this._config.display?.[native.key] : undefined;
     const statusCfg = this._config.display?.[displayStatus];
     const fallback = DefaultDisplayConfig[displayStatus];
 
     const icon =
-      keyCfg?.icon ?? statusCfg?.icon ?? fallback?.icon ?? "mdi:clock-outline";
+      keyCfg?.icon ??
+      statusCfg?.icon ??
+      native?.icon ??
+      fallback?.icon ??
+      "mdi:clock-outline";
     const color =
-      keyCfg?.color || statusCfg?.color || fallback?.color || undefined;
+      keyCfg?.color ||
+      statusCfg?.color ||
+      native?.color ||
+      fallback?.color ||
+      undefined;
     const overrideLabel = keyCfg?.label ?? statusCfg?.label;
 
     const timeOnly = this.renderTimeString(entry);
@@ -526,7 +531,7 @@ class DispenserScheduleCard extends LitElement {
     if (!this._isEditing) {
       const rowSecondary =
         overrideLabel ??
-        statusLabel ??
+        native?.label ??
         (displayStatus !== EntryStatus.NONE
           ? (localize(`status.${displayStatus}`) ?? displayStatus)
           : undefined);
@@ -539,7 +544,7 @@ class DispenserScheduleCard extends LitElement {
         nameTitle,
         secondaryContent: rowSecondary,
         style,
-        nativeStatus: statusKey,
+        nativeStatus: native?.key,
         valueContent: this.renderCompactEntryValues(entry.values),
       });
     }
@@ -556,7 +561,7 @@ class DispenserScheduleCard extends LitElement {
       nameTitle,
       secondaryContent: rowSecondary || undefined,
       style,
-      nativeStatus: statusKey,
+      nativeStatus: native?.key,
       valueContent: hasOverflowActions
         ? html`<ha-dropdown
             class="edit-menu"
