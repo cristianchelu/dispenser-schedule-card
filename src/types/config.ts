@@ -33,7 +33,7 @@ export type ConfigEditableOption =
 export const DefaultDisplayConfig: DisplayConfig = {
   [EntryStatus.DISPENSED]: {
     icon: "mdi:check",
-    color: "var(--state-active-color)",
+    color: "var(--success-color)",
   },
   [EntryStatus.FAILED]: {
     icon: "mdi:close",

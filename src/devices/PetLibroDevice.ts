@@ -415,7 +415,24 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   getDisplayStatus(entry: ScheduleEntry): EntryStatus {
-    return entry.status;
+    const { hour, minute, status } = entry;
+
+    if (status === EntryStatus.PENDING) {
+      if (this.entryAppliesToday(entry)) {
+        const scheduledDate = new Date();
+        scheduledDate.setHours(hour, minute);
+        if (Date.now() > scheduledDate.getTime()) {
+          return EntryStatus.SKIPPED;
+        }
+      }
+
+      const globalToggle = this.getGlobalToggle();
+      if (globalToggle?.state === false) {
+        return EntryStatus.DISABLED;
+      }
+    }
+
+    return status;
   }
 
   private buildServicePayload(
@@ -491,7 +508,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
         key: "dispensed",
         label: localize("status.dispensed"),
         icon: "mdi:alert-circle-check-outline",
-        color: "var(--state-active-color)",
+        color: "var(--success-color)",
       };
     }
     return getPetlibroNativeStatusDisplay(meta.state);
