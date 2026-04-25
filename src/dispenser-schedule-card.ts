@@ -116,10 +116,9 @@ class DispenserScheduleCard extends LitElement {
 
   set hass(hass: HomeAssistant) {
     this._hass = hass;
-    if (this._device) {
-      this._device.updateHass(hass);
-      this._schedules = this._device.getSchedule();
-    }
+    if (!this._device) return;
+    this._device.updateHass(hass);
+    this._schedules = this._device.getSchedule();
   }
 
   handleEditToggle() {
@@ -971,15 +970,18 @@ class DispenserScheduleCard extends LitElement {
     }
 
     let editable = config.editable ?? "toggle";
-
-    if (editable === "always") {
-      this._isEditing = true;
-    } else if (editable === "never") {
-      this._isEditing = false;
-    } else if (editable !== "toggle") {
+    if (
+      editable !== "always" &&
+      editable !== "never" &&
+      editable !== "toggle"
+    ) {
       throw new Error(`Invalid editable option: ${editable}`);
     }
 
+    // Build the device now so capabilities are available immediately.
+    // Capabilities are a pure function of config; any hass-dependent
+    // resolution (e.g. PetLibro schedule-entity discovery) re-runs on the
+    // next `set hass` via updateHass().
     this._device = createDevice(
       config.device,
       this._hass ?? EMPTY_HOME_ASSISTANT
@@ -995,9 +997,14 @@ class DispenserScheduleCard extends LitElement {
 
     if (!hasAnyEditAction) {
       editable = "never";
-      this._isEditing = false;
     }
 
+    this._isEditing = editable === "always";
     this._config = { ...config, editable };
+
+    if (this._hass) {
+      this._device.updateHass(this._hass);
+      this._schedules = this._device.getSchedule();
+    }
   }
 }

@@ -20,8 +20,7 @@ type PetlibroState =
   | "dispensed"
   | "skipped"
   | "state_5"
-  | "unknown"
-  | "not_recurring";
+  | "unknown";
 interface PetlibroScheduleEntry {
   /** Petlibro ID */
   id: number;
@@ -45,12 +44,12 @@ interface PetlibroScheduleEntry {
   enabled: boolean;
   /** Days of the week on which the entry should be dispensed */
   repeat_days?: number[] | null;
+  /** Whether the entry is recurring */
+  recurring: boolean;
   /** Whether to play a calling sound when dispensing */
   sound: boolean;
   /** Status of schedule entry */
   state: PetlibroState;
-  /** Translated status label */
-  state_label: string;
 }
 
 interface PetlibroEntityAttributes {
@@ -67,7 +66,6 @@ const PETLIBRO_STATE_TO_STATUS: Record<PetlibroState, EntryStatus> = {
   skipped: EntryStatus.SKIPPED,
   state_5: EntryStatus.NONE,
   unknown: EntryStatus.NONE,
-  not_recurring: EntryStatus.PENDING,
 };
 
 function parseTime(time: string): { hour: number; minute: number } {
@@ -84,7 +82,7 @@ function stringifyTime(hour: number, minute: number): string {
 
 /** Integration `repeat_days`: **1 = Monday … 7 = Sunday** (card `Weekday` enum). */
 function repeatDaysToWeekdays(days: readonly number[]): Weekday[] {
-  return sortWeekdays([...new Set(days)].map((d) => d as Weekday));
+  return sortWeekdays([...new Set(days)]);
 }
 
 // --- Device ---
@@ -178,6 +176,26 @@ function buildPetlibroScheduleToggleAdapter(
   };
 }
 
+function isPetlibroSchedule(
+  schedule: unknown
+): schedule is PetlibroScheduleEntry[] {
+  return (
+    Array.isArray(schedule) &&
+    schedule.every(
+      (item) =>
+        typeof item === "object" &&
+        item !== null &&
+        "id" in item &&
+        "time" in item &&
+        "today" in item &&
+        "amount_raw" in item &&
+        "enabled" in item &&
+        "repeat_days" in item &&
+        "state" in item
+    )
+  );
+}
+
 function findPetlibroScheduleEntity(
   hass: HomeAssistant,
   deviceId: string
@@ -189,7 +207,10 @@ function findPetlibroScheduleEntity(
     if (!entity) continue;
     if (entity.device_id !== deviceId) continue;
 
-    if (!!hass.states[entityId]!.attributes!.schedule) {
+    // Entities on the device may be disabled / not yet have a state; skip those.
+    const state = hass.states[entityId];
+    if (!state) continue;
+    if (state.attributes.schedule) {
       return entityId;
     }
   }
@@ -319,16 +340,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   private _planToScheduleEntry(plan: PetlibroScheduleEntry): ScheduleEntry {
-    const {
-      id,
-      enabled,
-      state,
-      repeat_days,
-      time,
-      state_label,
-      label,
-      amount_raw,
-    } = plan;
+    const { id, enabled, state, repeat_days, time, label, amount_raw } = plan;
     const { hour, minute } = parseTime(time);
 
     const key = id.toString();
@@ -341,7 +353,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       hour,
       minute,
       values: [amount_raw],
-      label: label,
+      label,
       status: enabled ? PETLIBRO_STATE_TO_STATUS[state] : EntryStatus.DISABLED,
       weekdays,
     };
@@ -354,7 +366,8 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     const state = this.hass.states[entityId];
     if (!state) return [];
 
-    const attrs = state.attributes as unknown as PetlibroEntityAttributes;
+    const attrs = state.attributes;
+    if (!isPetlibroSchedule(attrs.schedule)) return [];
     return attrs.schedule
       .filter((item) => (item.repeat_days?.length ?? 0) > 0)
       .map((item) => this._planToScheduleEntry(item))
@@ -451,7 +464,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   } {
     const meta = this._planByEntryKey.get(entry.key);
     if (!meta) return {};
-    return { statusKey: meta.state, statusLabel: meta.state_label };
+    return { statusKey: meta.state, statusLabel: meta.state };
   }
 
   async setEntrySkipForToday(

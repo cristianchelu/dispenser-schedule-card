@@ -26,12 +26,17 @@ export type EntryStatus = (typeof EntryStatus)[keyof typeof EntryStatus];
 export interface ScheduleEntry {
   /** Opaque key for the device to reference this entry. Card never parses it. */
   key: string;
+  /** Entry dispense hour */
   hour: number;
+  /** Entry dispense minute */
   minute: number;
+  /** Entry dispense amount to dispense or compartment position */
   values: number[];
-  /** Plan label (e.g. PetLibro); optional for devices without `hasEntryLabel`. */
+  /** Entry Label (e.g. Breakfast) */
   label?: string;
+  /** Canonical status of the entry */
   status: EntryStatus;
+  /** Days of the week on which the entry should be dispensed */
   weekdays?: readonly Weekday[];
   /**
    * Marks an entry the card cannot safely roundtrip (e.g. a one-time feed
