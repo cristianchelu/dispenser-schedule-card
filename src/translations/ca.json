@@ -16,6 +16,7 @@
     "amount": "Quantitat",
     "repeat": "Repetició",
     "every_day": "Cada dia",
+    "never_repeat": "Sense repetició",
     "empty_today": "Cap horari per avui",
     "skip_today": "Omet",
     "unskip_today": "Reprèn"

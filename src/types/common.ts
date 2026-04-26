@@ -121,6 +121,15 @@ export interface EntryLabelConstraints {
   pattern: string;
 }
 
+/**
+ * Weekly schedule policy.
+ * - `false`: no weekday selection (entries always run).
+ * - `{}`: weekday picker, ≥ 1 day required (missing/full-week persist as "every day").
+ * - `{ allowNever: true }`: same as `{}` plus an empty selection persists as a
+ *   distinct "never repeat" state (e.g. PetLibro `repeat_days: []`).
+ */
+export type WeeklySchedulePolicy = false | { allowNever?: boolean };
+
 export interface DeviceCapabilities {
   hasEntryToggle: boolean;
   hasGlobalToggle: boolean;
@@ -128,7 +137,7 @@ export interface DeviceCapabilities {
   canRemoveEntries: boolean;
   canEditEntries: boolean;
   maxEntries: number;
-  hasWeeklySchedule: boolean;
+  weeklySchedule: WeeklySchedulePolicy;
   /** One-off skip / un-skip for today only (e.g. PetLibro `skip_feeding_plan`). */
   hasTodaySkip: boolean;
   /**
@@ -181,16 +190,16 @@ export abstract class Device<
 
   /**
    * Entries that apply on “today” in the HA user timezone.
-   * When `hasWeeklySchedule` is false, returns `entries` unchanged.
+   * When `weeklySchedule` is `false`, returns `entries` unchanged.
    */
   filterScheduleForToday(entries: ScheduleEntry[]): ScheduleEntry[] {
-    if (!this.capabilities.hasWeeklySchedule) return entries;
+    if (!this.capabilities.weeklySchedule) return entries;
     return entries.filter((entry) => this.entryAppliesToday(entry));
   }
 
   /** Whether this entry runs on today's weekday (always true without weekly schedule). */
   entryAppliesToday(entry: ScheduleEntry): boolean {
-    if (!this.capabilities.hasWeeklySchedule) return true;
+    if (!this.capabilities.weeklySchedule) return true;
     const today = getTodayWeekday(this.hass.config.time_zone);
     return appliesOnWeekday(entry.weekdays, today);
   }

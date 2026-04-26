@@ -16,6 +16,7 @@
     "amount": "Cantitate",
     "repeat": "Repetare",
     "every_day": "În fiecare zi",
+    "never_repeat": "Fără repetare",
     "empty_today": "Niciun orar pentru astăzi",
     "skip_today": "Omite",
     "unskip_today": "Reia"

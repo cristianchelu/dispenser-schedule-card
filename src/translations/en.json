@@ -15,6 +15,7 @@
     "amount": "Amount",
     "repeat": "Repeat",
     "every_day": "Every day",
+    "never_repeat": "Never repeat",
     "empty_today": "No schedule for today",
     "skip_today": "Skip",
     "unskip_today": "Resume"

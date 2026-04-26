@@ -213,6 +213,7 @@ switch:
 | Global enable / disable  | Yes       | Default: schedule `binary_sensor` + `toggle_feeding_schedule`; optional `switch` YAML as above.                                                  |
 | Per-plan toggle / delete | Yes       | `petlibro.toggle_feeding_plan` / `delete_feeding_plan` (needs a recent integration).                                                             |
 | Skip / un-skip for today | Yes       | Edit mode row menu: **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`). Un-skip is offered when the plan’s `state` is **`to_be_skipped`**. |
+| Never-repeat plans       | Yes       | Deselecting every day in the editor persists as `repeat_days: []` ("Never repeat"), the symmetric counterpart of "Every day".                    |
 
 #### PetLibro amounts
 

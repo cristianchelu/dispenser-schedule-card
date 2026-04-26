@@ -15,6 +15,7 @@
     "amount": "Menge",
     "repeat": "Wiederholung",
     "every_day": "Täglich",
+    "never_repeat": "Keine Wiederholung",
     "empty_today": "Kein Zeitplan für heute",
     "skip_today": "Überspringen",
     "unskip_today": "Fortsetzen"

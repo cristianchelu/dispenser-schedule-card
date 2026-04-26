@@ -1,5 +1,13 @@
 import { ALL_WEEKDAYS, Weekday, sortWeekdays } from "./weekday";
 
+/**
+ * Per-device weekday rules. When `allowNever` is true, an empty selection is
+ * a valid, distinct "never repeat" state (instead of being collapsed to "every day").
+ */
+export interface WeekdayPolicy {
+  allowNever?: boolean;
+}
+
 function uniqueWeekdays(days: readonly Weekday[]): Weekday[] {
   return [...new Set(days)];
 }
@@ -11,15 +19,28 @@ function normalizedExplicitWeekdays(
   return sortWeekdays(uniqueWeekdays(days));
 }
 
+/** Empty selection = "never repeat" (only meaningful when policy.allowNever). */
+export function isNeverRepeatWeekdays(
+  days: readonly Weekday[] | undefined
+): boolean {
+  return Array.isArray(days) && days.length === 0;
+}
+
 /**
  * Canonical persisted weekday semantics:
  * - `undefined` means every day / no restriction
  * - an explicit array means a sorted unique subset
- * - empty and full-week arrays normalize to `undefined`
+ * - a full-week array normalizes to `undefined`
+ * - an empty array normalizes to `undefined` by default; with
+ *   `policy.allowNever`, it survives as `[]` ("never repeat").
  */
 export function canonicalizeWeekdays(
-  days: readonly Weekday[] | undefined
+  days: readonly Weekday[] | undefined,
+  policy?: WeekdayPolicy
 ): Weekday[] | undefined {
+  if (policy?.allowNever && isNeverRepeatWeekdays(days)) {
+    return [];
+  }
   const normalized = normalizedExplicitWeekdays(days);
   if (normalized.length === 0 || normalized.length === ALL_WEEKDAYS.length) {
     return undefined;
@@ -35,26 +56,37 @@ export function getEditableWeekdays(
   return normalizedExplicitWeekdays(days);
 }
 
-/** Weekly edit state is valid when at least one checkbox remains selected. */
+/**
+ * Weekly edit state is valid when at least one checkbox remains selected,
+ * unless the device opts in to `allowNever`, in which case empty is also valid.
+ */
 export function hasSelectedWeekdays(
-  days: readonly Weekday[] | undefined
+  days: readonly Weekday[] | undefined,
+  policy?: WeekdayPolicy
 ): boolean {
+  if (policy?.allowNever) return true;
   return days === undefined || days.length > 0;
 }
 
-/** Persisted schedule semantics: missing/full-set means every day. */
+/**
+ * Persisted schedule semantics: missing/full-set means every day. Empty
+ * arrays are treated as every-day by default; with `policy.allowNever` they
+ * are a distinct "never repeat" state and therefore *not* every-day.
+ */
 export function isEveryDayWeekdays(
-  days: readonly Weekday[] | undefined
+  days: readonly Weekday[] | undefined,
+  policy?: WeekdayPolicy
 ): boolean {
-  return canonicalizeWeekdays(days) === undefined;
+  return canonicalizeWeekdays(days, policy) === undefined;
 }
 
 export function weekdaysEqual(
   a: readonly Weekday[] | undefined,
-  b: readonly Weekday[] | undefined
+  b: readonly Weekday[] | undefined,
+  policy?: WeekdayPolicy
 ): boolean {
-  const left = canonicalizeWeekdays(a);
-  const right = canonicalizeWeekdays(b);
+  const left = canonicalizeWeekdays(a, policy);
+  const right = canonicalizeWeekdays(b, policy);
   if (left === undefined || right === undefined) {
     return left === right;
   }
@@ -85,6 +117,7 @@ export function appliesOnWeekday(
   days: readonly Weekday[] | undefined,
   weekday: Weekday
 ): boolean {
+  if (isNeverRepeatWeekdays(days)) return false;
   const normalized = canonicalizeWeekdays(days);
   return normalized === undefined || normalized.includes(weekday);
 }
