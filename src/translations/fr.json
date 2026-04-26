@@ -16,6 +16,7 @@
     "amount": "Quantité",
     "repeat": "Répétition",
     "every_day": "Tous les jours",
+    "never_repeat": "Sans répétition",
     "empty_today": "Aucun horaire pour aujourd'hui",
     "skip_today": "Ignorer",
     "unskip_today": "Reprendre"

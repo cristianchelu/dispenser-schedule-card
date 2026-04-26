@@ -103,11 +103,6 @@ function stringifyTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-/** Integration `repeat_days`: **1 = Monday … 7 = Sunday** (card `Weekday` enum). */
-function repeatDaysToWeekdays(days: readonly number[]): Weekday[] {
-  return sortWeekdays([...new Set(days)]);
-}
-
 // --- Device ---
 
 export type PetLibroGlobalToggleConfig =
@@ -310,7 +305,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       canRemoveEntries: hasDeviceId,
       canEditEntries: hasDeviceId,
       maxEntries: 10,
-      hasWeeklySchedule: true,
+      weeklySchedule: { allowNever: true },
       hasTodaySkip: hasDeviceId,
       hasEntryLabel: hasDeviceId
         ? {
@@ -368,7 +363,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
 
     const key = id.toString();
 
-    const weekdays = repeatDaysToWeekdays(repeat_days ?? []);
+    const weekdays = repeat_days?.length ? sortWeekdays(repeat_days) : [];
 
     this._planByEntryKey.set(key, plan);
     return {
@@ -392,7 +387,6 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     const attrs = state.attributes;
     if (!isPetlibroSchedule(attrs.schedule)) return [];
     return attrs.schedule
-      .filter((item) => (item.repeat_days?.length ?? 0) > 0)
       .map((item) => this._planToScheduleEntry(item))
       .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
   }
@@ -439,11 +433,14 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
     entry: EditScheduleEntry
   ): Record<string, unknown> {
     const time = stringifyTime(entry.hour, entry.minute);
-    const selected =
-      entry.weekdays && entry.weekdays.length > 0
-        ? [...entry.weekdays]
-        : ALL_WEEKDAYS;
-    const days = selected.map((d) => String(d));
+    let days: string[];
+    if (entry.weekdays === undefined) {
+      days = ALL_WEEKDAYS.map(String);
+    } else if (entry.weekdays.length === 0) {
+      days = [];
+    } else {
+      days = entry.weekdays.map(String);
+    }
     return {
       device_id: this.deviceConfig.device_id,
       time,

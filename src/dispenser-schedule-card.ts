@@ -26,8 +26,10 @@ import {
   getEditableWeekdays,
   hasSelectedWeekdays,
   isEveryDayWeekdays,
+  isNeverRepeatWeekdays,
   toggleEditableWeekday,
   weekdaysEqual,
+  type WeekdayPolicy,
 } from "./types/scheduleWeekdays";
 
 import {
@@ -90,6 +92,11 @@ class DispenserScheduleCard extends LitElement {
       this.requestUpdate();
     }
   };
+
+  private _weekdayPolicy(): WeekdayPolicy | undefined {
+    const w = this._device.capabilities.weeklySchedule;
+    return typeof w === "object" ? w : undefined;
+  }
 
   constructor() {
     super();
@@ -181,10 +188,12 @@ class DispenserScheduleCard extends LitElement {
       const labelEl = this._entryLabelInputEl;
       if (!labelEl || !labelEl.reportValidity()) return;
     }
-    if (caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays)) return;
+    const policy = this._weekdayPolicy();
+    if (caps.weeklySchedule && !hasSelectedWeekdays(entry.weekdays, policy))
+      return;
 
-    const normalizedEntry: EditScheduleEntry = caps.hasWeeklySchedule
-      ? { ...entry, weekdays: canonicalizeWeekdays(entry.weekdays) }
+    const normalizedEntry: EditScheduleEntry = caps.weeklySchedule
+      ? { ...entry, weekdays: canonicalizeWeekdays(entry.weekdays, policy) }
       : { ...entry, weekdays: undefined };
 
     this._isSaving = true;
@@ -215,7 +224,7 @@ class DispenserScheduleCard extends LitElement {
     if (this._isEditing) {
       return this._schedules.filter((entry) => !entry.readonly);
     }
-    if (!caps.hasWeeklySchedule) {
+    if (!caps.weeklySchedule) {
       return this._schedules;
     }
     return this._device.filterScheduleForToday(this._schedules);
@@ -261,22 +270,25 @@ class DispenserScheduleCard extends LitElement {
 
   /** Subtitle for edit-mode list rows when the device has a weekly schedule. */
   weekdaysSubtitle(entry: ScheduleEntry): string {
-    if (!this._device.capabilities.hasWeeklySchedule) return "";
-    const lang = this._hass.locale.language;
-    const every = localize("ui.every_day");
-    if (isEveryDayWeekdays(entry.weekdays)) {
-      return every ?? "";
-    }
-    return formatWeekdays(entry.weekdays, lang);
+    if (!this._device.capabilities.weeklySchedule) return "";
+    return this._formatWeekdaysSummary(entry.weekdays);
   }
 
   editWeekdaysSummary(entry: EditScheduleEntry): string {
-    const lang = this._hass.locale.language;
-    const every = localize("ui.every_day");
-    if (isEveryDayWeekdays(entry.weekdays)) {
-      return every ?? "";
+    return this._formatWeekdaysSummary(entry.weekdays);
+  }
+
+  private _formatWeekdaysSummary(
+    weekdays: readonly Weekday[] | undefined
+  ): string {
+    const policy = this._weekdayPolicy();
+    if (policy?.allowNever && isNeverRepeatWeekdays(weekdays)) {
+      return localize("ui.never_repeat") ?? "";
     }
-    return formatWeekdays(entry.weekdays, lang);
+    if (isEveryDayWeekdays(weekdays, policy)) {
+      return localize("ui.every_day") ?? "";
+    }
+    return formatWeekdays(weekdays, this._hass.locale.language);
   }
 
   handleWeekdaySelect(ev: CustomEvent) {
@@ -304,7 +316,7 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderWeekdaySelect(entry: EditScheduleEntry) {
-    if (!this._device.capabilities.hasWeeklySchedule) return nothing;
+    if (!this._device.capabilities.weeklySchedule) return nothing;
     const lang = this._hass.locale.language;
     const first = getFirstWeekdayOfLocale(this._hass.locale.first_weekday);
     const ordered = weekdaysInLocaleOrder(first);
@@ -549,7 +561,7 @@ class DispenserScheduleCard extends LitElement {
       });
     }
 
-    const rowSecondary = caps.hasWeeklySchedule
+    const rowSecondary = caps.weeklySchedule
       ? this.weekdaysSubtitle(entry)
       : undefined;
 
@@ -754,9 +766,11 @@ class DispenserScheduleCard extends LitElement {
       if (!labelEl.checkValidity()) return true;
     }
 
+    const policy = this._weekdayPolicy();
+
     if (entry.key === null) {
       const weekdaysInvalid =
-        caps.hasWeeklySchedule && !hasSelectedWeekdays(entry.weekdays);
+        !!caps.weeklySchedule && !hasSelectedWeekdays(entry.weekdays, policy);
       return (
         entry.hour < 0 ||
         entry.hour > 23 ||
@@ -776,8 +790,8 @@ class DispenserScheduleCard extends LitElement {
         (value, fieldIndex) => value === entry.values[fieldIndex]
       );
     const sameWeekdays =
-      !caps.hasWeeklySchedule ||
-      weekdaysEqual(entry.weekdays, schedule.weekdays);
+      !caps.weeklySchedule ||
+      weekdaysEqual(entry.weekdays, schedule.weekdays, policy);
     const sameLabel = (schedule.label ?? "") === (entry.label ?? "");
     return sameTime && sameWeekdays && sameLabel;
   }
@@ -906,7 +920,7 @@ class DispenserScheduleCard extends LitElement {
             ></ha-input>
           </div>`;
         })}
-        ${this._device.capabilities.hasWeeklySchedule
+        ${this._device.capabilities.weeklySchedule
           ? html`<div class="edit-field">
               <label class="edit-field-label">${repeatFieldLabel}</label>
               ${this.renderWeekdaySelect(entry)}
@@ -920,9 +934,7 @@ class DispenserScheduleCard extends LitElement {
       const available = this._device.isAvailable();
       const caps = this._device.capabilities;
       const todayFilteredOut =
-        caps.hasWeeklySchedule &&
-        !this._isEditing &&
-        this._schedules.length > 0;
+        !!caps.weeklySchedule && !this._isEditing && this._schedules.length > 0;
       let label: string;
       if (!available) {
         label = this._hass.localize("state.default.unavailable");

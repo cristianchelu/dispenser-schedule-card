@@ -15,6 +15,7 @@
     "amount": "Cantidad",
     "repeat": "Repetir",
     "every_day": "Todos los días",
+    "never_repeat": "Sin repetición",
     "empty_today": "Sin horario para hoy",
     "skip_today": "Omitir",
     "unskip_today": "Reanudar"

@@ -16,6 +16,7 @@
     "amount": "Quantità",
     "repeat": "Ripeti",
     "every_day": "Ogni giorno",
+    "never_repeat": "Nessuna ripetizione",
     "empty_today": "Nessun orario per oggi",
     "skip_today": "Salta",
     "unskip_today": "Riprendi"
