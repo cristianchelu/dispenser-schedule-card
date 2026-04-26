@@ -19,7 +19,8 @@
     "never_repeat": "Fără repetare",
     "empty_today": "Niciun orar pentru astăzi",
     "skip_today": "Omite",
-    "unskip_today": "Reia"
+    "unskip_today": "Reia",
+    "call_sound": "Chemare sonoră"
   },
   "entry_field": {
     "quantity_n": "Cantitate {n}",

@@ -18,7 +18,8 @@
     "never_repeat": "Sin repetición",
     "empty_today": "Sin horario para hoy",
     "skip_today": "Omitir",
-    "unskip_today": "Reanudar"
+    "unskip_today": "Reanudar",
+    "call_sound": "Llamada sonora"
   },
   "entry_field": {
     "quantity_n": "Cantidad {n}",

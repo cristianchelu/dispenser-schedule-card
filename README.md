@@ -206,14 +206,15 @@ switch:
 
 #### PetLibro capabilities
 
-| Capability               | Supported | Notes                                                                                                                                            |
-| ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Read schedule            | Yes       | From `attributes.schedule`.                                                                                                                      |
-| Add / edit feeding plans | Yes       | `petlibro.add_feeding_plan` / `edit_feeding_plan`.                                                                                               |
-| Global enable / disable  | Yes       | Default: schedule `binary_sensor` + `toggle_feeding_schedule`; optional `switch` YAML as above.                                                  |
-| Per-plan toggle / delete | Yes       | `petlibro.toggle_feeding_plan` / `delete_feeding_plan` (needs a recent integration).                                                             |
-| Skip / un-skip for today | Yes       | Edit mode row menu: **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`). Un-skip is offered when the plan’s `state` is **`to_be_skipped`**. |
-| Never-repeat plans       | Yes       | Deselecting every day in the editor persists as `repeat_days: []` ("Never repeat"), the symmetric counterpart of "Every day".                    |
+| Capability               | Supported | Notes                                                                                                                                                                                                                                                                |
+| ------------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Read schedule            | Yes       | From `attributes.schedule`.                                                                                                                                                                                                                                          |
+| Add / edit feeding plans | Yes       | `petlibro.add_feeding_plan` / `edit_feeding_plan`.                                                                                                                                                                                                                   |
+| Global enable / disable  | Yes       | Default: schedule `binary_sensor` + `toggle_feeding_schedule`; optional `switch` YAML as above.                                                                                                                                                                      |
+| Per-plan toggle / delete | Yes       | `petlibro.toggle_feeding_plan` / `delete_feeding_plan` (needs a recent integration).                                                                                                                                                                                 |
+| Skip / un-skip for today | Yes       | Edit mode row menu: **`skip_feeding_plan`** (`device_id`, `plan_id`, `skip`). Un-skip is offered when the plan’s `state` is **`to_be_skipped`**.                                                                                                                     |
+| Never-repeat plans       | Yes       | Deselecting every day in the editor persists as `repeat_days: []` ("Never repeat"), the symmetric counterpart of "Every day".                                                                                                                                        |
+| Calling / lure sound     | Yes       | Per-plan on/off in the add/edit form when `device_id` is set. Read from each plan’s `sound` attribute; written as `sound` on `add_feeding_plan` / `edit_feeding_plan` (field name matches the integration; confirm in your PetLibro version if plans do not update). |
 
 #### PetLibro amounts
 

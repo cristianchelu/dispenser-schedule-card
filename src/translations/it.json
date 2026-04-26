@@ -19,7 +19,8 @@
     "never_repeat": "Nessuna ripetizione",
     "empty_today": "Nessun orario per oggi",
     "skip_today": "Salta",
-    "unskip_today": "Riprendi"
+    "unskip_today": "Riprendi",
+    "call_sound": "Richiamo sonoro"
   },
   "entry_field": {
     "quantity_n": "Quantità {n}",

@@ -18,7 +18,8 @@
     "never_repeat": "Tekrar yok",
     "empty_today": "Bugün için program yok",
     "skip_today": "Atla",
-    "unskip_today": "Sürdür"
+    "unskip_today": "Sürdür",
+    "call_sound": "Mama çağrısı"
   },
   "entry_field": {
     "quantity_n": "Miktar {n}",

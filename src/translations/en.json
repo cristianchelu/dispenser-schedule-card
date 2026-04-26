@@ -18,7 +18,8 @@
     "never_repeat": "Never repeat",
     "empty_today": "No schedule for today",
     "skip_today": "Skip",
-    "unskip_today": "Resume"
+    "unskip_today": "Resume",
+    "call_sound": "Mealtime sound"
   },
   "entry_field": {
     "quantity_n": "Amount {n}",

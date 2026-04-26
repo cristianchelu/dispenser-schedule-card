@@ -140,6 +140,7 @@ class DispenserScheduleCard extends LitElement {
       values: [...entry.values],
       label: entry.label ?? "",
       weekdays: entry.weekdays ? [...entry.weekdays] : undefined,
+      callSound: entry.callSound,
     };
   }
 
@@ -693,6 +694,13 @@ class DispenserScheduleCard extends LitElement {
     this.handleValueChanged(entry, fieldIndex, value);
   }
 
+  handleCallSoundChanged(ev: Event, entry: EditScheduleEntry) {
+    this._editSchedule = {
+      ...entry,
+      callSound: (ev.target as HTMLInputElement).checked,
+    };
+  }
+
   renderSwitch() {
     const primaryEntityId = this.getPrimaryEntityId();
     const displayInfo = this._device.getDisplayInfo();
@@ -800,7 +808,12 @@ class DispenserScheduleCard extends LitElement {
       !caps.weeklySchedule ||
       weekdaysEqual(entry.weekdays, schedule.weekdays, policy);
     const sameLabel = (schedule.label ?? "") === (entry.label ?? "");
-    return sameTime && sameWeekdays && sameLabel;
+    const callSoundPolicy = caps.callSound;
+    const sameCallSound =
+      callSoundPolicy === false ||
+      callSoundPolicy.mode !== "on_off" ||
+      (schedule.callSound ?? false) === (entry.callSound ?? false);
+    return sameTime && sameWeekdays && sameLabel && sameCallSound;
   }
 
   renderConfigErrors() {
@@ -835,6 +848,9 @@ class DispenserScheduleCard extends LitElement {
       const timeFieldLabel = localize("ui.time") ?? "Time";
       const repeatFieldLabel = localize("ui.repeat") ?? "Repeat";
       const entryLabelFieldLabel = localize("entry_field.label") ?? "Label";
+      const callSoundFieldLabel = localize("ui.call_sound") ?? "Mealtine sound";
+      const showCallSoundRow =
+        caps.callSound !== false && caps.callSound.mode === "on_off";
       const labelConstraints =
         caps.hasEntryLabel !== false ? caps.hasEntryLabel : null;
 
@@ -931,6 +947,18 @@ class DispenserScheduleCard extends LitElement {
           ? html`<div class="edit-field">
               <label class="edit-field-label">${repeatFieldLabel}</label>
               ${this.renderWeekdaySelect(entry)}
+            </div>`
+          : nothing}
+        ${showCallSoundRow
+          ? html`<div class="edit-field edit-field--entity-row">
+              <span class="edit-field-inline-label"
+                >${callSoundFieldLabel}</span
+              >
+              <ha-switch
+                .checked=${entry.callSound ?? false}
+                @change=${(ev: Event) => this.handleCallSoundChanged(ev, entry)}
+                aria-label=${callSoundFieldLabel}
+              ></ha-switch>
             </div>`
           : nothing}
       `;
