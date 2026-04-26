@@ -82,6 +82,7 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       weeklySchedule: false,
       hasTodaySkip: false,
       hasEntryLabel: false,
+      callSound: false,
     };
   }
 

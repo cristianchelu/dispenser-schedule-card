@@ -90,6 +90,32 @@ ha-time-input {
   gap: 4px;
 }
 
+/**
+ * Inline label + control (entity-row / HTML checkbox pattern), not label-over-field.
+ */
+.edit-field--entity-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 8px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-field-inline-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--primary-text-color);
+  font-size: var(--ha-font-size-body, 14px);
+  line-height: 1.4;
+}
+
+.edit-field--entity-row ha-switch {
+  flex-shrink: 0;
+}
+
 .edit-field-label {
   color: var(--secondary-text-color);
   font-size: var(--ha-font-size-s, 12px);

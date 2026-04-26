@@ -52,6 +52,11 @@ export interface ScheduleEntry {
    * hides edit/remove/toggle affordances and excludes it from the edit list.
    */
   readonly?: boolean;
+  /**
+   * Play lure / "calling" sound when the feed runs. Only when
+   * `DeviceCapabilities.callSound` is not `false` (e.g. `mode: "on_off"`).
+   */
+  callSound?: boolean;
 }
 
 export interface EditScheduleEntry {
@@ -62,6 +67,11 @@ export interface EditScheduleEntry {
   /** Set when `DeviceCapabilities.hasEntryLabel` is not `false`. */
   label?: string;
   weekdays?: readonly Weekday[];
+  /**
+   * When `DeviceCapabilities.callSound` is not `false`, per-entry on/off
+   * (e.g. PetLibro `sound`).
+   */
+  callSound?: boolean;
 }
 
 /**
@@ -130,6 +140,15 @@ export interface EntryLabelConstraints {
  */
 export type WeeklySchedulePolicy = false | { allowNever?: boolean };
 
+/**
+ * Lure / "calling" audio when a scheduled feed runs.
+ * - `false`: the card does not offer this for the device.
+ * - `{ mode: "on_off" }`: one boolean per entry (e.g. PetLibro `sound`).
+ * Future: e.g. `{ mode: "choice"; options: ReadonlyArray<{ id: string; label: string }> }`
+ * for per-entry sound selection.
+ */
+export type CallSoundPolicy = false | { mode: "on_off" };
+
 export interface DeviceCapabilities {
   hasEntryToggle: boolean;
   hasGlobalToggle: boolean;
@@ -144,6 +163,10 @@ export interface DeviceCapabilities {
    * When not `false`, the add/edit form shows a label text field with these constraints.
    */
   hasEntryLabel: false | EntryLabelConstraints;
+  /**
+   * When not `false`, the add/edit form can surface per-entry calling/lure sound.
+   */
+  callSound: CallSoundPolicy;
 }
 
 /**

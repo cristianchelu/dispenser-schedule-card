@@ -18,7 +18,8 @@
     "never_repeat": "Keine Wiederholung",
     "empty_today": "Kein Zeitplan für heute",
     "skip_today": "Überspringen",
-    "unskip_today": "Fortsetzen"
+    "unskip_today": "Fortsetzen",
+    "call_sound": "Lockruf"
   },
   "entry_field": {
     "quantity_n": "Menge {n}",

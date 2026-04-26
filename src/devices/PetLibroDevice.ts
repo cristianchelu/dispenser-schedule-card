@@ -337,6 +337,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
             pattern: "^\\S+$",
           }
         : false,
+      callSound: hasDeviceId ? { mode: "on_off" } : false,
     };
   }
 
@@ -380,7 +381,8 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
   }
 
   private _planToScheduleEntry(plan: PetlibroScheduleEntry): ScheduleEntry {
-    const { id, enabled, state, repeat_days, time, label, amount_raw } = plan;
+    const { id, enabled, state, repeat_days, time, label, amount_raw, sound } =
+      plan;
     const { hour, minute } = parseTime(time);
 
     const key = id.toString();
@@ -396,6 +398,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       label: resolvePetlibroEntryLabel(label, key),
       status: enabled ? petlibroStateToStatus(state) : EntryStatus.DISABLED,
       weekdays,
+      callSound: sound,
     };
   }
 
@@ -469,6 +472,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       portions: entry.values[0],
       days,
       label: entry.label ?? "",
+      ...(entry.callSound !== undefined && { sound: entry.callSound }),
     };
   }
 
@@ -562,6 +566,8 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       values: [this.entryFields[0].config.min],
       label: "",
       weekdays: undefined,
+      // Quiet default: user opts in to calling sound in the editor.
+      callSound: false,
     };
   }
 }
