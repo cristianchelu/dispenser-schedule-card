@@ -178,19 +178,12 @@ ha-time-input {
   direction: ltr;
 }
 
-/* Default list (not header, not edit mode): time stays compact; portions use remaining width */
+/* Default list (not header, not edit mode): time+label takes remaining width (ellipsis);
+   value column stays one line at intrinsic width (no flex-wrap in portions). */
 .dispenser-entity-row.timeline:not(.header-row):not(
     .dispenser-entity-row--edit-list
   )
   .dispenser-entity-row__info {
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.dispenser-entity-row.timeline:not(.header-row):not(
-    .dispenser-entity-row--edit-list
-  )
-  .dispenser-entity-row__value {
   flex: 1 1 0%;
   min-width: 0;
 }
@@ -198,9 +191,37 @@ ha-time-input {
 .dispenser-entity-row.timeline:not(.header-row):not(
     .dispenser-entity-row--edit-list
   )
-  .dispenser-entity-row__state {
-  width: 100%;
+  .dispenser-entity-row__value {
+  flex: 0 0 auto;
   min-width: 0;
+}
+
+.dispenser-entity-row.timeline:not(.header-row):not(
+    .dispenser-entity-row--edit-list
+  )
+  .dispenser-entity-row__state {
+  width: auto;
+  min-width: 0;
+  flex-shrink: 0;
+  /* Plain <span> amounts (single field) and compact chips: one line, don't steal width from time+label. */
+  white-space: nowrap;
+}
+
+.dispenser-entity-row.timeline:not(.header-row):not(
+    .dispenser-entity-row--edit-list
+  )
+  .entry-values-compact {
+  flex-wrap: nowrap;
+}
+
+.dispenser-entity-row.timeline:not(.header-row):not(
+    .dispenser-entity-row--edit-list
+  )
+  .dispenser-entity-row__primary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dispenser-entity-row__header-controls {

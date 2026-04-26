@@ -234,11 +234,19 @@ class DispenserScheduleCard extends LitElement {
     return `${entry.hour}:${entry.minute.toString().padStart(2, "0")}`;
   }
 
-  /** Accessible label for the row (time + value summary). */
-  scheduleEntryNameTitle(entry: ScheduleEntry): string {
+  /** Non-edit primary line: "HH:MM" or "HH:MM ⸱ Label". */
+  private formatTimeWithOptionalEntryLabel(entry: ScheduleEntry): string {
     const time = this.renderTimeString(entry);
+    const label = entry.label?.trim();
+    if (!label) return time;
+    return `${time} \u2e31 ${label}`;
+  }
+
+  /** Accessible label for the row (time + optional label + value summary). */
+  scheduleEntryNameTitle(entry: ScheduleEntry): string {
+    const timePart = this.formatTimeWithOptionalEntryLabel(entry);
     const summary = this.renderEntryValues(entry.values);
-    return summary ? `${time} · ${summary}` : time;
+    return summary ? `${timePart} · ${summary}` : timePart;
   }
 
   getEntryFieldValue(
@@ -517,7 +525,6 @@ class DispenserScheduleCard extends LitElement {
       undefined;
     const overrideLabel = keyCfg?.label ?? statusCfg?.label;
 
-    const timeOnly = this.renderTimeString(entry);
     const nameTitle = this.scheduleEntryNameTitle(entry);
     const style = this.getRowStyle(color);
     const caps = this._device.capabilities;
@@ -552,7 +559,7 @@ class DispenserScheduleCard extends LitElement {
         className: rowClass,
         icon,
         iconColor: color,
-        nameContent: timeOnly,
+        nameContent: this.formatTimeWithOptionalEntryLabel(entry),
         nameTitle,
         secondaryContent: rowSecondary,
         style,

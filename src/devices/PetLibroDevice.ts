@@ -103,6 +103,28 @@ function stringifyTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
+/**
+ * The Petlibro integration may expose a default label `plan_<id>` (e.g. `plan_123456`)
+ * for the plan whose numeric id matches. Treat that as empty for display/edit so it
+ * does not appear as a "real" name. A user-chosen label `plan_1` on a different plan
+ * id `567` is kept, because the suffix is compared to this entry's `entryKey` (its
+ * `plan_id` string from the integration, same as the numeric `id` here).
+ */
+function resolvePetlibroEntryLabel(
+  labelFromApi: string,
+  entryKey: string
+): string {
+  const t = labelFromApi.trim();
+  if (t.length === 0) {
+    return labelFromApi;
+  }
+  const m = /^plan_(.+)$/.exec(t);
+  if (m && m[1] === entryKey) {
+    return "";
+  }
+  return labelFromApi;
+}
+
 // --- Device ---
 
 export type PetLibroGlobalToggleConfig =
@@ -371,7 +393,7 @@ export default class PetLibroDevice extends Device<PetLibroDeviceConfig> {
       hour,
       minute,
       values: [amount_raw],
-      label,
+      label: resolvePetlibroEntryLabel(label, key),
       status: enabled ? petlibroStateToStatus(state) : EntryStatus.DISABLED,
       weekdays,
     };
