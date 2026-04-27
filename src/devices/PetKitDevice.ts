@@ -453,7 +453,7 @@ export default class PetKitDevice extends Device<PetKitDeviceConfig> {
     const dual =
       isDualFromItems(allItems) ||
       isDualFromDeviceModel(this.hass, this.deviceConfig.device_id);
-    const min = 1;
+    const min = dual ? 0 : 1;
     const max = dual ? 10 : 50;
     const configAmt: AmountConfig = { min, max, step: 1 };
     if (dual) {
@@ -655,11 +655,13 @@ export default class PetKitDevice extends Device<PetKitDeviceConfig> {
   }
 
   getNewEntryDefaults(): EditScheduleEntry {
+    const fields = this.entryFields;
+    const values = fields.length > 1 ? [1, 0] : [fields[0]?.config.min ?? 1];
     return {
       key: null,
       hour: 0,
       minute: 0,
-      values: this.entryFields.map((f) => f.config.min),
+      values,
       label: "",
       weekdays: undefined,
     };
