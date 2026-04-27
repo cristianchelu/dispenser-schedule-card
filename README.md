@@ -60,13 +60,13 @@ Each device family has its own minimal configuration. Pick yours from
 
 ## Supported devices
 
-| Device                                       | `device.type`           | Companion integration                                                                       | Capabilities                                                            | Docs                                                           |
-| -------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Xiaomi Smart Pet Feeder (`mmgg.feeder.fi1`)  | `xiaomi-smart-feeder`   | [esphome-miot](https://github.com/dhewg/esphome-miot/blob/main/config/mmgg.feeder.fi1.yaml) | Full schedule control                                                   | [docs/xiaomi-smart-feeder.md](docs/xiaomi-smart-feeder.md)     |
-| Xiaomi Smart Pet Feeder 2                    | `xiaomi-smart-feeder-2` | [Xiaomi Home (official)](https://github.com/XiaoMi/ha_xiaomi_home)                          | Full schedule control                                                   | [docs/xiaomi-smart-feeder-2.md](docs/xiaomi-smart-feeder-2.md) |
-| PetLibro dry feeders                         | `petlibro`              | [jjjonesjr33/petlibro](https://github.com/jjjonesjr33/petlibro)                             | Full control, weekly schedule, today-skip, lure sound, per-entry labels | [docs/petlibro.md](docs/petlibro.md)                           |
-| PetKit feeders (Fresh Element, YumShare)     | `custom`                | [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)       | Display only                                                            | [docs/petkit.md](docs/petkit.md)                               |
-| DIY ESPHome dispensers / other state sources | `custom`                | any (see [docs/dispenser-blueprint.yaml](docs/dispenser-blueprint.yaml))                    | Depends on the services you wire up                                     | [docs/custom.md](docs/custom.md)                               |
+| Device                                       | `device.type`           | Companion integration                                                                       | Capabilities                                                                           | Docs                                                           |
+| -------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Xiaomi Smart Pet Feeder (`mmgg.feeder.fi1`)  | `xiaomi-smart-feeder`   | [esphome-miot](https://github.com/dhewg/esphome-miot/blob/main/config/mmgg.feeder.fi1.yaml) | Full schedule control                                                                  | [docs/xiaomi-smart-feeder.md](docs/xiaomi-smart-feeder.md)     |
+| Xiaomi Smart Pet Feeder 2                    | `xiaomi-smart-feeder-2` | [Xiaomi Home (official)](https://github.com/XiaoMi/ha_xiaomi_home)                          | Full schedule control                                                                  | [docs/xiaomi-smart-feeder-2.md](docs/xiaomi-smart-feeder-2.md) |
+| PetLibro dry feeders                         | `petlibro`              | [jjjonesjr33/petlibro](https://github.com/jjjonesjr33/petlibro)                             | Full control, weekly schedule, today-skip, lure sound, per-entry labels                | [docs/petlibro.md](docs/petlibro.md)                           |
+| PetKit feeders (Fresh Element, YumShare)     | `petkit`                | [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)       | Full schedule + weekly (dual-hopper aware); no per-entry toggle / today-skip in HA yet | [docs/petkit.md](docs/petkit.md)                               |
+| DIY ESPHome dispensers / other state sources | `custom`                | any (see [docs/dispenser-blueprint.yaml](docs/dispenser-blueprint.yaml))                    | Depends on the services you wire up                                                    | [docs/custom.md](docs/custom.md)                               |
 
 Don't see your device? See [Compatibility](#compatibility) below.
 
@@ -76,13 +76,13 @@ These options apply to any device. For device-specific keys (`entity`,
 `device_id`, `switch`, `actions`, etc.), follow the link in
 [Supported devices](#supported-devices) above.
 
-| Name                  | Required     | Description                                                                                                                                                                          |
-| --------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `device`              | **Required** | Device block. Must include `type` (one of `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, `petlibro`, `custom`). All other keys depend on the device type — see the per-device docs. |
-| `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br>Defaults to `toggle` when the device supports editing or toggling; otherwise `never`.                       |
-| `unit_of_measurement` | _Optional_   | Unit label. String or object with plural forms — see [Pluralization](#pluralization).<br><br>Defaults to `portions`.                                                                 |
-| `alternate_unit`      | _Optional_   | Display a secondary unit of measurement, with a conversion factor — see [`alternate_unit` options](#alternate_unit-options).                                                         |
-| `display`             | _Optional_   | Per-status display overrides — see [Display customization](#display-customization).                                                                                                  |
+| Name                  | Required     | Description                                                                                                                                                                                    |
+| --------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `device`              | **Required** | Device block. Must include `type` (one of `xiaomi-smart-feeder`, `xiaomi-smart-feeder-2`, `petlibro`, `petkit`, `custom`). All other keys depend on the device type — see the per-device docs. |
+| `editable`            | _Optional_   | Whether the schedule is editable. `always`, `toggle`, or `never`.<br><br>Defaults to `toggle` when the device supports editing or toggling; otherwise `never`.                                 |
+| `unit_of_measurement` | _Optional_   | Unit label. String or object with plural forms — see [Pluralization](#pluralization).<br><br>Defaults to `portions`.                                                                           |
+| `alternate_unit`      | _Optional_   | Display a secondary unit of measurement, with a conversion factor — see [`alternate_unit` options](#alternate_unit-options).                                                                   |
+| `display`             | _Optional_   | Per-status display overrides — see [Display customization](#display-customization).                                                                                                            |
 
 ### `alternate_unit` options
 
