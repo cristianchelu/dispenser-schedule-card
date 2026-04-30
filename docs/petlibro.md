@@ -6,6 +6,9 @@ This page covers the `device.type: petlibro` adapter. PetLibro dry feeders
 are supported via the [jjjonesjr33/petlibro](https://github.com/jjjonesjr33/petlibro)
 custom integration.
 
+Minimum integration version: [v1.2.31.5-pre-release](https://github.com/jjjonesjr33/petlibro/releases/tag/v1.2.31.5-pre-release).
+See HACS Docs on [downloading a specific version of a repository](https://www.hacs.xyz/docs/use/repositories/dashboard/#downloading-a-specific-version-of-a-repository).
+
 ## Minimal YAML
 
 ```yaml
