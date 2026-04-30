@@ -3,9 +3,9 @@
 > A simple card to view and control dispenser schedules in
 > [Home Assistant](https://www.home-assistant.io/).
 
-[hacs_badge](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
-Screenshot of dispenser schedule card
+![Screenshot of dispenser schedule card](docs/screenshot.png)
 
 ## Contents
 
@@ -25,28 +25,28 @@ Minimum Home Assistant version: **2026.4.0**.
 
 ### Using HACS
 
-[Open your Home Assistant instance and open the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/redirect/hacs_repository/?owner=cristianchelu&repository=dispenser-schedule-card&category=plugin)
+[![Open your Home Assistant instance and open the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg?style=flat-square)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cristianchelu&repository=dispenser-schedule-card&category=plugin)
 
 Or follow these steps:
 
 1. Open HACS (Home Assistant Community Store)
 2. Click on the three dots in the top right corner
 3. Click on `Custom repositories`
-4. In the Repository field, enter [https://github.com/cristianchelu/dispenser-schedule-card/](https://github.com/cristianchelu/dispenser-schedule-card/)
+4. In the Repository field, enter https://github.com/cristianchelu/dispenser-schedule-card/
 5. In the Category field, select `Dashboard`
 6. Click on `Add`
 7. Search for `Dispenser Schedule Card` in the list
 8. Install the card
 
 More information and screenshots in the official guide:
-[https://hacs.xyz/docs/faq/custom_repositories/](https://hacs.xyz/docs/faq/custom_repositories/)
+https://hacs.xyz/docs/faq/custom_repositories/
 
 ### Manually
 
 Download `dispenser-schedule-card.min.js` from the Releases tab of this
 repository and place it under your `www` folder, then add it as a resource
 of type "Javascript Module", following the official Home Assistant guide:
-[https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources](https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources)
+https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources
 
 ## Quick start
 
