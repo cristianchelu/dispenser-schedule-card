@@ -1,0 +1,45 @@
+{
+ "ui": {
+   "name": "Schema",
+   "portions_one": "portie",
+   "portions_other": "porties",
+   "empty": "Geen schema",
+   "edit": "Bewerken",
+   "delete": "Verwijderen",
+   "enable": "Inschakelen",
+   "disable": "Uitschakelen",
+   "done": "Klaar",
+   "cancel": "Annuleren",
+   "save": "Opslaan",
+   "time": "Tijd",
+   "amount": "Hoeveelheid",
+   "repeat": "Herhalen",
+   "every_day": "Elke dag",
+   "never_repeat": "Nooit herhalen",
+   "empty_today": "Geen schema voor vandaag",
+   "skip_today": "Overslaan",
+   "unskip_today": "Hervatten",
+   "call_sound": "Eettijdgeluid"
+ },
+ "entry_field": {
+   "quantity_n": "Hoeveelheid {n}",
+   "position": "Compartiment",
+   "label": "Label"
+ },
+ "status": {
+   "dispensed": "Uitgedoseerd",
+   "dispensing": "Uitdoseren",
+   "pending": "In afwachting",
+   "failed": "Mislukt",
+   "skipped": "Overgeslagen",
+   "disabled": "Uitgeschakeld",
+   "unknown": "Onbekend"
+ },
+ "status_petlibro": {
+   "to_be_skipped": "Over te slaan",
+   "state_5": "Onbekende status 5"
+ },
+ "errors": {
+   "unresolved_field": "Kon {field} niet automatisch oplossen. Geef het handmatig op."
+ }
+}
