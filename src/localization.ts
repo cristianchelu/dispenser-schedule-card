@@ -24,6 +24,7 @@ const languages: Record<string, Translations> = {
   it,
   ro,
   tr,
+  nl,
 };
 
 const DEFAULT_LANG = "en";
