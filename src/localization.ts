@@ -6,6 +6,7 @@ import * as en from "./translations/en.json";
 import * as es from "./translations/es.json";
 import * as fr from "./translations/fr.json";
 import * as it from "./translations/it.json";
+import * as nl from "./translations/nl.json";
 import * as ro from "./translations/ro.json";
 import * as tr from "./translations/tr.json";
 
@@ -22,9 +23,9 @@ const languages: Record<string, Translations> = {
   es,
   fr,
   it,
+  nl,
   ro,
   tr,
-  nl,
 };
 
 const DEFAULT_LANG = "en";
