@@ -15,6 +15,7 @@ export type {
   PetLibroGlobalToggleConfig,
 } from "./PetLibroDevice";
 export type { PetKitDeviceConfig } from "./PetKitDevice";
+export type { OpenPetBowlDeviceConfig } from "./OpenPetBowlDevice";
 export type { XiaomiSmartFeederDeviceConfig } from "./XiaomiSmartFeeder";
 export type { XiaomiSmartPetFeeder2DeviceConfig } from "./XiaomiSmartPetFeeder2";
 
