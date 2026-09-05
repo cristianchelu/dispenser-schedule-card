@@ -39,6 +39,16 @@
     "to_be_skipped": "To be skipped",
     "state_5": "Unknown state 5"
   },
+  "status_petkit": {
+    "cancelled": "Skipped",
+    "skipped_surpluscontrol": "Skipped SurplusControl",
+    "surplus_skipped": "Skipped (bowl still full)",
+    "dispensed_schedule": "Dispensed (schedule)",
+    "dispensed_remote": "Dispensed (remote app)",
+    "dispensed_local": "Dispensed (local button)",
+    "error": "Dispense error",
+    "past_unknown": "Unknown (past due)"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }
