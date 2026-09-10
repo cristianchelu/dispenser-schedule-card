@@ -9,7 +9,6 @@ import {
   EntryFieldRole,
   EntryStatus,
   GlobalToggleInfo,
-  NativeStatusDisplay,
   ScheduleEntry,
   isEntryStatus,
 } from "../types/common";
@@ -34,6 +33,7 @@ export interface OpenPetBowlAmount {
   min: number;
   max: number;
   step: number;
+  unit?: string;
 }
 
 export interface OpenPetBowlActions {
@@ -51,7 +51,7 @@ export interface OpenPetBowlCapabilities {
   weekly?: boolean;
   today_skip?: boolean;
   global_toggle?: boolean;
-  labels?: boolean;
+  labels?: boolean | { required?: boolean };
   actions?: OpenPetBowlActions;
 }
 
@@ -99,16 +99,43 @@ export function isOpenPetBowlCapabilities(
   );
 }
 
-function isOpenPetBowlAttrs(attrs: Record<string, unknown> | undefined): boolean {
+function labelConstraints(
+  labels: OpenPetBowlCapabilities["labels"]
+):
+  | false
+  | {
+      required: boolean;
+      minLength: number;
+      maxLength: number;
+      pattern: string;
+    } {
+  if (!labels) return false;
+  const required = typeof labels === "object" ? !!labels.required : false;
+  return {
+    required,
+    minLength: required ? 1 : 0,
+    maxLength: 50,
+    pattern: ".*",
+  };
+}
+
+function isOpenPetBowlAttrs(
+  attrs: Record<string, unknown> | undefined
+): boolean {
   if (!attrs) return false;
-  return isOpenPetBowlCapabilities(attrs.capabilities) && Array.isArray(attrs.schedule);
+  return (
+    isOpenPetBowlCapabilities(attrs.capabilities) &&
+    Array.isArray(attrs.schedule)
+  );
 }
 
 function domainOf(entityId: string): string {
   return entityId.split(".")[0] ?? "";
 }
 
-function parseService(qualified: string): { domain: string; service: string } | null {
+function parseService(
+  qualified: string
+): { domain: string; service: string } | null {
   const dot = qualified.indexOf(".");
   if (dot <= 0) return null;
   return { domain: qualified.slice(0, dot), service: qualified.slice(dot + 1) };
@@ -135,21 +162,6 @@ function findOpenPetBowlEntity(
   return matches[0]?.id;
 }
 
-function findFeedDailyListEntity(
-  hass: HomeAssistant,
-  deviceId: string
-): string | undefined {
-  const entities = hass.entities;
-  if (!entities) return undefined;
-  for (const entityId in entities) {
-    const entity = entities[entityId];
-    if (!entity || entity.device_id !== deviceId) continue;
-    const state = hass.states[entityId];
-    if (Array.isArray(state?.attributes?.feed_daily_list)) return entityId;
-  }
-  return undefined;
-}
-
 function rowToSchedule(row: OpenPetBowlRow): ScheduleEntry {
   const status = isEntryStatus(row.status) ? row.status : EntryStatus.PENDING;
   const wds = Array.isArray(row.weekdays)
@@ -159,7 +171,9 @@ function rowToSchedule(row: OpenPetBowlRow): ScheduleEntry {
     key: String(row.key),
     hour: coerceInt(row.hour, 0),
     minute: coerceInt(row.minute, 0),
-    values: Array.isArray(row.values) ? row.values.map((n) => coerceInt(n, 0)) : [0],
+    values: Array.isArray(row.values)
+      ? row.values.map((n) => coerceInt(n, 0))
+      : [0],
     label: row.label ?? "",
     status,
     weekdays: wds?.length === ALL_WEEKDAYS.length ? undefined : wds,
@@ -181,9 +195,7 @@ function resolveConfig(
   const errors: DeviceConfigError[] = [];
   let scheduleEntity = config.entity;
   if (!scheduleEntity && config.device_id) {
-    scheduleEntity =
-      findOpenPetBowlEntity(hass, config.device_id) ??
-      findFeedDailyListEntity(hass, config.device_id);
+    scheduleEntity = findOpenPetBowlEntity(hass, config.device_id);
   }
   if (!scheduleEntity) {
     errors.push({ field: "device.entity" });
@@ -209,14 +221,15 @@ function resolveConfig(
 
 /**
  * Generic OpenPetBowl reader/writer. YAML is `device_id` (HA registry id).
- * Discovers the schedule entity by capabilities + `schedule[]`, with a
- * `feed_daily_list` fallback for mid-migration Home Assistant.
+ * Discovers the schedule entity by capabilities + `schedule[]`.
  */
 export default class OpenPetBowlDevice<
   TConfig extends OpenPetBowlDeviceConfig = OpenPetBowlDeviceConfig,
 > extends Device<TConfig> {
   protected resolved: ResolvedConfig;
   protected nativeStatusByKey = new Map<string, string>();
+  /** Provider's verdict on whether each row runs today, by key. */
+  protected todayByKey = new Map<string, boolean>();
 
   constructor(deviceConfig: TConfig, hass: HomeAssistant) {
     super(deviceConfig, hass);
@@ -253,9 +266,7 @@ export default class OpenPetBowlDevice<
       maxEntries: 10,
       weeklySchedule: caps?.weekly === false ? false : { allowNever: false },
       hasTodaySkip: !!caps?.today_skip,
-      hasEntryLabel: caps?.labels
-        ? { required: false, minLength: 0, maxLength: 50, pattern: ".*" }
-        : false,
+      hasEntryLabel: labelConstraints(caps?.labels),
       callSound: false,
     };
   }
@@ -266,8 +277,16 @@ export default class OpenPetBowlDevice<
     const n = caps?.compartments ?? 1;
     if (n >= 2) {
       return [
-        { role: EntryFieldRole.QUANTITY, config: amount, compartmentColor: "blue" },
-        { role: EntryFieldRole.QUANTITY, config: amount, compartmentColor: "orange" },
+        {
+          role: EntryFieldRole.QUANTITY,
+          config: amount,
+          compartmentColor: "blue",
+        },
+        {
+          role: EntryFieldRole.QUANTITY,
+          config: amount,
+          compartmentColor: "orange",
+        },
       ];
     }
     return [{ role: EntryFieldRole.QUANTITY, config: amount }];
@@ -297,21 +316,32 @@ export default class OpenPetBowlDevice<
 
   getSchedule(): ScheduleEntry[] {
     this.nativeStatusByKey.clear();
+    this.todayByKey.clear();
     const raw = this.attrs.schedule;
-    if (Array.isArray(raw)) {
-      return (raw as OpenPetBowlRow[]).map((row) => {
-        if (row.native_status) {
-          this.nativeStatusByKey.set(String(row.key), row.native_status);
-        }
-        return rowToSchedule(row);
-      });
-    }
-    return this.getScheduleFromFeedDailyListFallback();
+    if (!Array.isArray(raw)) return [];
+    return (raw as OpenPetBowlRow[]).map((row) => {
+      const key = String(row.key);
+      if (row.native_status) {
+        this.nativeStatusByKey.set(key, row.native_status);
+      }
+      if (typeof row.today === "boolean") {
+        this.todayByKey.set(key, row.today);
+      }
+      return rowToSchedule(row);
+    });
   }
 
-  /** Mid-migration: old HA sensor with `feed_daily_list` only. */
-  protected getScheduleFromFeedDailyListFallback(): ScheduleEntry[] {
-    return [];
+  /**
+   * Without a weekly schedule the card has no weekdays to reason about, so it
+   * defers to the provider's `today`. A device may still run a row only on
+   * some days (a PetKit D1/Mini keeps one plan-level weekday mask that has no
+   * per-entry equivalent) and must not be offered a skip on the other days.
+   */
+  entryAppliesToday(entry: ScheduleEntry): boolean {
+    if (!this.capabilities.weeklySchedule) {
+      return this.todayByKey.get(entry.key) ?? true;
+    }
+    return super.entryAppliesToday(entry);
   }
 
   getGlobalToggle(): GlobalToggleInfo | null {
@@ -330,7 +360,9 @@ export default class OpenPetBowlDevice<
 
   canSkipEntryForToday(entry: ScheduleEntry): boolean {
     if (!this.capabilities.hasTodaySkip) return false;
-    return entry.status === EntryStatus.PENDING && this.entryAppliesToday(entry);
+    return (
+      entry.status === EntryStatus.PENDING && this.entryAppliesToday(entry)
+    );
   }
 
   canUnskipEntryForToday(entry: ScheduleEntry): boolean {
@@ -349,7 +381,9 @@ export default class OpenPetBowlDevice<
     return true;
   }
 
-  protected servicePayload(extra: Record<string, unknown>): Record<string, unknown> {
+  protected servicePayload(
+    extra: Record<string, unknown>
+  ): Record<string, unknown> {
     return { device_id: this.resolved.cloudDeviceId, ...extra };
   }
 
@@ -387,10 +421,17 @@ export default class OpenPetBowlDevice<
 
   async removeEntry(entry: ScheduleEntry): Promise<void> {
     const actions = this.bowlCapabilities?.actions ?? {};
-    if (await this.callAction(actions.remove, this.servicePayload({ key: entry.key }))) {
+    if (
+      await this.callAction(
+        actions.remove,
+        this.servicePayload({ key: entry.key })
+      )
+    ) {
       return;
     }
-    await this.writeFullSchedule(this.getSchedule().filter((s) => s.key !== entry.key));
+    await this.writeFullSchedule(
+      this.getSchedule().filter((s) => s.key !== entry.key)
+    );
   }
 
   async toggleEntry(_entry: ScheduleEntry): Promise<void> {
@@ -405,7 +446,10 @@ export default class OpenPetBowlDevice<
     });
   }
 
-  async setEntrySkipForToday(entry: ScheduleEntry, skip: boolean): Promise<void> {
+  async setEntrySkipForToday(
+    entry: ScheduleEntry,
+    skip: boolean
+  ): Promise<void> {
     const actions = this.bowlCapabilities?.actions ?? {};
     const qualified = skip ? actions.skip_today : actions.unskip_today;
     await this.callAction(qualified, this.servicePayload({ key: entry.key }));
@@ -421,7 +465,7 @@ export default class OpenPetBowlDevice<
       weekdays: e.weekdays,
       label: e.label,
     }));
-    if (await this.callAction(actions.set, this.servicePayload({ schedule }))) return;
+    await this.callAction(actions.set, this.servicePayload({ schedule }));
   }
 
   protected toScheduleFromEdit(e: EditScheduleEntry): ScheduleEntry {

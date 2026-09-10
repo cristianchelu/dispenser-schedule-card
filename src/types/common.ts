@@ -83,6 +83,8 @@ export interface AmountConfig {
   min: number;
   max: number;
   step: number;
+  /** Device-native unit, e.g. `"g"` or `"portions"`. YAML may override. */
+  unit?: string;
 }
 
 export const EntryFieldRole = {

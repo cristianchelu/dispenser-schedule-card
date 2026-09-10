@@ -258,17 +258,31 @@ class DispenserScheduleCard extends LitElement {
     return entry.values[fieldIndex] ?? field?.config.min ?? 0;
   }
 
+  private _amountUnitLabel(pluralCategory: Intl.LDMLPluralRule = "other"): string {
+    const unitConfig = this._config.unit_of_measurement;
+    if (typeof unitConfig === "object" && unitConfig !== null) {
+      return unitConfig[pluralCategory] ?? unitConfig.other ?? "portions";
+    }
+    if (typeof unitConfig === "string") {
+      return unitConfig;
+    }
+    const deviceUnit = this._device.entryFields[0]?.config.unit;
+    if (deviceUnit === "portions") {
+      return localize(`ui.portions_${pluralCategory}`) ?? "portions";
+    }
+    if (deviceUnit) {
+      return deviceUnit;
+    }
+    return localize(`ui.portions_${pluralCategory}`) ?? "portions";
+  }
+
   resolveFieldLabel(field: EntryFieldDescriptor, fieldIndex: number): string {
     if (field.role === EntryFieldRole.POSITION) {
       return localize("entry_field.position") ?? localize("ui.amount") ?? "";
     }
 
     if (this._device.entryFields.length === 1) {
-      const unitConfig = this._config.unit_of_measurement;
-      if (typeof unitConfig === "object" && unitConfig !== null) {
-        return unitConfig.other ?? localize("ui.amount") ?? "";
-      }
-      return unitConfig ?? localize("ui.amount") ?? "";
+      return this._amountUnitLabel();
     }
 
     return (
@@ -371,15 +385,7 @@ class DispenserScheduleCard extends LitElement {
       pluralCategory = pluralRules.select(value);
     } catch (_error) {}
 
-    let main_unit: string;
-    const unitConfig = this._config.unit_of_measurement;
-    if (typeof unitConfig === "object" && unitConfig !== null) {
-      main_unit = unitConfig[pluralCategory] ?? unitConfig.other ?? "portions";
-    } else if (typeof unitConfig === "string") {
-      main_unit = unitConfig;
-    } else {
-      main_unit = localize(`ui.portions_${pluralCategory}`) ?? "portions";
-    }
+    let main_unit = this._amountUnitLabel(pluralCategory);
     const mainStr = `${value} ${main_unit}`;
 
     let alternateStr;
@@ -433,7 +439,7 @@ class DispenserScheduleCard extends LitElement {
   ): TemplateResult {
     const { showUnit = true } = options;
     const fields = this._device.entryFields;
-    const unit = localize("ui.portions_other") ?? "portions";
+    const unit = this._amountUnitLabel("other");
     return html`
       <span class="entry-values-compact">
         ${fields.map((field, fieldIndex) => {
