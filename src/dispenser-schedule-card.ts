@@ -2,6 +2,7 @@ import { html, LitElement, nothing, unsafeCSS } from "lit";
 import { ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
+import { formatFraction } from "./fraction";
 
 import { customElement } from "lit/decorators/custom-element.js";
 
@@ -258,7 +259,9 @@ class DispenserScheduleCard extends LitElement {
     return entry.values[fieldIndex] ?? field?.config.min ?? 0;
   }
 
-  private _amountUnitLabel(pluralCategory: Intl.LDMLPluralRule = "other"): string {
+  private _amountUnitLabel(
+    pluralCategory: Intl.LDMLPluralRule = "other"
+  ): string {
     const unitConfig = this._config.unit_of_measurement;
     if (typeof unitConfig === "object" && unitConfig !== null) {
       return unitConfig[pluralCategory] ?? unitConfig.other ?? "portions";
@@ -374,18 +377,20 @@ class DispenserScheduleCard extends LitElement {
     </ha-dropdown>`;
   }
 
+  private _pluralCategory(value: number): Intl.LDMLPluralRule {
+    try {
+      return new Intl.PluralRules(this._hass.locale.language, {
+        type: "cardinal",
+      }).select(value);
+    } catch (_error) {
+      return "other";
+    }
+  }
+
   renderQuantityValue(value: number): string {
     const { alternate_unit } = this._config;
 
-    let pluralCategory: Intl.LDMLPluralRule = "other";
-    try {
-      const pluralRules = new Intl.PluralRules(this._hass.locale.language, {
-        type: "cardinal",
-      });
-      pluralCategory = pluralRules.select(value);
-    } catch (_error) {}
-
-    let main_unit = this._amountUnitLabel(pluralCategory);
+    const main_unit = this._amountUnitLabel(this._pluralCategory(value));
     const mainStr = `${value} ${main_unit}`;
 
     let alternateStr;
@@ -396,15 +401,16 @@ class DispenserScheduleCard extends LitElement {
         unit_of_measurement: alt_unit,
       } = alternate_unit;
       const convertedAmount = value * conversion_factor;
+      const altPlural = this._pluralCategory(convertedAmount);
 
       let alt_unit_display: string;
       if (typeof alt_unit === "object" && alt_unit !== null) {
-        alt_unit_display = alt_unit[pluralCategory] ?? alt_unit.other ?? "";
+        alt_unit_display = alt_unit[altPlural] ?? alt_unit.other ?? "";
       } else {
         alt_unit_display = alt_unit;
       }
 
-      alternateStr = `${approximate ? "~" : ""}${convertedAmount} ${alt_unit_display}`;
+      alternateStr = `${approximate ? "~" : ""}${formatFraction(convertedAmount)} ${alt_unit_display}`;
     }
 
     return [mainStr, alternateStr].filter(Boolean).join(" ⸱ ");
