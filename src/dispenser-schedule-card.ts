@@ -2,6 +2,7 @@ import { html, LitElement, nothing, unsafeCSS } from "lit";
 import { ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { STATE_NOT_RUNNING } from "home-assistant-js-websocket";
+import { formatFraction } from "./fraction";
 
 import { customElement } from "lit/decorators/custom-element.js";
 
@@ -258,17 +259,33 @@ class DispenserScheduleCard extends LitElement {
     return entry.values[fieldIndex] ?? field?.config.min ?? 0;
   }
 
+  private _amountUnitLabel(
+    pluralCategory: Intl.LDMLPluralRule = "other"
+  ): string {
+    const unitConfig = this._config.unit_of_measurement;
+    if (typeof unitConfig === "object" && unitConfig !== null) {
+      return unitConfig[pluralCategory] ?? unitConfig.other ?? "portions";
+    }
+    if (typeof unitConfig === "string") {
+      return unitConfig;
+    }
+    const deviceUnit = this._device.entryFields[0]?.config.unit;
+    if (deviceUnit === "portions") {
+      return localize(`ui.portions_${pluralCategory}`) ?? "portions";
+    }
+    if (deviceUnit) {
+      return deviceUnit;
+    }
+    return localize(`ui.portions_${pluralCategory}`) ?? "portions";
+  }
+
   resolveFieldLabel(field: EntryFieldDescriptor, fieldIndex: number): string {
     if (field.role === EntryFieldRole.POSITION) {
       return localize("entry_field.position") ?? localize("ui.amount") ?? "";
     }
 
     if (this._device.entryFields.length === 1) {
-      const unitConfig = this._config.unit_of_measurement;
-      if (typeof unitConfig === "object" && unitConfig !== null) {
-        return unitConfig.other ?? localize("ui.amount") ?? "";
-      }
-      return unitConfig ?? localize("ui.amount") ?? "";
+      return this._amountUnitLabel();
     }
 
     return (
@@ -360,26 +377,24 @@ class DispenserScheduleCard extends LitElement {
     </ha-dropdown>`;
   }
 
-  renderQuantityValue(value: number): string {
-    const { alternate_unit } = this._config;
-
-    let pluralCategory: Intl.LDMLPluralRule = "other";
+  private _pluralCategory(value: number): Intl.LDMLPluralRule {
     try {
-      const pluralRules = new Intl.PluralRules(this._hass.locale.language, {
+      return new Intl.PluralRules(this._hass.locale.language, {
         type: "cardinal",
-      });
-      pluralCategory = pluralRules.select(value);
-    } catch (_error) {}
-
-    let main_unit: string;
-    const unitConfig = this._config.unit_of_measurement;
-    if (typeof unitConfig === "object" && unitConfig !== null) {
-      main_unit = unitConfig[pluralCategory] ?? unitConfig.other ?? "portions";
-    } else if (typeof unitConfig === "string") {
-      main_unit = unitConfig;
-    } else {
-      main_unit = localize(`ui.portions_${pluralCategory}`) ?? "portions";
+      }).select(value);
+    } catch (_error) {
+      return "other";
     }
+  }
+
+  renderQuantityValue(value: number): string {
+    // YAML wins; otherwise the device may supply one (e.g. the cup fraction
+    // a PetKit portion is).
+    const alternate_unit =
+      this._config.alternate_unit ??
+      this._device.entryFields[0]?.config.alternate_unit;
+
+    const main_unit = this._amountUnitLabel(this._pluralCategory(value));
     const mainStr = `${value} ${main_unit}`;
 
     let alternateStr;
@@ -390,15 +405,16 @@ class DispenserScheduleCard extends LitElement {
         unit_of_measurement: alt_unit,
       } = alternate_unit;
       const convertedAmount = value * conversion_factor;
+      const altPlural = this._pluralCategory(convertedAmount);
 
       let alt_unit_display: string;
       if (typeof alt_unit === "object" && alt_unit !== null) {
-        alt_unit_display = alt_unit[pluralCategory] ?? alt_unit.other ?? "";
+        alt_unit_display = alt_unit[altPlural] ?? alt_unit.other ?? "";
       } else {
         alt_unit_display = alt_unit;
       }
 
-      alternateStr = `${approximate ? "~" : ""}${convertedAmount} ${alt_unit_display}`;
+      alternateStr = `${approximate ? "~" : ""}${formatFraction(convertedAmount)} ${alt_unit_display}`;
     }
 
     return [mainStr, alternateStr].filter(Boolean).join(" ⸱ ");
@@ -433,7 +449,7 @@ class DispenserScheduleCard extends LitElement {
   ): TemplateResult {
     const { showUnit = true } = options;
     const fields = this._device.entryFields;
-    const unit = localize("ui.portions_other") ?? "portions";
+    const unit = this._amountUnitLabel("other");
     return html`
       <span class="entry-values-compact">
         ${fields.map((field, fieldIndex) => {
@@ -651,29 +667,26 @@ class DispenserScheduleCard extends LitElement {
     });
   }
 
-  handleTimeChanged(ev: CustomEvent, entry: EditScheduleEntry) {
+  handleTimeChanged(ev: CustomEvent) {
+    const entry = this._editSchedule;
+    if (!entry) return;
     const [hour, minute] = ev.detail.value.split(":").map(Number);
     this._editSchedule = { ...entry, hour, minute };
   }
 
-  handleValueChanged(
-    entry: EditScheduleEntry,
-    fieldIndex: number,
-    value: number
-  ) {
+  handleValueChanged(fieldIndex: number, value: number) {
+    const entry = this._editSchedule;
+    if (!entry) return;
     const values = [...entry.values];
     values[fieldIndex] = value;
     this._editSchedule = { ...entry, values };
   }
 
-  handleAmountChanged(
-    ev: InputEvent,
-    entry: EditScheduleEntry,
-    fieldIndex: number
-  ) {
+  handleAmountLive(ev: Event, fieldIndex: number) {
     const amountInput = ev.currentTarget as unknown as { value?: string };
-    const value = parseInt(amountInput.value ?? "", 10);
-    this.handleValueChanged(entry, fieldIndex, value);
+    const raw = amountInput.value ?? "";
+    const value = raw === "" ? NaN : parseInt(raw, 10);
+    this.handleValueChanged(fieldIndex, value);
   }
 
   handleEntryLabelInput(ev: Event) {
@@ -684,17 +697,15 @@ class DispenserScheduleCard extends LitElement {
     this._editSchedule = { ...edit, label: value };
   }
 
-  handlePositionChanged(
-    ev: CustomEvent,
-    entry: EditScheduleEntry,
-    fieldIndex: number
-  ) {
+  handlePositionChanged(ev: CustomEvent, fieldIndex: number) {
     const value = parseInt(ev.detail?.item?.value ?? "", 10);
     if (Number.isNaN(value)) return;
-    this.handleValueChanged(entry, fieldIndex, value);
+    this.handleValueChanged(fieldIndex, value);
   }
 
-  handleCallSoundChanged(ev: Event, entry: EditScheduleEntry) {
+  handleCallSoundChanged(ev: Event) {
+    const entry = this._editSchedule;
+    if (!entry) return;
     this._editSchedule = {
       ...entry,
       callSound: (ev.target as HTMLInputElement).checked,
@@ -879,8 +890,7 @@ class DispenserScheduleCard extends LitElement {
             aria-label=${timeFieldLabel}
             .value=${`${entry.hour}:${entry.minute.toString().padStart(2, "0")}`}
             .locale=${this._hass.locale}
-            @value-changed=${(ev: CustomEvent) =>
-              this.handleTimeChanged(ev, entry)}
+            @value-changed=${this.handleTimeChanged}
           ></ha-time-input>
         </div>
         ${labelConstraints
@@ -909,7 +919,7 @@ class DispenserScheduleCard extends LitElement {
               <ha-dropdown
                 placement="bottom"
                 @wa-select=${(ev: CustomEvent) =>
-                  this.handlePositionChanged(ev, entry, fieldIndex)}
+                  this.handlePositionChanged(ev, fieldIndex)}
               >
                 <ha-picker-field
                   slot="trigger"
@@ -938,8 +948,8 @@ class DispenserScheduleCard extends LitElement {
               max=${String(field.config.max)}
               min=${String(field.config.min)}
               step=${String(field.config.step)}
-              @change=${(ev: InputEvent) =>
-                this.handleAmountChanged(ev, entry, fieldIndex)}
+              @keyup=${(ev: Event) => this.handleAmountLive(ev, fieldIndex)}
+              @input=${(ev: Event) => this.handleAmountLive(ev, fieldIndex)}
             ></ha-input>
           </div>`;
         })}
@@ -956,7 +966,7 @@ class DispenserScheduleCard extends LitElement {
               >
               <ha-switch
                 .checked=${entry.callSound ?? false}
-                @change=${(ev: Event) => this.handleCallSoundChanged(ev, entry)}
+                @change=${this.handleCallSoundChanged}
                 aria-label=${callSoundFieldLabel}
               ></ha-switch>
             </div>`

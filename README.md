@@ -90,6 +90,12 @@ Each device family has its own minimal configuration. Pick yours from
 | `conversion_factor`   | **Required** | Number to multiply the primary amount by.                                                      |
 | `approximate`         | _Optional_   | Whether the alternate unit is an approximation. Adds a `~` prefix to the value.                |
 
+Fractional results render as `½`, `⅕`, `1¼` and so on where Unicode has a
+glyph for them, and as short decimals otherwise.
+
+Some devices supply their own alternate unit (for example the cup fraction one
+PetKit portion is). Setting `alternate_unit` in YAML overrides it.
+
 Example:
 
 ```yaml

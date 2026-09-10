@@ -39,6 +39,13 @@
     "to_be_skipped": "Atlanacak",
     "state_5": "Bilinmeyen durum 5"
   },
+  "status_petkit": {
+    "cancelled": "Atlandı",
+    "skipped_surpluscontrol": "Atlandı SurplusControl",
+    "dispensed_schedule": "Verildi (schedule)",
+    "dispensed_remote": "Verildi (remote app)",
+    "dispensed_local": "Verildi (local button)"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }
