@@ -388,7 +388,11 @@ class DispenserScheduleCard extends LitElement {
   }
 
   renderQuantityValue(value: number): string {
-    const { alternate_unit } = this._config;
+    // YAML wins; otherwise the device may supply one (e.g. the cup fraction
+    // a PetKit portion is).
+    const alternate_unit =
+      this._config.alternate_unit ??
+      this._device.entryFields[0]?.config.alternate_unit;
 
     const main_unit = this._amountUnitLabel(this._pluralCategory(value));
     const mainStr = `${value} ${main_unit}`;

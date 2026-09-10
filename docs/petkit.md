@@ -54,11 +54,17 @@ when the integration reports `amount1` / `amount2` on the schedule, or when
 the device is registered as D4S/D4SH in Home Assistant and the schedule is
 still empty (first-time setup).
 
-Amounts are **portions**: typically 1–10 per side on dual hoppers, 1–50 on
-many single-hopper models, as allowed by the device. Use the card’s
-`[unit_of_measurement](../README.md#card-configuration)` and
-`[alternate_unit](../README.md#alternate_unit-options)` to show grams or other
-units if you like.
+Amounts follow the device. Fresh Element Solo (D3) has a scale and feeds in
+**grams**; every other model feeds in **portions**, with the range the device
+allows. Single-hopper models (Fresh Element, Mini, Infinity, YumShare Solo)
+also report the cup fraction one portion is — `⅕ cup`, `⅒ cup`, `0.05 cup` —
+and the card shows it alongside the portion count, the way the PetKit app
+does. The dual hoppers show bare portions, as the app does.
+
+Grams-per-portion is not something the device knows: it depends on your
+kibble. If you want an approximate gram figure, set the card’s
+[`alternate_unit`](../README.md#alternate_unit-options) with
+`approximate: true`; it replaces the device-supplied cup fraction.
 
 ## Discovery
 

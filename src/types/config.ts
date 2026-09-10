@@ -1,13 +1,13 @@
 import type { DeviceConfig } from "../devices";
-import { EntryStatus, type DisplayConfigEntry } from "./common";
+import {
+  EntryStatus,
+  type AlternateUnitConfig,
+  type DisplayConfigEntry,
+} from "./common";
+
+export type { AlternateUnitConfig };
 
 export type DisplayConfig = Record<string, DisplayConfigEntry>;
-
-export interface AlternateUnitConfig {
-  unit_of_measurement: string | Record<Intl.LDMLPluralRule, string | undefined>;
-  conversion_factor: number;
-  approximate?: boolean;
-}
 
 export interface DispenserScheduleCardConfig {
   device: DeviceConfig;

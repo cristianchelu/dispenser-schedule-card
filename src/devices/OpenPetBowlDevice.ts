@@ -1,4 +1,5 @@
 import {
+  AlternateUnitConfig,
   AmountConfig,
   Device,
   DeviceCapabilities,
@@ -34,6 +35,7 @@ export interface OpenPetBowlAmount {
   max: number;
   step: number;
   unit?: string;
+  alternate_unit?: AlternateUnitConfig;
 }
 
 export interface OpenPetBowlActions {
@@ -88,6 +90,25 @@ function isAmountShape(v: unknown): v is OpenPetBowlAmount {
   );
 }
 
+function isAlternateUnitShape(v: unknown): v is AlternateUnitConfig {
+  if (!v || typeof v !== "object") return false;
+  const rec = v as Record<string, unknown>;
+  const unit = rec.unit_of_measurement;
+  return (
+    (typeof unit === "string" || (!!unit && typeof unit === "object")) &&
+    typeof rec.conversion_factor === "number" &&
+    Number.isFinite(rec.conversion_factor)
+  );
+}
+
+/** Keep `alternate_unit` only when the device sent a usable one. */
+function sanitizeAmount(amount: OpenPetBowlAmount): AmountConfig {
+  const { alternate_unit, ...rest } = amount;
+  return isAlternateUnitShape(alternate_unit)
+    ? { ...rest, alternate_unit }
+    : rest;
+}
+
 export function isOpenPetBowlCapabilities(
   v: unknown
 ): v is OpenPetBowlCapabilities {
@@ -99,9 +120,7 @@ export function isOpenPetBowlCapabilities(
   );
 }
 
-function labelConstraints(
-  labels: OpenPetBowlCapabilities["labels"]
-):
+function labelConstraints(labels: OpenPetBowlCapabilities["labels"]):
   | false
   | {
       required: boolean;
@@ -273,7 +292,9 @@ export default class OpenPetBowlDevice<
 
   get entryFields(): EntryFieldDescriptor[] {
     const caps = this.bowlCapabilities;
-    const amount: AmountConfig = caps?.amount ?? { min: 1, max: 50, step: 1 };
+    const amount: AmountConfig = caps?.amount
+      ? sanitizeAmount(caps.amount)
+      : { min: 1, max: 50, step: 1 };
     const n = caps?.compartments ?? 1;
     if (n >= 2) {
       return [
