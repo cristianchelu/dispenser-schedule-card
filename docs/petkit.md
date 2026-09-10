@@ -54,9 +54,10 @@ when the integration reports `amount1` / `amount2` on the schedule, or when
 the device is registered as D4S/D4SH in Home Assistant and the schedule is
 still empty (first-time setup).
 
-Amounts follow the device. Fresh Element Solo (D3) has a scale and feeds in
+Amounts follow the device. Fresh Element 3 (D3) has a scale and feeds in
 **grams**; every other model feeds in **portions**, with the range the device
-allows. Single-hopper models (Fresh Element, Mini, Infinity, YumShare Solo)
+allows. Single-hopper models (Fresh Element, Mini, Fresh Element Solo, YumShare
+Solo)
 also report the cup fraction one portion is — `⅕ cup`, `⅒ cup`, `0.05 cup` —
 and the card shows it alongside the portion count, the way the PetKit app
 does. The dual hoppers show bare portions, as the app does.
