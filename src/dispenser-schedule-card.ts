@@ -36,6 +36,7 @@ import {
 import {
   DefaultDisplayConfig,
   DispenserScheduleCardConfig,
+  type ConfigEditableOption,
 } from "./types/config";
 
 import { type HomeAssistant, EMPTY_HOME_ASSISTANT } from "./types/ha";
@@ -84,6 +85,9 @@ class DispenserScheduleCard extends LitElement {
   declare _isSaving: boolean;
   declare _device: Device;
 
+  /** `editable` from YAML. Applied only once the device can actually write. */
+  private _requestedEditable: ConfigEditableOption = "toggle";
+
   private _entryLabelInputEl: ConstraintValidatableElement | null = null;
 
   private _onEntryLabelInputRef = (el: Element | undefined) => {
@@ -127,6 +131,38 @@ class DispenserScheduleCard extends LitElement {
     if (!this._device) return;
     this._device.updateHass(hass);
     this._schedules = this._device.getSchedule();
+    // setConfig often runs before hass, when discovery cannot see the
+    // schedule entity yet. Re-check once state is available.
+    this.applyEditable(false);
+  }
+
+  private hasEditActions(): boolean {
+    const caps = this._device?.capabilities;
+    if (!caps) return false;
+    return (
+      caps.canAddEntries ||
+      caps.canEditEntries ||
+      caps.canRemoveEntries ||
+      caps.hasEntryToggle ||
+      caps.hasTodaySkip
+    );
+  }
+
+  /**
+   * Hide edit controls when the device exposes no write actions.
+   * `resetEditing` is for a fresh config; routine hass updates must not
+   * kick the user out of an open editor.
+   */
+  private applyEditable(resetEditing: boolean) {
+    if (!this._config || !this._device) return;
+    const editable = this.hasEditActions() ? this._requestedEditable : "never";
+    const changed = this._config.editable !== editable;
+    if (changed) {
+      this._config = { ...this._config, editable };
+    }
+    if (resetEditing || changed) {
+      this._isEditing = editable === "always";
+    }
   }
 
   handleEditToggle() {
@@ -1031,7 +1067,7 @@ class DispenserScheduleCard extends LitElement {
       throw new Error("Missing required 'device.type' in card configuration");
     }
 
-    let editable = config.editable ?? "toggle";
+    const editable = config.editable ?? "toggle";
     if (
       editable !== "always" &&
       editable !== "never" &&
@@ -1040,33 +1076,19 @@ class DispenserScheduleCard extends LitElement {
       throw new Error(`Invalid editable option: ${editable}`);
     }
 
-    // Build the device now so capabilities are available immediately.
-    // Capabilities are a pure function of config; any hass-dependent
-    // resolution (e.g. PetLibro schedule-entity discovery) re-runs on the
-    // next `set hass` via updateHass().
+    // Discovery (PetKit, PetLibro) needs hass, and Lovelace calls setConfig
+    // first. Write actions are re-checked in `set hass`.
+    this._requestedEditable = editable;
     this._device = createDevice(
       config.device,
       this._hass ?? EMPTY_HOME_ASSISTANT
     );
-
-    const caps = this._device.capabilities;
-    const hasAnyEditAction =
-      caps.canAddEntries ||
-      caps.canEditEntries ||
-      caps.canRemoveEntries ||
-      caps.hasEntryToggle ||
-      caps.hasTodaySkip;
-
-    if (!hasAnyEditAction) {
-      editable = "never";
-    }
-
-    this._isEditing = editable === "always";
     this._config = { ...config, editable };
 
     if (this._hass) {
       this._device.updateHass(this._hass);
       this._schedules = this._device.getSchedule();
     }
+    this.applyEditable(true);
   }
 }
