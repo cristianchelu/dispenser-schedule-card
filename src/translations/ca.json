@@ -40,6 +40,13 @@
     "to_be_skipped": "Pendent d'ometre",
     "state_5": "Estat desconegut 5"
   },
+  "status_petkit": {
+    "cancelled": "Eludit",
+    "skipped_surpluscontrol": "Eludit SurplusControl",
+    "dispensed_schedule": "Lliurats (schedule)",
+    "dispensed_remote": "Lliurats (remote app)",
+    "dispensed_local": "Lliurats (local button)"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

@@ -40,6 +40,13 @@
     "to_be_skipped": "Va fi omis",
     "state_5": "Stare necunoscută 5"
   },
+  "status_petkit": {
+    "cancelled": "Omis",
+    "skipped_surpluscontrol": "Omis SurplusControl",
+    "dispensed_schedule": "Dozat (schedule)",
+    "dispensed_remote": "Dozat (remote app)",
+    "dispensed_local": "Dozat (local button)"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

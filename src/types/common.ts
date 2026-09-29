@@ -75,6 +75,18 @@ export interface EditScheduleEntry {
 }
 
 /**
+ * A secondary unit shown next to the primary amount, e.g. cups next to
+ * portions. Same shape whether it comes from YAML or from a device.
+ */
+export interface AlternateUnitConfig {
+  unit_of_measurement: string | Record<Intl.LDMLPluralRule, string | undefined>;
+  /** Multiplied with the primary amount. Fractions render as ½, ⅕, 1¼ where Unicode has a glyph. */
+  conversion_factor: number;
+  /** Prefix the converted value with `~`. */
+  approximate?: boolean;
+}
+
+/**
  * How the UI constrains amount input fields.
  * Every amount-capable device converges on this shape.
  * Hardcoded devices set it as a constant; CustomDevice reads it from YAML config.
@@ -83,6 +95,10 @@ export interface AmountConfig {
   min: number;
   max: number;
   step: number;
+  /** Device-native unit, e.g. `"g"` or `"portions"`. YAML may override. */
+  unit?: string;
+  /** Device-native secondary unit, e.g. the cup fraction one portion is. YAML may override. */
+  alternate_unit?: AlternateUnitConfig;
 }
 
 export const EntryFieldRole = {
