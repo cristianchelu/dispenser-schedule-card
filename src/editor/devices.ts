@@ -1,4 +1,8 @@
 import type { DeviceConfig, DeviceType } from "../devices";
+import {
+  PETKIT_NATIVE_STATUSES,
+  getPetkitNativeStatusDisplay,
+} from "../devices/PetKitDevice";
 import { getPetlibroNativeStatusDisplay } from "../devices/PetLibroDevice";
 import type { DisplayConfigEntry } from "../types/common";
 import type { HomeAssistant } from "../types/ha";
@@ -56,6 +60,46 @@ const serviceActionsSchema: HaFormSchema = {
 };
 
 export const DEVICE_EDITORS: Record<DeviceType, DeviceEditorDescriptor> = {
+  "petkit": {
+    label: "PetKit",
+    kind: "device",
+    docs: `${DOCS_BASE}/petkit.md`,
+    integration: "petkit",
+    nativeStatuses: PETKIT_NATIVE_STATUSES,
+    nativeStatusDefaults: getPetkitNativeStatusDisplay,
+    schema: (device, hass) => {
+      const include_entities = entitiesOfDevice(
+        hass,
+        device.device_id as string | undefined
+      );
+      return [
+        {
+          name: "device_id",
+          required: true,
+          selector: { device: { filter: { integration: "petkit" } } },
+        },
+        {
+          type: "expandable",
+          name: "overrides",
+          flatten: true,
+          icon: "mdi:tune-variant",
+          schema: [
+            {
+              // The schedule lives on the Feeding schedule switch; older
+              // integration versions exposed it on a sensor.
+              name: "entity",
+              selector: {
+                entity: {
+                  include_entities,
+                  filter: { domain: ["switch", "binary_sensor", "sensor"] },
+                },
+              },
+            },
+          ],
+        },
+      ];
+    },
+  },
   "petlibro": {
     label: "PetLibro",
     kind: "device",

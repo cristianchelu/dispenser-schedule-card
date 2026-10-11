@@ -18,15 +18,24 @@ const PETKIT_NATIVE_ICONS: Record<string, string> = {
   past_unknown: "mdi:help-circle-outline",
 };
 
+export const PETKIT_NATIVE_STATUSES = Object.keys(PETKIT_NATIVE_ICONS);
+
+/** The card's own look for a PetKit native status; the editor shows it as the default. */
+export function getPetkitNativeStatusDisplay(
+  key: string
+): NativeStatusDisplay | undefined {
+  const icon = PETKIT_NATIVE_ICONS[key];
+  if (!icon) return undefined;
+  const label = localize(`status_petkit.${key}`) ?? key;
+  return { key, label, icon };
+}
+
 /** PetKit skin over OpenPetBowl: the native status catalog, nothing more. */
 export default class PetKitDevice extends OpenPetBowlDevice<PetKitDeviceConfig> {
   getNativeStatusDisplay(
     entry: ScheduleEntry
   ): NativeStatusDisplay | undefined {
     const key = this.nativeStatusByKey.get(entry.key);
-    if (!key) return undefined;
-    const label = localize(`status_petkit.${key}`) ?? key;
-    const icon = PETKIT_NATIVE_ICONS[key];
-    return { key, label, ...(icon ? { icon } : {}) };
+    return key ? getPetkitNativeStatusDisplay(key) : undefined;
   }
 }
