@@ -68,7 +68,7 @@ function petlibroStateToStatus(state: string): EntryStatus {
   }
 }
 
-function getPetlibroNativeStatusDisplay(
+export function getPetlibroNativeStatusDisplay(
   state: string
 ): NativeStatusDisplay | undefined {
   switch (state) {

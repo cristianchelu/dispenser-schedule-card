@@ -61,9 +61,15 @@ device:
 Each device family has its own minimal configuration. Pick yours from
 [Supported devices](#supported-devices) below.
 
+The card can also be set up from the dashboard's visual editor: pick the
+device type, then the device (or entities), and adjust units and status
+appearance. Options not covered by the editor (e.g. the PetLibro compound
+`switch`) are kept as-is and can be edited in the code editor.
+
 ### Finding your device ID
 
-Some device types need `device_id`. This is the **Home Assistant** device ID:
+Some device types need `device_id`. If you use the visual editor, its device
+picker fills this in for you. This is the **Home Assistant** device ID:
 a 32-character hex string that Home Assistant assigns to the device. It is
 **not** the ID, serial number or MAC address the manufacturer's app or the
 integration shows for the feeder.

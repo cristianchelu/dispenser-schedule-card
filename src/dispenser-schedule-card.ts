@@ -46,6 +46,9 @@ import { renderEntityRow } from "./rows/entityRow";
 
 import DispenserScheduleCardStyles from "./dispenser-schedule-card.css";
 
+import "./editor/dispenser-schedule-card-editor";
+import { detectDevice } from "./editor/devices";
+
 const createEntityNotFoundWarning = (hass: HomeAssistant, entityId?: string) =>
   hass.config.state !== STATE_NOT_RUNNING
     ? hass.localize("ui.panel.lovelace.warning.entity_not_found", {
@@ -434,7 +437,8 @@ class DispenserScheduleCard extends LitElement {
     const mainStr = `${value} ${main_unit}`;
 
     let alternateStr;
-    if (alternate_unit) {
+    // Partial configs (e.g. mid-edit in the visual editor) have no factor yet.
+    if (alternate_unit && Number.isFinite(alternate_unit.conversion_factor)) {
       const {
         approximate,
         conversion_factor,
@@ -447,7 +451,7 @@ class DispenserScheduleCard extends LitElement {
       if (typeof alt_unit === "object" && alt_unit !== null) {
         alt_unit_display = alt_unit[altPlural] ?? alt_unit.other ?? "";
       } else {
-        alt_unit_display = alt_unit;
+        alt_unit_display = alt_unit ?? "";
       }
 
       alternateStr = `${approximate ? "~" : ""}${formatFraction(convertedAmount)} ${alt_unit_display}`;
@@ -1062,6 +1066,14 @@ class DispenserScheduleCard extends LitElement {
     return 1 + rows;
   }
 
+  static getConfigElement(): HTMLElement {
+    return document.createElement("dispenser-schedule-card-editor");
+  }
+
+  static getStubConfig(hass?: HomeAssistant) {
+    return { device: detectDevice(hass) };
+  }
+
   setConfig(config: DispenserScheduleCardConfig) {
     if (!config.device?.type) {
       throw new Error("Missing required 'device.type' in card configuration");
@@ -1092,3 +1104,12 @@ class DispenserScheduleCard extends LitElement {
     this.applyEditable(true);
   }
 }
+
+window.customCards = window.customCards ?? [];
+window.customCards.push({
+  type: "dispenser-schedule-card",
+  name: "Dispenser Schedule Card",
+  description: "View and edit pet feeder and dispenser schedules.",
+  preview: true,
+  documentationURL: "https://github.com/cristianchelu/dispenser-schedule-card",
+});

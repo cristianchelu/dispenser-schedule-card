@@ -130,8 +130,10 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       (res = regex.exec(state)) !== null &&
       i < this.deviceConfig.max_entries
     ) {
-      const id = res.groups!.id;
-      const mapped = this.statusMap[parseInt(res.groups!.status)];
+      // Without named groups (e.g. a pattern still being typed) nothing parses.
+      if (!res.groups) break;
+      const id = res.groups.id;
+      const mapped = this.statusMap[parseInt(res.groups.status)];
       const isKnown = isEntryStatus(mapped);
       const status = isKnown ? mapped : EntryStatus.NONE;
       if (!isKnown && mapped !== undefined) {
@@ -142,9 +144,9 @@ export default class CustomDevice extends Device<CustomDeviceConfig> {
       }
       schedules.push({
         key: id,
-        hour: parseInt(res.groups!.hour),
-        minute: parseInt(res.groups!.minute),
-        values: [parseInt(res.groups!.amount)],
+        hour: parseInt(res.groups.hour),
+        minute: parseInt(res.groups.minute),
+        values: [parseInt(res.groups.amount)],
         status,
       });
       i++;
