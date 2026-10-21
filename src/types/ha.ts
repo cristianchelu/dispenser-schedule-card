@@ -42,9 +42,16 @@ export interface HassState {
   };
 }
 
+/** Home Assistant device registry (subset used by the card). */
+export interface HassDeviceEntry {
+  model_id?: string | null;
+}
+
 export interface HomeAssistant {
   states: Record<string, HassState | undefined>;
   entities: Record<string, HassEntity | undefined>;
+  /** When present, maps HA device id to registry entry (Core 0.88+ in Lovelace). */
+  devices?: Record<string, HassDeviceEntry | undefined>;
   services: Record<string, Record<string, { fields: Record<string, unknown> }>>;
   callService(
     domain: string,
@@ -66,6 +73,7 @@ export interface HomeAssistant {
 export const EMPTY_HOME_ASSISTANT: HomeAssistant = {
   states: {},
   entities: {},
+  devices: {},
   services: {},
   callService: async () => {},
   locale: { language: "en" },

@@ -15,7 +15,7 @@ See HACS Docs on [downloading a specific version of a repository](https://www.ha
 type: custom:dispenser-schedule-card
 device:
   type: petlibro
-  device_id: abc123def456...
+  device_id: 0123456789abcdef0123456789abcdef
 ```
 
 The card auto-discovers the schedule entity for the device — see
@@ -23,12 +23,12 @@ The card auto-discovers the schedule entity for the device — see
 
 ## Configuration
 
-| Name        | Required     | Description                                                                                                                                                                     |
-| ----------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`      | **Required** | Must be `petlibro`.                                                                                                                                                             |
-| `device_id` | **Required** | Home Assistant device id (the trailing segment of the device's settings page URL, e.g. `/config/devices/device/abc123def456…`). Without it, the card runs in display-only mode. |
-| `entity`    | _Optional_   | Override the auto-discovered schedule `binary_sensor` if discovery fails — see [Discovery](#discovery).                                                                         |
-| `switch`    | _Optional_   | Override the global on/off control — see [Global toggle](#global-toggle).                                                                                                       |
+| Name        | Required     | Description                                                                                                                                                         |
+| ----------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`      | **Required** | Must be `petlibro`.                                                                                                                                                 |
+| `device_id` | **Required** | Home Assistant device ID, not the PetLibro one — see [Finding your device ID](../README.md#finding-your-device-id). Without it, the card runs in display-only mode. |
+| `entity`    | _Optional_   | Override the auto-discovered schedule `binary_sensor` if discovery fails — see [Discovery](#discovery).                                                             |
+| `switch`    | _Optional_   | Override the global on/off control — see [Global toggle](#global-toggle).                                                                                           |
 
 ## Capabilities
 

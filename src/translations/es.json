@@ -39,6 +39,13 @@
     "to_be_skipped": "Por omitir",
     "state_5": "Estado desconocido 5"
   },
+  "status_petkit": {
+    "cancelled": "Omitido",
+    "skipped_surpluscontrol": "Omitido SurplusControl",
+    "dispensed_schedule": "Dispensado (schedule)",
+    "dispensed_remote": "Dispensado (remote app)",
+    "dispensed_local": "Dispensado (local button)"
+  },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   }

@@ -2,32 +2,117 @@
 
 [← Back to main README](../README.md)
 
-PetKit feeders (such as the Fresh Element and YumShare lines) are
-compatible with this card through the
+This page covers the `device.type: petkit` adapter. PetKit feeders (Fresh
+Element, YumShare, and similar models) work with the
 [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)
-custom integration, in **display-only** mode, using `device.type: custom`.
+custom integration in Home Assistant.
 
-> **Note**
-> Schedule editing and toggling is not supported for PetKit. The
-> integration does not expose write actions matching the card's contract.
-> Leave `actions` and `switch` unset.
+## Integration version
+
+Full control needs homeassistant_petkit
+[1.29.0](https://github.com/Jezza34000/homeassistant_petkit/releases/tag/1.29.0)
+or newer. See HACS Docs on
+[downloading a specific version of a repository](https://www.hacs.xyz/docs/use/repositories/dashboard/#downloading-a-specific-version-of-a-repository).
+
+Older versions are display only: use [`device.type: custom`](custom.md) with
+the integration's comma-separated `raw_distribution_data` string and a
+`status_pattern`, as shown in the
+[PetKit integration wiki](https://github.com/Jezza34000/homeassistant_petkit/wiki).
+That setup cannot edit the schedule and has no weekly or dual-hopper support.
+
+## Minimal YAML
+
+```yaml
+type: custom:dispenser-schedule-card
+device:
+  type: petkit
+  device_id: 0123456789abcdef0123456789abcdef
+```
+
+`device_id` is the **Home Assistant** device ID of the feeder — the last part
+of the URL when you open it under **Settings → Devices & services → Devices**.
+It is _not_ the PetKit device ID or serial number shown in the PetKit app or
+on the device page. See
+[Finding your device ID](../README.md#finding-your-device-id).
+
+The card finds the schedule sensor automatically — see
+[Discovery](#discovery) if that fails.
 
 ## Configuration
 
-Configure as a [custom device](custom.md). Point `entity` at the
-`raw_distribution_data` sensor exposed by the PetKit integration, and use a
-`status_pattern` and `status_map` that match its state format.
+| Name        | Required     | Description                                                                                                                                                                             |
+| ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`      | **Required** | Must be `petkit`.                                                                                                                                                                       |
+| `device_id` | **Required** | Home Assistant device ID, not the PetKit one — see [Finding your device ID](../README.md#finding-your-device-id). Without it, the card cannot find the schedule sensor or save changes. |
+| `entity`    | _Optional_   | Override the auto-discovered `raw_distribution_data` sensor if discovery fails.                                                                                                         |
 
-The PetKit integration's wiki publishes a recommended, ready-to-paste
-configuration — including `status_pattern`, `status_map`, and the matching
-`display` overrides for the various PetKit-specific statuses
-(`dispensed_schedule`, `dispensed_remote`, `dispensed_local`, `cancelled`,
-`skipped`, `error`, …):
+## Capabilities
 
-[Recommended Cards → Schedule Card for Feeders](https://github.com/Jezza34000/homeassistant_petkit/wiki/Recommended-Cards#-schedule-card-for-feeders)
+| Capability                  | Supported | Notes                                                                                                     |
+| --------------------------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| Read schedule               | Yes       | Up to 10 plan slots.                                                                                      |
+| Add / edit / remove entries | Yes       | Replaces the full 7-day schedule in one step. **Requires** `device_id`.                                   |
+| Toggle individual entry     | No        | The PetKit cloud API does not offer a per-entry on/off control like some other brands.                    |
+| Global enable / disable     | No        | Not available in Home Assistant for this flow; use the PetKit app.                                        |
+| Skip / un-skip for today    | No        | Not available from the card; use the app for one-off changes to today’s run.                              |
+| Weekly schedule             | Yes       | Choose which weekdays each entry runs; at least one day per entry. “Never repeat” is not used for PetKit. |
+| Per-entry label             | Yes       | Optional. If you leave it blank, the card sends a default `Feed HH:MM` name (the API requires a name).    |
 
-That page also lists the currently compatible feeder models. If your feeder
-doesn't expose a `raw_distribution_data` sensor, the integration does not
-yet support it for this card.
+**Dual hoppers (D4S, D4SH):** the card shows two amount fields (blue / orange)
+when the integration reports `amount1` / `amount2` on the schedule, or when
+the device is registered as D4S/D4SH in Home Assistant and the schedule is
+still empty (first-time setup).
 
-See the [Custom devices](custom.md) docs for the full field reference.
+Amounts follow the device. Fresh Element 3 (D3) has a scale and feeds in
+**grams**; every other model feeds in **portions**, with the range the device
+allows. Single-hopper models (Fresh Element, Mini, Fresh Element Solo, YumShare
+Solo)
+also report the cup fraction one portion is — `⅕ cup`, `⅒ cup`, `0.05 cup` —
+and the card shows it alongside the portion count, the way the PetKit app
+does. The dual hoppers show bare portions, as the app does.
+
+Grams-per-portion is not something the device knows: it depends on your
+kibble. If you want an approximate gram figure, set the card’s
+[`alternate_unit`](../README.md#alternate_unit-options) with
+`approximate: true`; it replaces the device-supplied cup fraction.
+
+## Discovery
+
+With `device_id` set, the card looks for an entity on that device that has a
+`feed_daily_list` attribute (the `raw_distribution_data` sensor from the PetKit
+integration).
+
+If you wish to override this, set `entity` by hand, for example:
+
+```yaml
+device:
+  type: petkit
+  device_id: ...
+  entity: sensor.your_feeder_raw_distribution_data
+```
+
+## Native status keys
+
+The integration reports live feed results in a short state on
+`raw_distribution_data`. The card maps these to
+[canonical statuses](../README.md#display-customization) and to the native keys
+below for finer-grained `display` overrides.
+
+| Native key               | Meaning                                        | Default canonical mapping |
+| ------------------------ | ---------------------------------------------- | ------------------------- |
+| `dispensed_schedule`     | Fed on schedule                                | `dispensed`               |
+| `dispensed_remote`       | Fed from the app                               | `dispensed`               |
+| `dispensed_local`        | Fed from the feeder                            | `dispensed`               |
+| `cancelled`              | Will be skipped for today.                     | `skipped`                 |
+| `skipped_surpluscontrol` | Skipped because bowl was full (SurplusControl) | `skipped`                 |
+
+Override any of these through the card's `display` map:
+
+```yaml
+display:
+  cancelled:
+    icon: mdi:close-circle
+```
+
+See the [Display customization](../README.md#display-customization) section  
+of the main README for the full overrides API.
