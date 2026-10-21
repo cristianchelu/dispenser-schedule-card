@@ -11,6 +11,7 @@
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
+  - [Finding your device ID](#finding-your-device-id)
 - [Supported devices](#supported-devices)
 - [Card configuration](#card-configuration)
   - [Alternate units](#alternate_unit-options)
@@ -54,11 +55,31 @@ https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resourc
 type: custom:dispenser-schedule-card
 device:
   type: petlibro
-  device_id: abc123def456...
+  device_id: 0123456789abcdef0123456789abcdef # see "Finding your device ID"
 ```
 
 Each device family has its own minimal configuration. Pick yours from
 [Supported devices](#supported-devices) below.
+
+### Finding your device ID
+
+Some device types need `device_id`. This is the **Home Assistant** device ID:
+a 32-character hex string that Home Assistant assigns to the device. It is
+**not** the ID, serial number or MAC address the manufacturer's app or the
+integration shows for the feeder.
+
+To find it:
+
+1. Go to **Settings → Devices & services → Devices** and open your feeder.
+2. Copy the last part of the page URL:
+
+   ```text
+   http://homeassistant.local:8123/config/devices/device/0123456789abcdef0123456789abcdef
+                                                         └───────── device_id ──────────┘
+   ```
+
+Alternatively, paste `{{ device_id('sensor.your_feeder_entity') }}` into
+**Developer tools → Template**, using any entity of the feeder.
 
 ## Supported devices
 
@@ -67,7 +88,7 @@ Each device family has its own minimal configuration. Pick yours from
 | Xiaomi Smart Pet Feeder[^1] | `xiaomi-smart-feeder`   | [esphome-miot](https://github.com/dhewg/esphome-miot/blob/main/config/mmgg.feeder.fi1.yaml) | [Full control 📖](docs/xiaomi-smart-feeder.md)   |
 | Xiaomi Smart Pet Feeder 2   | `xiaomi-smart-feeder-2` | [Xiaomi Home (official)](https://github.com/XiaoMi/ha_xiaomi_home)                          | [Full control 📖](docs/xiaomi-smart-feeder-2.md) |
 | PetLibro dry feeders        | `petlibro`              | [jjjonesjr33/petlibro](https://github.com/jjjonesjr33/petlibro)                             | [Full control 📖](docs/petlibro.md)              |
-| PetKit dry feeders          | `custom`                | [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)       | [Display only 📖](docs/petkit.md)                |
+| PetKit dry feeders          | `petkit`                | [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)       | [Full control 📖](docs/petkit.md)                |
 | DIY / Others                | `custom`                | Any ([Example ESPHome config](docs/dispenser-blueprint.yaml))                               | [Custom :) 📖](docs/custom.md)                   |
 
 [^1]: `mmgg.feeder.fi1`, only when modified with ESPHome firmware.

@@ -22,20 +22,25 @@ That path does not include the weekly or dual-hopper editor.
 type: custom:dispenser-schedule-card
 device:
   type: petkit
-  device_id: abc123def456...
+  device_id: 0123456789abcdef0123456789abcdef
 ```
 
-The card needs your Home Assistant **device id** (see
-[Configuration](#configuration)) and finds the schedule sensor automatically —
-see [Discovery](#discovery) if that fails.
+`device_id` is the **Home Assistant** device ID of the feeder — the last part
+of the URL when you open it under **Settings → Devices & services → Devices**.
+It is _not_ the PetKit device ID or serial number shown in the PetKit app or
+on the device page. See
+[Finding your device ID](../README.md#finding-your-device-id).
+
+The card finds the schedule sensor automatically — see
+[Discovery](#discovery) if that fails.
 
 ## Configuration
 
-| Name        | Required     | Description                                                                                                                                                                               |
-| ----------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`      | **Required** | Must be `petkit`.                                                                                                                                                                         |
-| `device_id` | **Required** | Home Assistant device id (trailing part of the device’s settings URL, e.g. `/config/devices/device/abc123def456…`). Without it, the card cannot find the schedule sensor or save changes. |
-| `entity`    | _Optional_   | Override the auto-discovered `raw_distribution_data` sensor if discovery fails.                                                                                                           |
+| Name        | Required     | Description                                                                                                                                                                             |
+| ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`      | **Required** | Must be `petkit`.                                                                                                                                                                       |
+| `device_id` | **Required** | Home Assistant device ID, not the PetKit one — see [Finding your device ID](../README.md#finding-your-device-id). Without it, the card cannot find the schedule sensor or save changes. |
+| `entity`    | _Optional_   | Override the auto-discovered `raw_distribution_data` sensor if discovery fails.                                                                                                         |
 
 ## Capabilities
 
