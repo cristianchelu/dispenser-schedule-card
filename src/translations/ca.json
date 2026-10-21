@@ -49,5 +49,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Dispositiu",
+      "display": "Visualització"
+    },
+    "group": {
+      "overrides": "Substitueix les entitats detectades",
+      "actions": "Accions de servei",
+      "primary_unit": "Unitat principal",
+      "alternate_unit": "Unitat alternativa",
+      "plural_forms": "Formes del plural",
+      "display": "Aparença dels estats"
+    },
+    "field": {
+      "device_type": "Tipus de dispositiu",
+      "device_id": "Dispositiu",
+      "entity": "Entitat de l'horari",
+      "switch": "Interruptor de l'horari",
+      "add": "Afegeix una entrada",
+      "edit": "Edita una entrada",
+      "remove": "Elimina una entrada",
+      "toggle": "Commuta una entrada",
+      "max_entries": "Màxim d'entrades",
+      "min_amount": "Quantitat mínima",
+      "max_amount": "Quantitat màxima",
+      "step_amount": "Increment de quantitat",
+      "status_pattern": "Patró d'estat (regex)",
+      "status_map": "Mapa d'estats (codi -> estat)",
+      "editable": "Edició",
+      "unit": "Unitat",
+      "conversion_factor": "Factor de conversió",
+      "approximate": "Aproximat (~)",
+      "icon": "Icona",
+      "color": "Color",
+      "label": "Etiqueta"
+    },
+    "editable": {
+      "always": "Sempre",
+      "toggle": "Commuta",
+      "never": "Mai"
+    },
+    "plural": {
+      "zero": "Zero",
+      "one": "U",
+      "two": "Dos",
+      "few": "Pocs",
+      "many": "Molts"
+    },
+    "help": {
+      "documentation": "Documentació",
+      "unit_placeholder": "Per defecte del dispositiu",
+      "plural_forms": "Algunes llengües canvien la paraula segons la quantitat. Aquestes són les formes que fa servir el {language}; les buides fan servir la unitat de dalt.",
+      "plural_forms_docs": "Com funciona el plural",
+      "color_default": "Per defecte: {value}"
+    },
+    "alert": {
+      "compound_switch": "L'interruptor de l'horari fa servir la forma composta, només disponible en YAML, i es manté tal com és.",
+      "unknown_device": "El tipus de dispositiu \"{type}\" només es pot configurar en YAML."
+    }
   }
 }

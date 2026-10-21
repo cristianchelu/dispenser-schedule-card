@@ -41,5 +41,65 @@
   },
   "errors": {
     "unresolved_field": "Kon {field} niet automatisch oplossen. Geef het handmatig op."
+  },
+  "editor": {
+    "section": {
+      "device": "Apparaat",
+      "display": "Weergave"
+    },
+    "group": {
+      "overrides": "Gevonden entiteiten overschrijven",
+      "actions": "Service-acties",
+      "primary_unit": "Primaire eenheid",
+      "alternate_unit": "Alternatieve eenheid",
+      "plural_forms": "Meervoudsvormen",
+      "display": "Weergave van statussen"
+    },
+    "field": {
+      "device_type": "Apparaattype",
+      "device_id": "Apparaat",
+      "entity": "Schema-entiteit",
+      "switch": "Schema aan/uit-schakelaar",
+      "add": "Item toevoegen",
+      "edit": "Item bewerken",
+      "remove": "Item verwijderen",
+      "toggle": "Item schakelen",
+      "max_entries": "Max. aantal items",
+      "min_amount": "Min. hoeveelheid",
+      "max_amount": "Max. hoeveelheid",
+      "step_amount": "Stapgrootte hoeveelheid",
+      "status_pattern": "Statuspatroon (regex)",
+      "status_map": "Statustoewijzing (code -> status)",
+      "editable": "Bewerken",
+      "unit": "Eenheid",
+      "conversion_factor": "Omrekeningsfactor",
+      "approximate": "Ongeveer (~)",
+      "icon": "Pictogram",
+      "color": "Kleur",
+      "label": "Label"
+    },
+    "editable": {
+      "always": "Altijd",
+      "toggle": "Schakelen",
+      "never": "Nooit"
+    },
+    "plural": {
+      "zero": "Nul",
+      "one": "Eén",
+      "two": "Twee",
+      "few": "Enkele",
+      "many": "Veel"
+    },
+    "help": {
+      "documentation": "Documentatie",
+      "unit_placeholder": "Standaard van het apparaat",
+      "plural_forms": "Sommige talen veranderen het woord afhankelijk van het aantal. Dit zijn de vormen die het {language} gebruikt; lege velden gebruiken de eenheid hierboven.",
+      "plural_forms_docs": "Hoe meervoudsvormen werken",
+      "color_default": "Standaard: {value}"
+    },
+    "alert": {
+      "compound_switch": "De schemaschakelaar gebruikt de samengestelde vorm die alleen in YAML beschikbaar is en blijft ongewijzigd.",
+      "unknown_device": "Apparaattype \"{type}\" kan alleen in YAML worden geconfigureerd."
+    }
   }
 }

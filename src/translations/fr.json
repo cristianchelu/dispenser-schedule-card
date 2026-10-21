@@ -49,5 +49,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Appareil",
+      "display": "Affichage"
+    },
+    "group": {
+      "overrides": "Remplacer les entités détectées",
+      "actions": "Actions de service",
+      "primary_unit": "Unité principale",
+      "alternate_unit": "Unité secondaire",
+      "plural_forms": "Formes du pluriel",
+      "display": "Apparence des statuts"
+    },
+    "field": {
+      "device_type": "Type d'appareil",
+      "device_id": "Appareil",
+      "entity": "Entité de l'horaire",
+      "switch": "Interrupteur de l'horaire",
+      "add": "Ajouter une entrée",
+      "edit": "Modifier une entrée",
+      "remove": "Supprimer une entrée",
+      "toggle": "Basculer une entrée",
+      "max_entries": "Nombre max. d'entrées",
+      "min_amount": "Quantité min.",
+      "max_amount": "Quantité max.",
+      "step_amount": "Pas de quantité",
+      "status_pattern": "Modèle de statut (regex)",
+      "status_map": "Correspondance des statuts (code -> statut)",
+      "editable": "Modification",
+      "unit": "Unité",
+      "conversion_factor": "Facteur de conversion",
+      "approximate": "Approximatif (~)",
+      "icon": "Icône",
+      "color": "Couleur",
+      "label": "Libellé"
+    },
+    "editable": {
+      "always": "Toujours",
+      "toggle": "Basculer",
+      "never": "Jamais"
+    },
+    "plural": {
+      "zero": "Zéro",
+      "one": "Un",
+      "two": "Deux",
+      "few": "Quelques",
+      "many": "Beaucoup"
+    },
+    "help": {
+      "documentation": "Documentation",
+      "unit_placeholder": "Valeur par défaut de l'appareil",
+      "plural_forms": "Certaines langues changent le mot selon la quantité. Voici les formes utilisées en {language} ; les champs vides utilisent l'unité ci-dessus.",
+      "plural_forms_docs": "Fonctionnement du pluriel",
+      "color_default": "Par défaut : {value}"
+    },
+    "alert": {
+      "compound_switch": "L'interrupteur de l'horaire utilise la forme composée, disponible uniquement en YAML, et reste inchangé.",
+      "unknown_device": "Le type d'appareil \"{type}\" ne peut être configuré qu'en YAML."
+    }
   }
 }

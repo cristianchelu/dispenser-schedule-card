@@ -48,5 +48,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Cihaz",
+      "display": "Görünüm"
+    },
+    "group": {
+      "overrides": "Bulunan varlıkları geçersiz kıl",
+      "actions": "Servis eylemleri",
+      "primary_unit": "Ana birim",
+      "alternate_unit": "Alternatif birim",
+      "plural_forms": "Çoğul biçimleri",
+      "display": "Durum görünümü"
+    },
+    "field": {
+      "device_type": "Cihaz türü",
+      "device_id": "Cihaz",
+      "entity": "Program varlığı",
+      "switch": "Program açma/kapama anahtarı",
+      "add": "Kayıt ekle",
+      "edit": "Kaydı düzenle",
+      "remove": "Kaydı sil",
+      "toggle": "Kaydı aç/kapat",
+      "max_entries": "Maks. kayıt",
+      "min_amount": "Min. miktar",
+      "max_amount": "Maks. miktar",
+      "step_amount": "Miktar adımı",
+      "status_pattern": "Durum kalıbı (regex)",
+      "status_map": "Durum eşlemesi (kod -> durum)",
+      "editable": "Düzenleme",
+      "unit": "Birim",
+      "conversion_factor": "Dönüşüm katsayısı",
+      "approximate": "Yaklaşık (~)",
+      "icon": "Simge",
+      "color": "Renk",
+      "label": "Etiket"
+    },
+    "editable": {
+      "always": "Her zaman",
+      "toggle": "Aç/kapat",
+      "never": "Asla"
+    },
+    "plural": {
+      "zero": "Sıfır",
+      "one": "Bir",
+      "two": "İki",
+      "few": "Birkaç",
+      "many": "Çok"
+    },
+    "help": {
+      "documentation": "Belgeler",
+      "unit_placeholder": "Cihaz varsayılanı",
+      "plural_forms": "Bazı diller kelimeyi sayıya göre değiştirir. Bunlar {language} dilinin kullandığı biçimlerdir; boş olanlar yukarıdaki birimi kullanır.",
+      "plural_forms_docs": "Çoğul biçimleri nasıl çalışır",
+      "color_default": "Varsayılan: {value}"
+    },
+    "alert": {
+      "compound_switch": "Program anahtarı yalnızca YAML'da kullanılabilen birleşik biçimi kullanıyor ve olduğu gibi korunuyor.",
+      "unknown_device": "\"{type}\" cihaz türü yalnızca YAML ile yapılandırılabilir."
+    }
   }
 }

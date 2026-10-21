@@ -53,40 +53,63 @@
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
   },
   "editor": {
-    "device_section": "Device",
-    "device_type": "Device type",
-    "documentation": "Documentation",
-    "device_id": "Device",
-    "overrides": "Override discovered entities",
-    "entity": "Schedule entity",
-    "switch": "Schedule on/off switch",
-    "actions": "Service actions",
-    "add": "Add entry",
-    "edit": "Edit entry",
-    "remove": "Remove entry",
-    "toggle": "Toggle entry",
-    "max_entries": "Max entries",
-    "min_amount": "Min amount",
-    "max_amount": "Max amount",
-    "step_amount": "Amount step",
-    "status_pattern": "Status pattern (regex)",
-    "status_map": "Status map (code -> status)",
-    "compound_switch": "The schedule switch uses the YAML-only compound form and is kept as-is.",
-    "unknown_device": "Device type \"{type}\" can only be configured in YAML.",
-    "display_section": "Display",
-    "editable": "Editing",
-    "editable_toggle": "With Edit button",
-    "editable_always": "Always",
-    "editable_never": "Never",
-    "unit_of_measurement": "Unit",
-    "unit_of_measurement_one": "Unit (singular)",
-    "alternate_unit": "Alternate unit",
-    "conversion_factor": "Conversion factor",
-    "approximate": "Approximate (~)",
-    "display": "Status appearance",
-    "icon": "Icon",
-    "color": "Color",
-    "label": "Label",
-    "default": "Default: {value}"
+    "section": {
+      "device": "Device",
+      "display": "Display"
+    },
+    "group": {
+      "overrides": "Override discovered entities",
+      "actions": "Service actions",
+      "primary_unit": "Primary unit",
+      "alternate_unit": "Alternate unit",
+      "plural_forms": "Plural forms",
+      "display": "Status appearance"
+    },
+    "field": {
+      "device_type": "Device type",
+      "device_id": "Device",
+      "entity": "Schedule entity",
+      "switch": "Schedule on/off switch",
+      "add": "Add entry",
+      "edit": "Edit entry",
+      "remove": "Remove entry",
+      "toggle": "Toggle entry",
+      "max_entries": "Max entries",
+      "min_amount": "Min amount",
+      "max_amount": "Max amount",
+      "step_amount": "Amount step",
+      "status_pattern": "Status pattern (regex)",
+      "status_map": "Status map (code -> status)",
+      "editable": "Editing",
+      "unit": "Unit",
+      "conversion_factor": "Conversion factor",
+      "approximate": "Approximate (~)",
+      "icon": "Icon",
+      "color": "Color",
+      "label": "Label"
+    },
+    "editable": {
+      "always": "Always",
+      "toggle": "Toggle",
+      "never": "Never"
+    },
+    "plural": {
+      "zero": "Zero",
+      "one": "One",
+      "two": "Two",
+      "few": "Few",
+      "many": "Many"
+    },
+    "help": {
+      "documentation": "Documentation",
+      "unit_placeholder": "Device default",
+      "plural_forms": "Some languages change the word depending on the count. These are the forms {language} uses; empty ones fall back to the unit above.",
+      "plural_forms_docs": "How pluralization works",
+      "color_default": "Default: {value}"
+    },
+    "alert": {
+      "compound_switch": "The schedule switch uses the YAML-only compound form and is kept as-is.",
+      "unknown_device": "Device type \"{type}\" can only be configured in YAML."
+    }
   }
 }

@@ -49,5 +49,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Dispozitiv",
+      "display": "Afișare"
+    },
+    "group": {
+      "overrides": "Înlocuiește entitățile detectate",
+      "actions": "Acțiuni de serviciu",
+      "primary_unit": "Unitate principală",
+      "alternate_unit": "Unitate alternativă",
+      "plural_forms": "Forme de plural",
+      "display": "Aspectul stărilor"
+    },
+    "field": {
+      "device_type": "Tip de dispozitiv",
+      "device_id": "Dispozitiv",
+      "entity": "Entitatea orarului",
+      "switch": "Comutatorul orarului",
+      "add": "Adăugare intrare",
+      "edit": "Editare intrare",
+      "remove": "Ștergere intrare",
+      "toggle": "Comutare intrare",
+      "max_entries": "Număr maxim de intrări",
+      "min_amount": "Cantitate minimă",
+      "max_amount": "Cantitate maximă",
+      "step_amount": "Pas cantitate",
+      "status_pattern": "Model de stare (regex)",
+      "status_map": "Corespondență stări (cod -> stare)",
+      "editable": "Editare",
+      "unit": "Unitate",
+      "conversion_factor": "Factor de conversie",
+      "approximate": "Aproximativ (~)",
+      "icon": "Pictogramă",
+      "color": "Culoare",
+      "label": "Etichetă"
+    },
+    "editable": {
+      "always": "Mereu",
+      "toggle": "Comutare",
+      "never": "Niciodată"
+    },
+    "plural": {
+      "zero": "Zero",
+      "one": "Unu",
+      "two": "Doi",
+      "few": "Câteva",
+      "many": "Multe"
+    },
+    "help": {
+      "documentation": "Documentație",
+      "unit_placeholder": "Implicită a dispozitivului",
+      "plural_forms": "Unele limbi schimbă cuvântul în funcție de număr. Acestea sunt formele folosite în {language}; cele goale folosesc unitatea de mai sus.",
+      "plural_forms_docs": "Cum funcționează pluralul",
+      "color_default": "Implicit: {value}"
+    },
+    "alert": {
+      "compound_switch": "Comutatorul orarului folosește forma compusă, disponibilă doar în YAML, și este păstrat ca atare.",
+      "unknown_device": "Tipul de dispozitiv „{type}” poate fi configurat doar în YAML."
+    }
   }
 }

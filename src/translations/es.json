@@ -48,5 +48,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Dispositivo",
+      "display": "Visualización"
+    },
+    "group": {
+      "overrides": "Sustituir las entidades detectadas",
+      "actions": "Acciones de servicio",
+      "primary_unit": "Unidad principal",
+      "alternate_unit": "Unidad alternativa",
+      "plural_forms": "Formas del plural",
+      "display": "Apariencia de los estados"
+    },
+    "field": {
+      "device_type": "Tipo de dispositivo",
+      "device_id": "Dispositivo",
+      "entity": "Entidad del horario",
+      "switch": "Interruptor del horario",
+      "add": "Añadir entrada",
+      "edit": "Editar entrada",
+      "remove": "Eliminar entrada",
+      "toggle": "Alternar entrada",
+      "max_entries": "Máximo de entradas",
+      "min_amount": "Cantidad mínima",
+      "max_amount": "Cantidad máxima",
+      "step_amount": "Incremento de cantidad",
+      "status_pattern": "Patrón de estado (regex)",
+      "status_map": "Mapa de estados (código -> estado)",
+      "editable": "Edición",
+      "unit": "Unidad",
+      "conversion_factor": "Factor de conversión",
+      "approximate": "Aproximado (~)",
+      "icon": "Icono",
+      "color": "Color",
+      "label": "Etiqueta"
+    },
+    "editable": {
+      "always": "Siempre",
+      "toggle": "Alternar",
+      "never": "Nunca"
+    },
+    "plural": {
+      "zero": "Cero",
+      "one": "Uno",
+      "two": "Dos",
+      "few": "Pocos",
+      "many": "Muchos"
+    },
+    "help": {
+      "documentation": "Documentación",
+      "unit_placeholder": "Predeterminada del dispositivo",
+      "plural_forms": "Algunos idiomas cambian la palabra según la cantidad. Estas son las formas que usa el {language}; las vacías usan la unidad de arriba.",
+      "plural_forms_docs": "Cómo funciona el plural",
+      "color_default": "Predeterminado: {value}"
+    },
+    "alert": {
+      "compound_switch": "El interruptor del horario usa la forma compuesta, solo disponible en YAML, y se mantiene tal cual.",
+      "unknown_device": "El tipo de dispositivo \"{type}\" solo se puede configurar en YAML."
+    }
   }
 }

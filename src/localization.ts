@@ -11,9 +11,7 @@ import * as ro from "./translations/ro.json";
 import * as tr from "./translations/tr.json";
 
 type Translations = {
-  [key: string]: {
-    [key: string]: string;
-  };
+  [key: string]: string | Translations;
 };
 
 const languages: Record<string, Translations> = {
@@ -30,12 +28,25 @@ const languages: Record<string, Translations> = {
 
 const DEFAULT_LANG = "en";
 
+/** Walks a dotted key path, e.g. `editor.field.entity`. */
+function lookup(
+  translations: Translations | undefined,
+  path: string[]
+): string | undefined {
+  let node: string | Translations | undefined = translations;
+  for (const part of path) {
+    if (typeof node !== "object") return;
+    node = node[part];
+  }
+  return typeof node === "string" ? node : undefined;
+}
+
 export default function localize(
   str: string,
   search?: string,
   replace?: string
 ): string | undefined {
-  const [section, key] = str.toLowerCase().split(".");
+  const path = str.toLowerCase().split(".");
 
   let langStored: string | null = null;
 
@@ -49,16 +60,8 @@ export default function localize(
     .replace(/['"]+/g, "")
     .replace("-", "_");
 
-  let translated;
-
-  try {
-    translated = languages[lang][section][key];
-  } catch (e) {
-    translated = languages[DEFAULT_LANG][section][key];
-  }
-  if (translated === undefined) {
-    translated = languages[DEFAULT_LANG][section][key];
-  }
+  let translated =
+    lookup(languages[lang], path) ?? lookup(languages[DEFAULT_LANG], path);
   if (translated === undefined) {
     return;
   }

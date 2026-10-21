@@ -49,5 +49,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Dispositivo",
+      "display": "Visualizzazione"
+    },
+    "group": {
+      "overrides": "Sostituisci le entità rilevate",
+      "actions": "Azioni di servizio",
+      "primary_unit": "Unità principale",
+      "alternate_unit": "Unità alternativa",
+      "plural_forms": "Forme plurali",
+      "display": "Aspetto degli stati"
+    },
+    "field": {
+      "device_type": "Tipo di dispositivo",
+      "device_id": "Dispositivo",
+      "entity": "Entità dell'orario",
+      "switch": "Interruttore dell'orario",
+      "add": "Aggiungi voce",
+      "edit": "Modifica voce",
+      "remove": "Rimuovi voce",
+      "toggle": "Commuta voce",
+      "max_entries": "Numero massimo di voci",
+      "min_amount": "Quantità minima",
+      "max_amount": "Quantità massima",
+      "step_amount": "Incremento quantità",
+      "status_pattern": "Modello di stato (regex)",
+      "status_map": "Mappa degli stati (codice -> stato)",
+      "editable": "Modifica",
+      "unit": "Unità",
+      "conversion_factor": "Fattore di conversione",
+      "approximate": "Approssimato (~)",
+      "icon": "Icona",
+      "color": "Colore",
+      "label": "Etichetta"
+    },
+    "editable": {
+      "always": "Sempre",
+      "toggle": "Commuta",
+      "never": "Mai"
+    },
+    "plural": {
+      "zero": "Zero",
+      "one": "Uno",
+      "two": "Due",
+      "few": "Pochi",
+      "many": "Molti"
+    },
+    "help": {
+      "documentation": "Documentazione",
+      "unit_placeholder": "Predefinita del dispositivo",
+      "plural_forms": "Alcune lingue cambiano la parola in base alla quantità. Queste sono le forme usate in {language}; quelle vuote usano l'unità qui sopra.",
+      "plural_forms_docs": "Come funziona il plurale",
+      "color_default": "Predefinito: {value}"
+    },
+    "alert": {
+      "compound_switch": "L'interruttore dell'orario usa la forma composta, disponibile solo in YAML, e viene mantenuto così com'è.",
+      "unknown_device": "Il tipo di dispositivo \"{type}\" può essere configurato solo in YAML."
+    }
   }
 }

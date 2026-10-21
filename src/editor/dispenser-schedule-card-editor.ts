@@ -1,11 +1,10 @@
-import { css, html, LitElement, nothing } from "lit";
+import { css, html, LitElement, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators/custom-element.js";
 
 import type { DeviceConfig } from "../devices";
 import {
   DefaultDisplayConfig,
   type DispenserScheduleCardConfig,
-  type DisplayConfig,
 } from "../types/config";
 import type { HomeAssistant } from "../types/ha";
 import localize from "../localization";
@@ -22,19 +21,18 @@ type UnitConfig = NonNullable<
   DispenserScheduleCardConfig["unit_of_measurement"]
 >;
 
-interface UnitFields {
-  unit_of_measurement?: string;
-  unit_of_measurement_one?: string;
-}
+type AlternateUnitConfig = NonNullable<
+  DispenserScheduleCardConfig["alternate_unit"]
+>;
 
-interface DisplayFormData extends UnitFields {
-  editable: NonNullable<DispenserScheduleCardConfig["editable"]>;
-  alternate_unit?: UnitFields & {
-    conversion_factor?: number;
-    approximate?: boolean;
-  };
-  display?: DisplayConfig;
-}
+/** A unit as form data: the plain unit is `other`, plus any plural forms. */
+type UnitForms = Partial<Record<Intl.LDMLPluralRule, string>>;
+
+/** `other` is edited as the unit itself, so it is not a "plural form". */
+const PLURAL_FORMS = ["zero", "one", "two", "few", "many"] as const;
+
+const PLURALIZATION_DOCS =
+  "https://github.com/cristianchelu/dispenser-schedule-card#pluralization";
 
 /** Drops empty strings, nullish values and objects left empty by that. */
 function compact<T>(value: T): T {
@@ -53,35 +51,40 @@ function compact<T>(value: T): T {
   return out as T;
 }
 
-function toUnitFields(unit: UnitConfig | undefined): UnitFields {
-  if (typeof unit === "object" && unit !== null) {
-    return {
-      unit_of_measurement: unit.other,
-      unit_of_measurement_one: unit.one,
-    };
-  }
-  return { unit_of_measurement: unit };
+function toUnitForms(unit: UnitConfig | undefined): UnitForms {
+  if (typeof unit === "object" && unit !== null) return { ...unit };
+  return unit ? { other: unit } : {};
 }
 
-/**
- * Collapses to a plain string when only `other` is set. Plural categories
- * the editor does not show (`few`, `many`, ...) are kept from `previous`.
- */
-function fromUnitFields(
-  fields: UnitFields | undefined,
-  previous: UnitConfig | undefined
-): UnitConfig | undefined {
-  const kept =
-    typeof previous === "object" && previous !== null ? previous : {};
-  const unit = compact({
-    ...kept,
-    one: fields?.unit_of_measurement_one,
-    other: fields?.unit_of_measurement,
-  });
+/** Collapses to a plain string when only `other` is set. */
+function fromUnitForms(forms: UnitForms): UnitConfig | undefined {
+  const unit = compact(forms);
   const keys = Object.keys(unit);
   if (keys.length === 0) return undefined;
   if (keys.length === 1 && unit.other) return unit.other;
   return unit as UnitConfig;
+}
+
+/** The first few whole numbers that use each plural form, e.g. `1, 21, 31`. */
+function pluralExamples(language: string): Map<Intl.LDMLPluralRule, string> {
+  const examples = new Map<Intl.LDMLPluralRule, number[]>();
+  let rules: Intl.PluralRules;
+  try {
+    rules = new Intl.PluralRules(language);
+  } catch (_error) {
+    return new Map();
+  }
+  for (let n = 0; n <= 200; n++) {
+    const form = rules.select(n);
+    const list = examples.get(form) ?? [];
+    if (list.length < 4) examples.set(form, [...list, n]);
+  }
+  return new Map(
+    [...examples].map(([form, list]) => [
+      form,
+      list.length > 3 ? `${list.slice(0, 3).join(", ")}, …` : list.join(", "),
+    ])
+  );
 }
 
 const t = (key: string, search?: string, replace?: string) =>
@@ -129,7 +132,11 @@ export class DispenserScheduleCardEditor extends LitElement {
   }
 
   private _computeLabel = (schema: HaFormSchema) =>
-    "title" in schema && schema.title ? schema.title : t(schema.name);
+    "title" in schema && schema.title
+      ? schema.title
+      : t(
+          `${"type" in schema && schema.type === "expandable" ? "group" : "field"}.${schema.name}`
+        );
 
   private _computeHelper = (schema: HaFormSchema) =>
     "helper" in schema ? schema.helper : undefined;
@@ -191,53 +198,61 @@ export class DispenserScheduleCardEditor extends LitElement {
     );
   }
 
-  private _displaySchema(): HaFormSchema[] {
-    const type = this._config?.device?.type;
-    const nativeDefaults = isKnownDeviceType(type)
-      ? DEVICE_EDITORS[type].nativeStatusDefaults
-      : undefined;
-    const unitGrid: HaFormSchema = {
-      type: "grid",
-      name: "",
-      schema: [
-        { name: "unit_of_measurement", selector: { text: {} } },
-        { name: "unit_of_measurement_one", selector: { text: {} } },
-      ],
-    };
+  private _editableSchema(): HaFormSchema[] {
     return [
       {
         name: "editable",
         required: true,
         selector: {
-          select: {
-            mode: "dropdown",
-            options: (["toggle", "always", "never"] as const).map((value) => ({
+          button_toggle: {
+            options: (["always", "toggle", "never"] as const).map((value) => ({
               value,
-              label: t(`editable_${value}`),
+              label: t(`editable.${value}`),
             })),
           },
         },
       },
-      unitGrid,
-      {
-        type: "expandable",
-        name: "alternate_unit",
-        icon: "mdi:scale-balance",
-        schema: [
-          unitGrid,
-          {
-            type: "grid",
-            name: "",
-            schema: [
-              {
-                name: "conversion_factor",
-                selector: { number: { mode: "box", step: "any" } },
-              },
-              { name: "approximate", selector: { boolean: {} } },
-            ],
-          },
-        ],
-      },
+    ];
+  }
+
+  private _editableChanged(ev: CustomEvent) {
+    const config = this._config;
+    if (!config) return;
+    const { editable } = ev.detail.value;
+    this._emit(
+      compact({
+        ...config,
+        // `toggle` is the default; don't write it unless it was already there.
+        editable:
+          editable === "toggle" && !config.editable ? undefined : editable,
+      })
+    );
+  }
+
+  private _unitChanged(unit: UnitConfig | undefined) {
+    if (!this._config) return;
+    this._emit(compact({ ...this._config, unit_of_measurement: unit }));
+  }
+
+  private _alternateChanged(alternate: Partial<AlternateUnitConfig>) {
+    if (!this._config) return;
+    this._emit(
+      compact({
+        ...this._config,
+        alternate_unit: compact({
+          ...alternate,
+          approximate: alternate.approximate || undefined,
+        }) as AlternateUnitConfig,
+      })
+    );
+  }
+
+  private _statusSchema(): HaFormSchema[] {
+    const type = this._config?.device?.type;
+    const nativeDefaults = isKnownDeviceType(type)
+      ? DEVICE_EDITORS[type].nativeStatusDefaults
+      : undefined;
+    return [
       {
         type: "expandable",
         name: "display",
@@ -263,7 +278,7 @@ export class DispenserScheduleCardEditor extends LitElement {
                     name: "color",
                     selector: { text: {} },
                     helper: defaults.color
-                      ? t("default", "{value}", defaults.color)
+                      ? t("help.color_default", "{value}", defaults.color)
                       : undefined,
                   },
                 ],
@@ -276,56 +291,169 @@ export class DispenserScheduleCardEditor extends LitElement {
     ];
   }
 
-  private _displayData(): DisplayFormData {
-    const config = this._config!;
-    return {
-      editable: config.editable ?? "toggle",
-      ...toUnitFields(config.unit_of_measurement),
-      alternate_unit: config.alternate_unit && {
-        ...toUnitFields(config.alternate_unit.unit_of_measurement),
-        conversion_factor: config.alternate_unit.conversion_factor,
-        approximate: config.alternate_unit.approximate,
-      },
-      display: config.display,
-    };
+  private _statusChanged(ev: CustomEvent) {
+    if (!this._config) return;
+    this._emit(compact({ ...this._config, display: ev.detail.value.display }));
   }
 
-  private _displayChanged(ev: CustomEvent) {
-    const config = this._config;
-    if (!config) return;
-    const value: DisplayFormData = ev.detail.value;
+  // --- Units ---
 
-    const alternate = compact({
-      unit_of_measurement: fromUnitFields(
-        value.alternate_unit,
-        config.alternate_unit?.unit_of_measurement
-      ),
-      conversion_factor: value.alternate_unit?.conversion_factor,
-      approximate: value.alternate_unit?.approximate || undefined,
-    });
+  /**
+   * The plural forms worth offering: those the user's language uses, plus
+   * any already configured (e.g. written for another language).
+   */
+  private _pluralForms(forms: UnitForms): Intl.LDMLPluralRule[] {
+    let used: string[] = [];
+    try {
+      used = new Intl.PluralRules(this.hass?.locale?.language).resolvedOptions()
+        .pluralCategories;
+    } catch (_error) {
+      // Unknown language: only show what is configured.
+    }
+    return PLURAL_FORMS.filter((form) => used.includes(form) || forms[form]);
+  }
 
-    const {
-      editable: _editable,
-      unit_of_measurement: _unit,
-      alternate_unit: _alternate,
-      display: _display,
-      ...rest
-    } = config;
+  private _languageName(): string {
+    const language = this.hass?.locale?.language ?? "en";
+    try {
+      return (
+        new Intl.DisplayNames([language], { type: "language" }).of(language) ??
+        language
+      );
+    } catch (_error) {
+      return language;
+    }
+  }
 
-    this._emit(
-      compact({
-        ...rest,
-        // `toggle` is the default; don't write it unless it was already there.
-        editable:
-          value.editable === "toggle" && !config.editable
-            ? undefined
-            : value.editable,
-        unit_of_measurement: fromUnitFields(value, config.unit_of_measurement),
-        alternate_unit:
-          alternate as DispenserScheduleCardConfig["alternate_unit"],
-        display: value.display,
-      })
-    );
+  private _renderPanel(
+    header: string,
+    icon: string,
+    content: TemplateResult,
+    secondary?: string
+  ) {
+    return html`
+      <ha-expansion-panel outlined .header=${header} .secondary=${secondary}>
+        <ha-icon slot="leading-icon" .icon=${icon}></ha-icon>
+        <div class="content">${content}</div>
+      </ha-expansion-panel>
+    `;
+  }
+
+  /** The unit field and, folded away, its plural forms. */
+  private _renderUnitFields(
+    unit: UnitConfig | undefined,
+    placeholder: string | undefined,
+    onChange: (unit: UnitConfig | undefined) => void
+  ) {
+    const forms = toUnitForms(unit);
+    const pluralForms = this._pluralForms(forms);
+    const examples = pluralExamples(this.hass?.locale?.language ?? "en");
+    const changed = (ev: CustomEvent) => {
+      ev.stopPropagation();
+      onChange(fromUnitForms({ ...forms, ...ev.detail.value }));
+    };
+    const pluralLabel = (schema: HaFormSchema) => {
+      const form = schema.name as Intl.LDMLPluralRule;
+      const example = examples.get(form);
+      return `${t(`plural.${form}`)}${example ? ` (${example})` : ""}`;
+    };
+    return html`
+      <ha-form
+        .hass=${this.hass}
+        .data=${forms}
+        .schema=${[
+          {
+            name: "other",
+            selector: { text: { placeholder } },
+          },
+        ]}
+        .computeLabel=${() => t("field.unit")}
+        @value-changed=${changed}
+      ></ha-form>
+      ${pluralForms.length
+        ? this._renderPanel(
+            t("group.plural_forms"),
+            "mdi:format-letter-case",
+            html`
+              <p>
+                ${t("help.plural_forms", "{language}", this._languageName())}
+                <a href=${PLURALIZATION_DOCS} target="_blank" rel="noreferrer">
+                  ${t("help.plural_forms_docs")}
+                </a>
+              </p>
+              <ha-form
+                .hass=${this.hass}
+                .data=${forms}
+                .schema=${pluralForms.map((name) => ({
+                  name,
+                  selector: { text: { placeholder: forms.other } },
+                }))}
+                .computeLabel=${pluralLabel}
+                @value-changed=${changed}
+              ></ha-form>
+            `
+          )
+        : nothing}
+    `;
+  }
+
+  private _renderUnits() {
+    const config = this._config!;
+    const alternate: Partial<AlternateUnitConfig> = config.alternate_unit ?? {};
+    const primaryForms = toUnitForms(config.unit_of_measurement);
+    const alternateForms = toUnitForms(alternate.unit_of_measurement);
+    return html`
+      ${this._renderPanel(
+        t("group.primary_unit"),
+        "mdi:counter",
+        this._renderUnitFields(
+          config.unit_of_measurement,
+          t("help.unit_placeholder"),
+          (unit) => this._unitChanged(unit)
+        ),
+        primaryForms.other
+      )}
+      ${this._renderPanel(
+        t("group.alternate_unit"),
+        "mdi:scale-balance",
+        html`
+          ${this._renderUnitFields(
+            alternate.unit_of_measurement,
+            undefined,
+            (unit) =>
+              this._alternateChanged({
+                ...alternate,
+                unit_of_measurement: unit as UnitConfig,
+              })
+          )}
+          <ha-form
+            .hass=${this.hass}
+            .data=${alternate}
+            .schema=${[
+              {
+                type: "grid",
+                name: "",
+                schema: [
+                  {
+                    name: "conversion_factor",
+                    selector: { number: { mode: "box", step: "any" } },
+                  },
+                  { name: "approximate", selector: { boolean: {} } },
+                ],
+              },
+            ]}
+            .computeLabel=${this._computeLabel}
+            @value-changed=${(ev: CustomEvent) => {
+              ev.stopPropagation();
+              this._alternateChanged(ev.detail.value);
+            }}
+          ></ha-form>
+        `,
+        alternateForms.other && alternate.conversion_factor
+          ? `× ${alternate.conversion_factor} ${alternateForms.other}`
+          : alternateForms.other
+      )}
+    `;
   }
 
   // --- Render ---
@@ -341,7 +469,7 @@ export class DispenserScheduleCardEditor extends LitElement {
 
     return html`
       <div class="section">
-        <h3>${t("device_section")}</h3>
+        <h3>${t("section.device")}</h3>
         <ha-form
           .hass=${this.hass}
           .data=${{ device_type: device?.type }}
@@ -357,7 +485,7 @@ export class DispenserScheduleCardEditor extends LitElement {
                 target="_blank"
                 rel="noreferrer"
               >
-                ${t("documentation")}
+                ${t("help.documentation")}
               </a>
               <ha-form
                 .hass=${this.hass}
@@ -369,23 +497,31 @@ export class DispenserScheduleCardEditor extends LitElement {
               ></ha-form>
               ${hasCompoundSwitch
                 ? html`<ha-alert alert-type="info">
-                    ${t("compound_switch")}
+                    ${t("alert.compound_switch")}
                   </ha-alert>`
                 : nothing}
             `
           : html`<ha-alert alert-type="warning">
-              ${t("unknown_device", "{type}", String(device?.type))}
+              ${t("alert.unknown_device", "{type}", String(device?.type))}
             </ha-alert>`}
       </div>
       <div class="section">
-        <h3>${t("display_section")}</h3>
+        <h3>${t("section.display")}</h3>
         <ha-form
           .hass=${this.hass}
-          .data=${this._displayData()}
-          .schema=${this._displaySchema()}
+          .data=${{ editable: this._config.editable ?? "toggle" }}
+          .schema=${this._editableSchema()}
+          .computeLabel=${this._computeLabel}
+          @value-changed=${this._editableChanged}
+        ></ha-form>
+        ${this._renderUnits()}
+        <ha-form
+          .hass=${this.hass}
+          .data=${{ display: this._config.display }}
+          .schema=${this._statusSchema()}
           .computeLabel=${this._computeLabel}
           .computeHelper=${this._computeHelper}
-          @value-changed=${this._displayChanged}
+          @value-changed=${this._statusChanged}
         ></ha-form>
       </div>
     `;
@@ -409,6 +545,29 @@ export class DispenserScheduleCardEditor extends LitElement {
       .docs {
         align-self: flex-end;
         font-size: var(--ha-font-size-s, 12px);
+        color: var(--primary-color);
+      }
+      /* Matches ha-form's own expandable sections. */
+      ha-expansion-panel {
+        display: block;
+        --expansion-panel-content-padding: 0;
+        border-radius: var(--ha-border-radius-md, 6px);
+        --ha-card-border-radius: var(--ha-border-radius-md, 6px);
+      }
+      ha-expansion-panel ha-icon {
+        color: var(--secondary-text-color);
+      }
+      .content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+      .content p {
+        margin: 0;
+        color: var(--secondary-text-color);
+      }
+      .content a {
         color: var(--primary-color);
       }
     `;

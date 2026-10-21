@@ -48,5 +48,65 @@
   },
   "errors": {
     "unresolved_field": "Could not auto-resolve {field}. Specify it manually."
+  },
+  "editor": {
+    "section": {
+      "device": "Gerät",
+      "display": "Anzeige"
+    },
+    "group": {
+      "overrides": "Erkannte Entitäten überschreiben",
+      "actions": "Dienstaktionen",
+      "primary_unit": "Haupteinheit",
+      "alternate_unit": "Alternative Einheit",
+      "plural_forms": "Pluralformen",
+      "display": "Statusdarstellung"
+    },
+    "field": {
+      "device_type": "Gerätetyp",
+      "device_id": "Gerät",
+      "entity": "Zeitplan-Entität",
+      "switch": "Zeitplan-Schalter",
+      "add": "Eintrag hinzufügen",
+      "edit": "Eintrag bearbeiten",
+      "remove": "Eintrag entfernen",
+      "toggle": "Eintrag umschalten",
+      "max_entries": "Max. Einträge",
+      "min_amount": "Min. Menge",
+      "max_amount": "Max. Menge",
+      "step_amount": "Mengenschritt",
+      "status_pattern": "Statusmuster (Regex)",
+      "status_map": "Statuszuordnung (Code -> Status)",
+      "editable": "Bearbeitung",
+      "unit": "Einheit",
+      "conversion_factor": "Umrechnungsfaktor",
+      "approximate": "Ungefähr (~)",
+      "icon": "Symbol",
+      "color": "Farbe",
+      "label": "Beschriftung"
+    },
+    "editable": {
+      "always": "Immer",
+      "toggle": "Umschalten",
+      "never": "Nie"
+    },
+    "plural": {
+      "zero": "Null",
+      "one": "Eins",
+      "two": "Zwei",
+      "few": "Wenige",
+      "many": "Viele"
+    },
+    "help": {
+      "documentation": "Dokumentation",
+      "unit_placeholder": "Gerätestandard",
+      "plural_forms": "Manche Sprachen ändern das Wort je nach Anzahl. Dies sind die Formen, die {language} verwendet; leere Felder verwenden die Einheit oben.",
+      "plural_forms_docs": "So funktioniert die Pluralbildung",
+      "color_default": "Standard: {value}"
+    },
+    "alert": {
+      "compound_switch": "Der Zeitplan-Schalter verwendet die zusammengesetzte Form, die nur in YAML verfügbar ist, und bleibt unverändert.",
+      "unknown_device": "Der Gerätetyp \"{type}\" kann nur in YAML konfiguriert werden."
+    }
   }
 }
