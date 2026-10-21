@@ -227,6 +227,7 @@ Translations are currently available for the following languages:
 - Español (Spanish)
 - Français (French)
 - Italiano (Italian)
+- Nederlands (Dutch)
 - Română (Romanian)
 - Türkçe (Turkish)
 
