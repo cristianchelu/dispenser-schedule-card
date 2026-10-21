@@ -88,10 +88,12 @@ Alternatively, paste `{{ device_id('sensor.your_feeder_entity') }}` into
 | Xiaomi Smart Pet Feeder[^1] | `xiaomi-smart-feeder`   | [esphome-miot](https://github.com/dhewg/esphome-miot/blob/main/config/mmgg.feeder.fi1.yaml) | [Full control 📖](docs/xiaomi-smart-feeder.md)   |
 | Xiaomi Smart Pet Feeder 2   | `xiaomi-smart-feeder-2` | [Xiaomi Home (official)](https://github.com/XiaoMi/ha_xiaomi_home)                          | [Full control 📖](docs/xiaomi-smart-feeder-2.md) |
 | PetLibro dry feeders        | `petlibro`              | [jjjonesjr33/petlibro](https://github.com/jjjonesjr33/petlibro)                             | [Full control 📖](docs/petlibro.md)              |
-| PetKit dry feeders          | `petkit`                | [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)       | [Full control 📖](docs/petkit.md)                |
+| PetKit dry feeders          | `petkit`                | [Jezza34000/homeassistant_petkit](https://github.com/Jezza34000/homeassistant_petkit)       | [Full control[^2] 📖](docs/petkit.md)            |
 | DIY / Others                | `custom`                | Any ([Example ESPHome config](docs/dispenser-blueprint.yaml))                               | [Custom :) 📖](docs/custom.md)                   |
 
 [^1]: `mmgg.feeder.fi1`, only when modified with ESPHome firmware.
+
+[^2]: With homeassistant_petkit 1.29.0 or newer; older versions are display only.
 
 ## Card configuration
 

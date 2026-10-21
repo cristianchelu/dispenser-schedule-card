@@ -9,12 +9,16 @@ custom integration in Home Assistant.
 
 ## Integration version
 
-Use homeassistant_petkit `v1.25.0 (2026-04-17)` or newer.
-For older releases, you can still use
-`[device.type: custom](custom.md)` with the integration’s
-`raw_distribution_data` string and a `status_pattern`, as in the
+Full control needs homeassistant_petkit
+[1.29.0](https://github.com/Jezza34000/homeassistant_petkit/releases/tag/1.29.0)
+or newer. See HACS Docs on
+[downloading a specific version of a repository](https://www.hacs.xyz/docs/use/repositories/dashboard/#downloading-a-specific-version-of-a-repository).
+
+Older versions are display only: use [`device.type: custom`](custom.md) with
+the integration's comma-separated `raw_distribution_data` string and a
+`status_pattern`, as shown in the
 [PetKit integration wiki](https://github.com/Jezza34000/homeassistant_petkit/wiki).
-That path does not include the weekly or dual-hopper editor.
+That setup cannot edit the schedule and has no weekly or dual-hopper support.
 
 ## Minimal YAML
 
