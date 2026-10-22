@@ -222,6 +222,7 @@ states, so stylesheets can target them safely:
 Translations are currently available for the following languages:
 
 - Català (Catalan)
+- Čeština (Czech)
 - Deutsch (German)
 - English
 - Español (Spanish)
