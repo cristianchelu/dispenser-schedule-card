@@ -1,0 +1,115 @@
+{
+  "ui": {
+    "name": "Rozvrh",
+    "portions_one": "porce",
+    "portions_other": "porcí",
+    "empty": "Žádný rozvrh",
+    "edit": "Upravit",
+    "delete": "Smazat",
+    "enable": "Povolit",
+    "disable": "Zakázat",
+    "done": "Hotovo",
+    "cancel": "Zrušit",
+    "save": "Uložit",
+    "time": "Čas",
+    "amount": "Množství",
+    "repeat": "Opakování",
+    "every_day": "Každý den",
+    "never_repeat": "Neopakovat",
+    "empty_today": "Dnes žádný rozvrh",
+    "skip_today": "Přeskočit",
+    "unskip_today": "Obnovit",
+    "call_sound": "Zvuk při krmení"
+  },
+  "entry_field": {
+    "quantity_n": "Množství {n}",
+    "position": "Přihrádka",
+    "label": "Popisek"
+  },
+  "status": {
+    "dispensed": "Vydáno",
+    "dispensing": "Vydává se",
+    "pending": "Naplánováno",
+    "failed": "Selhání",
+    "skipped": "Přeskočeno",
+    "disabled": "Zakázáno",
+    "unknown": "Neznámé"
+  },
+  "status_petlibro": {
+    "to_be_skipped": "Bude přeskočeno",
+    "state_5": "Neznámý stav 5"
+  },
+  "status_petkit": {
+    "cancelled": "Přeskočeno",
+    "skipped_surpluscontrol": "Přeskočeno (SurplusControl)",
+    "surplus_skipped": "Přeskočeno (miska je stále plná)",
+    "dispensed_schedule": "Vydáno (rozvrh)",
+    "dispensed_remote": "Vydáno (vzdálená aplikace)",
+    "dispensed_local": "Vydáno (tlačítko na zařízení)",
+    "error": "Chyba výdeje",
+    "past_unknown": "Neznámé (po termínu)"
+  },
+  "errors": {
+    "unresolved_field": "Pole {field} se nepodařilo určit automaticky. Zadejte ho ručně."
+  },
+  "editor": {
+    "section": {
+      "device": "Zařízení",
+      "display": "Zobrazení"
+    },
+    "group": {
+      "overrides": "Přepsat nalezené entity",
+      "actions": "Akce služeb",
+      "primary_unit": "Primární jednotka",
+      "alternate_unit": "Alternativní jednotka",
+      "plural_forms": "Tvary množného čísla",
+      "display": "Vzhled stavu"
+    },
+    "field": {
+      "device_type": "Typ zařízení",
+      "device_id": "Zařízení",
+      "entity": "Entita rozvrhu",
+      "switch": "Vypínač rozvrhu",
+      "add": "Přidat položku",
+      "edit": "Upravit položku",
+      "remove": "Odebrat položku",
+      "toggle": "Přepnout položku",
+      "max_entries": "Max. počet položek",
+      "min_amount": "Min. množství",
+      "max_amount": "Max. množství",
+      "step_amount": "Krok množství",
+      "status_pattern": "Vzor stavu (regex)",
+      "status_map": "Mapa stavů (kód -> stav)",
+      "editable": "Úpravy",
+      "unit": "Jednotka",
+      "conversion_factor": "Převodní koeficient",
+      "approximate": "Přibližně (~)",
+      "icon": "Ikona",
+      "color": "Barva",
+      "label": "Popisek"
+    },
+    "editable": {
+      "always": "Vždy",
+      "toggle": "Přepínatelné",
+      "never": "Nikdy"
+    },
+    "plural": {
+      "zero": "Nula",
+      "one": "Jedna",
+      "two": "Dvě",
+      "few": "Několik",
+      "many": "Mnoho"
+    },
+    "help": {
+      "documentation": "Dokumentace",
+      "unit_placeholder": "Výchozí podle zařízení",
+      "plural_forms": "Některé jazyky mění slovo podle počtu. Toto jsou tvary, které používá jazyk {language}; prázdné se nahradí jednotkou výše.",
+      "plural_forms_docs": "Jak funguje množné číslo",
+      "color_default": "Výchozí: {value}"
+    },
+    "alert": {
+      "compound_switch": "Vypínač rozvrhu používá složenou formu dostupnou pouze v YAML a zůstane beze změny.",
+      "unknown_device": "Typ zařízení „{type}“ lze nastavit pouze v YAML."
+    }
+  }
+}
