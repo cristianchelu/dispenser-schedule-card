@@ -27,8 +27,8 @@
     "label": "Label"
   },
   "status": {
-    "dispensed": "Uitgedoseerd",
-    "dispensing": "Uitdoseren",
+    "dispensed": "Uitgegeven",
+    "dispensing": "Uitgeven",
     "pending": "In afwachting",
     "failed": "Mislukt",
     "skipped": "Overgeslagen",
